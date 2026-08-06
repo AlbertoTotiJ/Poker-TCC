@@ -3,13 +3,14 @@ pandas
 scipy
 scikit-learn
 
-gymanasium
+gymnasium
 rlcard
 stable-baselines3
 torch
 
 matplotlib
-ploty
-
+plotly
 sqlalchemy
 psycopg2-binary
+
+tqdm
