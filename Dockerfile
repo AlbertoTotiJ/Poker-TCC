@@ -1,3 +1,5 @@
+FROM python:3.11-slim
+
 # Evita arquivos .pyc e garante saída imediata no terminal
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -11,33 +13,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Instala as dependências Python
-COPY requirements.txt .
+COPY requirements/ requirements/
 
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements/base.txt
+RUN pip install --no-cache-dir -r requirements/dev.txt
 
 # Copia o restante do projeto
 COPY . .
 
 CMD ["python"]
-
-docker-compose.yml
-
-version: "3.9"
-
-services:
-
-  poker:
-
-    build: .
-
-    container_name: poker-tcc
-
-    working_dir: /app
-
-    volumes:
-      - .:/app
-
-    stdin_open: true
-
-    tty: true
