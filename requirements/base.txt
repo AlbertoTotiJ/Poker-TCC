@@ -1,0 +1,15 @@
+numpy
+pandas
+scipy
+scikit-learn
+
+gymanasium
+rlcard
+stable-baselines3
+torch
+
+matplotlib
+ploty
+
+sqlalchemy
+psycopg2-binary
