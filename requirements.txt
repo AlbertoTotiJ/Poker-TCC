@@ -1,0 +1,4 @@
+# Dependências de execução do servidor Vercel
+# O motor de regras e a interface web utilizam exclusivamente a Python Standard Library.
+# Para instalar as dependências de Machine Learning/RL do TCC, utilize:
+# pip install -r requirements/base.txt

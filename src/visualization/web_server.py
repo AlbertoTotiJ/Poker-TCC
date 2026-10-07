@@ -304,8 +304,22 @@ class WebPokerSession:
         }
 
 
+_WEB_DIR = Path(__file__).resolve().parent / "web"
+_PUBLIC_DIR = Path(__file__).resolve().parent.parent.parent / "public"
+_SESSIONS: Dict[str, WebPokerSession] = {}
+_DEFAULT_SESSION_ID = "default_session"
+
+
+def get_html_path() -> Path:
+    """Retorna o caminho do arquivo index.html em public/ ou web/."""
+    pub_index = _PUBLIC_DIR / "index.html"
+    if pub_index.exists():
+        return pub_index
+    return _WEB_DIR / "index.html"
+
+
 class PokerApiHandler(BaseHTTPRequestHandler):
-    """Tratador de requisições HTTP para a aplicação web."""
+    """Tratador de requisições HTTP para a aplicação web e Vercel Serverless."""
 
     session: Optional[WebPokerSession] = None
 
@@ -313,28 +327,57 @@ class PokerApiHandler(BaseHTTPRequestHandler):
         """Suprime logs padrão de requisições no console para manter saída limpa."""
         return
 
+    def _set_cors_headers(self) -> None:
+        """Configura cabeçalhos de CORS para permitir requisições seguras."""
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Session-ID")
+
+    def do_OPTIONS(self) -> None:
+        """Responde a requisições de preflight CORS."""
+        self.send_response(204)
+        self._set_cors_headers()
+        self.end_headers()
+
+    def _resolve_session(self, session_id: Optional[str] = None) -> WebPokerSession:
+        """Obtém ou cria a sessão associada ao identificador."""
+        sid = session_id or self.headers.get("X-Session-ID") or _DEFAULT_SESSION_ID
+        if sid not in _SESSIONS:
+            if PokerApiHandler.session is not None and sid == _DEFAULT_SESSION_ID:
+                _SESSIONS[sid] = PokerApiHandler.session
+            else:
+                _SESSIONS[sid] = WebPokerSession()
+        return _SESSIONS[sid]
+
     def do_GET(self) -> None:
         """Serve a interface gráfica HTML e retorna estado atual da API."""
         parsed = urlparse(self.path)
+        clean_path = parsed.path.rstrip("/")
 
-        if parsed.path in ("/", "/index.html"):
-            index_path = _WEB_DIR / "index.html"
+        if clean_path in ("", "/", "/index.html"):
+            index_path = get_html_path()
             if not index_path.exists():
                 self.send_error(404, "Arquivo index.html não encontrado.")
                 return
             content = index_path.read_bytes()
             self.send_response(200)
+            self._set_cors_headers()
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             self.wfile.write(content)
             return
 
-        if parsed.path == "/api/state":
-            if self.session is None:
-                self._send_json({"active": False})
-                return
-            state = self.session.get_serialized_state()
+        if clean_path.endswith("/state"):
+            query_sid = None
+            if parsed.query:
+                params = dict(
+                    qc.split("=", 1) for qc in parsed.query.split("&") if "=" in qc
+                )
+                query_sid = params.get("session_id")
+
+            session = self._resolve_session(query_sid)
+            state = session.get_serialized_state()
             self._send_json(state)
             return
 
@@ -343,47 +386,55 @@ class PokerApiHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         """Processa comandos da partida (início, apostas e avanço de turnos)."""
         parsed = urlparse(self.path)
+        clean_path = parsed.path.rstrip("/")
+
         content_len = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_len).decode("utf-8") if content_len > 0 else "{}"
         data = json.loads(body) if body else {}
 
-        if parsed.path == "/api/start_game":
+        sid = (
+            data.get("session_id")
+            or self.headers.get("X-Session-ID")
+            or _DEFAULT_SESSION_ID
+        )
+
+        if clean_path.endswith("/start_game"):
             num_players = int(data.get("num_players", 4))
             starting_stack = int(data.get("starting_stack", 1000))
-            PokerApiHandler.session = WebPokerSession(
+            new_session = WebPokerSession(
                 num_players=num_players,
                 starting_stack=starting_stack,
             )
-            state = PokerApiHandler.session.get_serialized_state()
-            self._send_json({"success": True, "state": state})
+            _SESSIONS[sid] = new_session
+            PokerApiHandler.session = new_session
+            state = new_session.get_serialized_state()
+            self._send_json({"success": True, "session_id": sid, "state": state})
             return
 
-        if self.session is None:
-            self._send_json({"success": False, "error": "Partida não iniciada."})
-            return
+        session = self._resolve_session(sid)
 
-        if parsed.path == "/api/action":
+        if clean_path.endswith("/action"):
             action_type = data.get("action_type", "")
             amount = int(data.get("amount", 0))
             try:
-                desc = self.session.apply_human_action(action_type, amount)
-                state = self.session.get_serialized_state()
+                desc = session.apply_human_action(action_type, amount)
+                state = session.get_serialized_state()
                 self._send_json({"success": True, "action": desc, "state": state})
             except Exception as ex:
                 self._send_json({"success": False, "error": str(ex)})
             return
 
-        if parsed.path == "/api/bot_step":
-            desc = self.session.step_bot()
-            state = self.session.get_serialized_state()
+        if clean_path.endswith("/bot_step"):
+            desc = session.step_bot()
+            state = session.get_serialized_state()
             self._send_json(
                 {"success": True, "action_performed": desc is not None, "state": state}
             )
             return
 
-        if parsed.path == "/api/next_hand":
-            self.session.start_next_hand()
-            state = self.session.get_serialized_state()
+        if clean_path.endswith("/next_hand"):
+            session.start_next_hand()
+            state = session.get_serialized_state()
             self._send_json({"success": True, "state": state})
             return
 
@@ -393,6 +444,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
         """Codifica e transmite payload JSON com cabeçalhos apropriados."""
         data = json.dumps(payload).encode("utf-8")
         self.send_response(200)
+        self._set_cors_headers()
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
