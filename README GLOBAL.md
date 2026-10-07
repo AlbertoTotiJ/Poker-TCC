@@ -13,7 +13,7 @@ O objetivo principal deste trabalho é construir um ecossistema experimental par
 2. **Agentes Autônomos de IA:** Desenvolver agentes com perfis estratégicos variados (e.g., conservador/tight, agressivo/loose, baseados em heurística ou aprendizado por reforço).
 3. **Mecanismo de Telemetria e Observação:** Registrar de forma estruturada as trajetórias completas do jogo (histórico de apostas, tamanho de raises, posições na mesa, cartas comunitárias e cartas privadas reveladas pós-showdown).
 4. **Módulo de Análise e Detecção de Blefe:** Extrair métricas comportamentais (frequência de agressão, disparidade entre valor real da mão e padrão de aposta, timing e sizing) e treinar modelos para classificação ou detecção precoce de blefes.
-5. **Todas as respostas dos agentes será em PORTUGUÊS.**
+5. **Todas as respostas dos agentes será em PORTUGUÊS** 
 
 ---
 
@@ -34,17 +34,58 @@ A manutenção, legibilidade e rigor técnico do código são pilares fundamenta
 
 ---
 
-## 3. Arquitetura Modular do Repositório
+## 3. Padrão de Código: Exemplos Comparativos
+
+### ❌ Incorreto (Ruído visual e comentários desnecessários)
+
+```python
+# Função que avalia a aposta
+def bet_eval(p, b, c):
+    # Pega o pote
+    pot = p
+    # Pega a aposta
+    bet = b
+    # Calcula a razao do pote
+    # Divide a aposta pelo total do pote mais aposta
+    ratio = bet / (pot + bet)  # calcula odds
+    
+    # Se a razao for menor que 0.3 retorna verdadeiro
+    if ratio < 0.3:
+        return True # pode pagar
+    else:
+        return False # folda
+```
+
+### ✅ Correto (Código limpo, tipado e autoexplicativo)
+
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class PotOdds:
+    current_pot: float
+    bet_to_call: float
+
+    @property
+    def call_ratio(self) -> float:
+        return self.bet_to_call / (self.current_pot + self.bet_to_call)
+
+    def is_favorable(self, required_threshold: float = 0.30) -> bool:
+        """Determina se a aposta é matematicamente vantajosa com base no limiar exigido."""
+        return self.call_ratio < required_threshold
+```
+
+---
+
+## 4. Arquitetura Modular do Repositório
 
 O projeto é organizado em módulos desacoplados para garantir isolamento entre as regras do jogo, a lógica dos agentes e o motor de telemetria/análise:
 
 ```text
 ├── src/
 │   ├── engine/             # Regras fundamentais do Texas Hold'em
-│   │   ├── deck.py         # Baralho de 52 cartas, naipes, ranques e embaralhamento
-│   │   ├── dealer.py       # Dealer oficial, distribuição de hole cards e bordo com queimas
-│   │   ├── hand_eval.py    # Avaliador de força e combinações de mãos de 7 cartas
-│   │   ├── player.py       # Entidade de jogador, stacks, all-in e volume apostado
+│   │   ├── deck.py         # Baralho, naipes e embaralhamento
+│   │   ├── hand_eval.py    # Avaliador de força e combinações de mãos
 │   │   ├── pot.py          # Gestão do pote principal e potes paralelos (side pots)
 │   │   └── table.py        # Estado da mesa, posições (dealer, blinds) e transições
 │   │
@@ -62,17 +103,15 @@ O projeto é organizado em módulos desacoplados para garantir isolamento entre 
 │       └── detector.py     # Modelos preditivos e classificadores de blefes
 │
 ├── tests/                  # Testes unitários cobrindo engine, agentes e avaliação
-├── scripts/                # Scripts utilitários e demonstrações interativas
 ├── notebooks/              # Análise exploratória e visualização dos dados coletados
-├── requirements/           # Dependências de ambiente (base e desenvolvimento)
-├── Dockerfile              # Imagem do ambiente de execução
-├── docker-compose.yml      # Orquestração do contêiner Docker
+├── config/                 # Parâmetros de simulação (blinds, bankroll, número de mãos)
+├── requirements.txt        # Dependências do projeto
 └── README.md               # Este documento
 ```
 
 ---
 
-## 4. Metodologia de Detecção de Blefe
+## 5. Metodologia de Detecção de Blefe
 
 No contexto deste projeto, um **blefe** é categorizado e medido através de:
 1. **Disparidade Ação-Mão:** Tomada de ação agressiva (aposta/aumento) com equidade de mão baixa (mãos fracas ou especulativas) em relação ao board.
@@ -82,54 +121,31 @@ No contexto deste projeto, um **blefe** é categorizado e medido através de:
 
 ---
 
-## 5. Como Executar
+## 6. Ambiente de Desenvolvimento e Ferramentas
 
-### 5.1 Ambiente Virtual Local
-
-```bash
-# Ativação do ambiente virtual
-.venv\Scripts\activate   # Windows
-source .venv/bin/activate  # Linux / macOS
-
-# Execução da suíte de testes unitários (27 testes)
-pytest -v
-
-# Validação de formatação e linter
-flake8 src/ tests/ scripts/
-black --check src/ tests/ scripts/
-
-# Execução da demonstração interativa da Sprint 1
-python scripts/demo_sprint1.py
-```
-
-### 5.2 Execução com Docker
+* **Linguagem:** Python 3.10+
+* **Formatação e Estilo:** `black` e `ruff` para manter padrão estético sem debates manuais.
+* **Verificação Estática:** `mypy` para validação rigorosa de tipos.
+* **Testes Automatizados:** `pytest` para testes das regras do jogo e avaliador de mãos.
 
 ```bash
-# Construção e inicialização do contêiner
-docker compose up --build
+# Instalação das dependências
+pip install -r requirements.txt
 
-# Execução de testes no contêiner
-docker compose run --rm poker pytest -v
+# Execução da suíte de testes
+pytest tests/ -v
+
+# Validação de tipos
+mypy src/
 ```
 
 ---
 
-## 6. Roadmap do Projeto
+## 7. Próximos Passos (Roadmap do TCC)
 
-- [x] **Sprint 1: Fundação do Engine, Baralho e Dealer**
-  - [x] Baralho padrão de 52 cartas determinístico e queima de cartas (`src/engine/deck.py`).
-  - [x] Dealer oficial com regras de distribuição de hole cards e board (`src/engine/dealer.py`).
-  - [x] Avaliador de mãos de 7 cartas com desempates precisos por kickers (`src/engine/hand_eval.py`).
-  - [x] Gestor de potes e potes paralelos (*side pots*) com all-in (`src/engine/pot.py`).
-  - [x] Controlador de mesa, blinds, streets e showdown (`src/engine/table.py` & `src/engine/player.py`).
-  - [x] Suíte de 27 testes unitários com 100% de aprovação (`tests/`).
-  - [x] Script de demonstração executável (`scripts/demo_sprint1.py`).
-- [ ] **Sprint 2: Interface e Agentes Baseline**
-  - [ ] Interface de agente com observação parcial (`src/agents/base.py`).
-  - [ ] Agentes baseline (`Random`, `Tight-Aggressive`, `Passive`).
-- [ ] **Sprint 3: Telemetria e Persistência**
-  - [ ] Modelos de dados e schemas (`src/telemetry/schemas.py`).
-  - [ ] Rastreador de trajetórias pré-flop ao showdown (`src/telemetry/tracker.py`).
-- [ ] **Sprint 4: Detecção e Análise de Blefes**
-  - [ ] Engenharia de features de agressão e disparidade (`src/analysis/features.py`).
-  - [ ] Modelos classificadores de blefes (`src/analysis/detector.py`).
+- [ ] Implementar motor do baralho e avaliador de mãos de 7 cartas (`engine/hand_eval.py`).
+- [ ] Construir o loop principal de rodadas de apostas e gestão de potes (`engine/table.py`).
+- [ ] Definir a interface padrão de agente com observação parcial das informações (`agents/base.py`).
+- [ ] Implementar agentes baseline (Randômico, Heurístico Básico, Tight-Aggressive).
+- [ ] Desenvolver o sistema de telemetria com exportação para Parquet/JSON.
+- [ ] Implementar pipeline de rotulagem e detecção supervisionada/não-supervisionada de blefes.
