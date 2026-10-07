@@ -1,20 +1,25 @@
 # Ambiente virtual
 .venv/
+venv/
 
 # Python
 __pycache__/
 *.pyc
 
-# VS Code
+# Ferramental e Testes
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
 .vscode/
+.idea/
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Dados
+# Dados e Modelos
 data/
-
-# Modelos
 models/
 
 # Logs
@@ -22,3 +27,10 @@ logs/
 
 # Variáveis de ambiente
 .env
+
+# Ferramentas de desenvolvimento e canvas locais
+.maestri/
+.freebuff/
+
+# Obsidian
+.obsidian/

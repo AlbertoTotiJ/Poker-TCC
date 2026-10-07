@@ -11,9 +11,11 @@ venv/
 .vscode/
 
 models/
-
 data/
-
 notebooks/
 
 .env
+
+.maestri/
+.freebuff/
+.pytest_cache/
