@@ -58,6 +58,7 @@ class Table:
         small_blind: int,
         big_blind: int,
         rng: Optional[random.Random] = None,
+        button_idx: int = 0,
     ) -> None:
         if len(players) < 2:
             raise ValueError("Uma mesa de Texas Hold'em exige no mínimo 2 jogadores.")
@@ -70,13 +71,15 @@ class Table:
         self._dealer: Dealer = Dealer(rng=rng)
         self._pot_manager: PotManager = PotManager()
 
-        self._button_idx: int = 0
+        self._button_idx: int = button_idx % len(self._players)
         self._street: Street = Street.PREFLOP
         self._current_player_idx: int = 0
         self._current_highest_bet: int = 0
         self._min_raise: int = big_blind
         self._last_aggressor_idx: Optional[int] = None
         self._acted_this_round: Set[str] = set()
+        self._last_payouts: Dict[str, int] = {}
+        self._last_scores: Dict[str, HandScore] = {}
 
     @property
     def players(self) -> Tuple[Player, ...]:
@@ -103,6 +106,22 @@ class Table:
         return self._current_highest_bet
 
     @property
+    def min_raise(self) -> int:
+        return self._min_raise
+
+    @property
+    def button_idx(self) -> int:
+        return self._button_idx
+
+    @property
+    def last_payouts(self) -> Dict[str, int]:
+        return dict(self._last_payouts)
+
+    @property
+    def last_scores(self) -> Dict[str, HandScore]:
+        return dict(self._last_scores)
+
+    @property
     def current_player(self) -> Optional[Player]:
         if self._street in (Street.SHOWDOWN, Street.FINISHED):
             return None
@@ -123,6 +142,8 @@ class Table:
         self._dealer.start_new_hand(rng=rng)
         self._street = Street.PREFLOP
         self._acted_this_round.clear()
+        self._last_payouts.clear()
+        self._last_scores.clear()
 
         # Determinação das posições de Small Blind e Big Blind
         num_players = len(self._players)
@@ -347,6 +368,8 @@ class Table:
         """Transfere todas as fichas ao único jogador remanescente após desistências."""
         total = self._pot_manager.total_pot
         winner.award(total)
+        self._last_payouts = {winner.player_id: total}
+        self._last_scores = {}
         self._street = Street.FINISHED
         self._button_idx = (self._button_idx + 1) % len(self._players)
 
@@ -367,6 +390,8 @@ class Table:
             if player.player_id in payouts:
                 player.award(payouts[player.player_id])
 
+        self._last_payouts = payouts
+        self._last_scores = scores
         self._street = Street.FINISHED
         self._button_idx = (self._button_idx + 1) % len(self._players)
         return payouts

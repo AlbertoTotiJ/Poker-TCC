@@ -91,15 +91,22 @@ No contexto deste projeto, um **blefe** é categorizado e medido através de:
 .venv\Scripts\activate   # Windows
 source .venv/bin/activate  # Linux / macOS
 
-# Execução da suíte de testes unitários (27 testes)
+# Execução da suíte de testes unitários (37 testes)
 pytest -v
 
 # Validação de formatação e linter
 flake8 src/ tests/ scripts/
 black --check src/ tests/ scripts/
 
-# Execução da demonstração interativa da Sprint 1
+# Execução da demonstração dos componentes da Sprint 1
 python scripts/demo_sprint1.py
+
+# Jogo interativo contra a máquina no terminal
+python scripts/play_poker.py
+
+# Jogo interativo com MESA GRÁFICA VIRTUAL no navegador
+python scripts/play_poker_web.py
+# (ou alternativamente: python scripts/play_poker.py --web)
 ```
 
 ### 5.2 Execução com Docker
