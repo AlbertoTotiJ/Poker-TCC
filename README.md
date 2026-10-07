@@ -91,7 +91,7 @@ No contexto deste projeto, um **blefe** é categorizado e medido através de:
 .venv\Scripts\activate   # Windows
 source .venv/bin/activate  # Linux / macOS
 
-# Execução da suíte de testes unitários (37 testes)
+# Execução da suíte de testes unitários (41 testes)
 pytest -v
 
 # Validação de formatação e linter
@@ -108,6 +108,8 @@ python scripts/play_poker.py
 python scripts/play_poker_web.py
 # (ou alternativamente: python scripts/play_poker.py --web)
 ```
+
+> 📖 **Guia Passo a Passo:** Para instruções detalhadas de como jogar, regras, opções visuais e comandos, consulte o mini guia [COMO_JOGAR.md](COMO_JOGAR.md).
 
 ### 5.2 Execução com Docker
 
