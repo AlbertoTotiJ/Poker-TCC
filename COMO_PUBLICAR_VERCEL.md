@@ -64,3 +64,6 @@ O link final de produção será exibido diretamente no seu terminal!
 - [`public/index.html`](public/index.html): Interface gráfica estática da mesa de poker.
 - [`.vercelignore`](.vercelignore): Exclui ambientes locais (`.venv`, notebooks, caches) para otimizar o tempo de envio.
 - [`requirements.txt`](requirements.txt): Declaração leve de dependências para o ambiente de execução serverless.
+- [`pyproject.toml`](pyproject.toml): Metadados PEP 621 e configurações do ambiente Python compatíveis com o builder `uv` da Vercel.
+- [`uv.lock`](uv.lock): Arquivo de lockfile determinístico gerado pelo `uv` para compilação instantânea na Vercel.
+
