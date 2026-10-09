@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Sequence, Set
 
 from src.engine.hand_eval import HandScore
 
@@ -82,16 +82,29 @@ class PotManager:
 
             previous_level = level
 
-        return pots
+        # Mescla potes consecutivos que compartilham os mesmos jogadores elegíveis
+        merged_pots: List[Pot] = []
+        for pot in pots:
+            if merged_pots and merged_pots[-1].eligible_players == pot.eligible_players:
+                merged_pots[-1].amount += pot.amount
+            else:
+                merged_pots.append(pot)
+
+        return merged_pots
 
     def payout(
-        self, pots: List[Pot], player_scores: Dict[str, HandScore]
+        self,
+        pots: List[Pot],
+        player_scores: Dict[str, HandScore],
+        table_order: Optional[Sequence[str]] = None,
     ) -> Dict[str, int]:
         """Distribui as fichas aos vencedores elegíveis por mérito de HandScore.
 
         Args:
             pots: Lista de potes calculados.
             player_scores: Avaliações de mão dos jogadores que foram ao showdown.
+            table_order: Ordem horária de assentos a partir do botão para
+                atribuição de fichas ímpares (odd chips).
 
         Returns:
             Dicionário com o montante de fichas ganho por cada jogador.
@@ -106,13 +119,20 @@ class PotManager:
             highest_score = max(player_scores[pid] for pid in contenders)
             winners = [pid for pid in contenders if player_scores[pid] == highest_score]
 
+            # Ordenação prioritária para divisão de fichas indivisíveis (odd chips)
+            if table_order:
+                order_map = {pid: i for i, pid in enumerate(table_order)}
+                winners.sort(key=lambda pid: order_map.get(pid, 9999))
+            else:
+                winners.sort()
+
             share = pot.amount // len(winners)
             remainder = pot.amount % len(winners)
 
             for winner in winners:
                 winnings[winner] += share
 
-            # Atribui o chip ímpar indivisível ao primeiro vencedor ordenado
+            # Atribui o chip ímpar ao primeiro vencedor conforme prioridade posicional
             for i in range(remainder):
                 winnings[winners[i]] += 1
 

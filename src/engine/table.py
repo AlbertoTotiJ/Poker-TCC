@@ -78,6 +78,7 @@ class Table:
         self._min_raise: int = big_blind
         self._last_aggressor_idx: Optional[int] = None
         self._acted_this_round: Set[str] = set()
+        self._incomplete_raise_locked_players: Set[str] = set()
         self._last_payouts: Dict[str, int] = {}
         self._last_scores: Dict[str, HandScore] = {}
 
@@ -127,6 +128,15 @@ class Table:
             return None
         return self._players[self._current_player_idx]
 
+    def _next_chip_player_idx(self, from_idx: int) -> int:
+        """Localiza o próximo jogador em sentido horário que ainda possui fichas."""
+        num = len(self._players)
+        for step in range(1, num + 1):
+            idx = (from_idx + step) % num
+            if self._players[idx].stack > 0:
+                return idx
+        return from_idx
+
     def start_new_hand(self, rng: Optional[random.Random] = None) -> None:
         """Inicia uma nova mão: prepara stacks, posta blinds e distribui cartas."""
         active_with_chips = [p for p in self._players if p.stack > 0]
@@ -142,20 +152,25 @@ class Table:
         self._dealer.start_new_hand(rng=rng)
         self._street = Street.PREFLOP
         self._acted_this_round.clear()
+        self._incomplete_raise_locked_players.clear()
         self._last_payouts.clear()
         self._last_scores.clear()
 
-        # Determinação das posições de Small Blind e Big Blind
-        num_players = len(self._players)
-        # Heads-up: Dealer posta Small Blind e fala primeiro pré-flop
-        if num_players == 2:
+        # Garante que o botão pertença a um jogador com fichas
+        if self._players[self._button_idx].stack == 0:
+            self._button_idx = self._next_chip_player_idx(self._button_idx)
+
+        num_chip_players = len(active_with_chips)
+
+        # Heads-up (2 jogadores com fichas): Dealer é Small Blind e age primeiro
+        if num_chip_players == 2:
             sb_idx = self._button_idx
-            bb_idx = (self._button_idx + 1) % num_players
+            bb_idx = self._next_chip_player_idx(self._button_idx)
             first_to_act_idx = sb_idx
         else:
-            sb_idx = (self._button_idx + 1) % num_players
-            bb_idx = (self._button_idx + 2) % num_players
-            first_to_act_idx = (self._button_idx + 3) % num_players
+            sb_idx = self._next_chip_player_idx(self._button_idx)
+            bb_idx = self._next_chip_player_idx(sb_idx)
+            first_to_act_idx = self._next_chip_player_idx(bb_idx)
 
         sb_player = self._players[sb_idx]
         posted_sb = sb_player.post_bet(self._small_blind)
@@ -169,7 +184,7 @@ class Table:
         self._min_raise = self._big_blind
         self._last_aggressor_idx = bb_idx
 
-        # Distribuição física pelo Dealer
+        # Distribuição física pelo Dealer apenas para jogadores ativos
         active_ids = [p.player_id for p in self._players if p.is_active]
         hole_map = self._dealer.deal_hole_cards(active_ids)
         for player in self._players:
@@ -195,7 +210,10 @@ class Table:
         else:
             if player.stack > call_amount:
                 actions.append(ActionType.CALL)
-                actions.append(ActionType.RAISE)
+                # Regra TDA 44 / Full Raise: Jogadores que já pagaram aposta prévia
+                # e enfrentam apenas aumento incompleto não podem aumentar novamente
+                if player_id not in self._incomplete_raise_locked_players:
+                    actions.append(ActionType.RAISE)
             else:
                 actions.append(ActionType.ALL_IN)
 
@@ -241,8 +259,10 @@ class Table:
             posted = player.post_bet(action.amount)
             self._pot_manager.add_contribution(player.player_id, posted)
             self._current_highest_bet = player.current_bet
-            self._min_raise = posted
+            self._min_raise = max(posted, self._big_blind)
             self._last_aggressor_idx = self._current_player_idx
+            self._incomplete_raise_locked_players.clear()
+            self._acted_this_round.clear()
 
         elif action.action_type == ActionType.RAISE:
             min_required = self._current_highest_bet + self._min_raise
@@ -253,22 +273,48 @@ class Table:
                 raise ValueError(
                     f"Aumento mínimo exigido é para o total de {min_required}."
                 )
+            prev_highest = self._current_highest_bet
             to_post = action.amount - player.current_bet
             posted = player.post_bet(to_post)
             self._pot_manager.add_contribution(player.player_id, posted)
-            raise_size = player.current_bet - self._current_highest_bet
+            raise_size = player.current_bet - prev_highest
+
             if raise_size >= self._min_raise:
                 self._min_raise = raise_size
+                self._incomplete_raise_locked_players.clear()
+                self._acted_this_round.clear()
+            else:
+                # Aumento incompleto (all-in menor que o raise mínimo)
+                for p in self._players:
+                    if (
+                        p.is_active
+                        and p.current_bet == prev_highest
+                        and p.player_id != player.player_id
+                    ):
+                        self._incomplete_raise_locked_players.add(p.player_id)
+
             self._current_highest_bet = player.current_bet
             self._last_aggressor_idx = self._current_player_idx
 
         elif action.action_type == ActionType.ALL_IN:
+            prev_highest = self._current_highest_bet
             posted = player.post_bet(player.stack)
             self._pot_manager.add_contribution(player.player_id, posted)
-            if player.current_bet > self._current_highest_bet:
-                raise_size = player.current_bet - self._current_highest_bet
+            if player.current_bet > prev_highest:
+                raise_size = player.current_bet - prev_highest
                 if raise_size >= self._min_raise:
                     self._min_raise = raise_size
+                    self._incomplete_raise_locked_players.clear()
+                    self._acted_this_round.clear()
+                else:
+                    # Aumento incompleto
+                    for p in self._players:
+                        if (
+                            p.is_active
+                            and p.current_bet == prev_highest
+                            and p.player_id != player.player_id
+                        ):
+                            self._incomplete_raise_locked_players.add(p.player_id)
                 self._current_highest_bet = player.current_bet
                 self._last_aggressor_idx = self._current_player_idx
 
@@ -317,6 +363,7 @@ class Table:
             player.reset_street_bet()
 
         self._acted_this_round.clear()
+        self._incomplete_raise_locked_players.clear()
         self._current_highest_bet = 0
         self._min_raise = self._big_blind
         self._last_aggressor_idx = None
@@ -336,7 +383,7 @@ class Table:
             return
 
         # Pós-flop: Primeiro a falar é a primeira posição ativa à esquerda do botão
-        self._current_player_idx = (self._button_idx + 1) % len(self._players)
+        self._current_player_idx = self._next_chip_player_idx(self._button_idx)
         self._ensure_valid_current_player()
 
     def _advance_street_or_runout(self) -> None:
@@ -371,7 +418,7 @@ class Table:
         self._last_payouts = {winner.player_id: total}
         self._last_scores = {}
         self._street = Street.FINISHED
-        self._button_idx = (self._button_idx + 1) % len(self._players)
+        self._button_idx = self._next_chip_player_idx(self._button_idx)
 
     def _resolve_showdown(self) -> Dict[str, int]:
         """Avalia mãos no Showdown e distribui potes principais e paralelos."""
@@ -385,7 +432,12 @@ class Table:
                 all_cards = list(player.hole_cards) + list(self._dealer.community_cards)
                 scores[player.player_id] = evaluate_hand(all_cards)
 
-        payouts = self._pot_manager.payout(pots, scores)
+        # Ordem horária de assentos para desempate do chip ímpar (odd chip)
+        table_order = [
+            self._players[(self._button_idx + 1 + i) % len(self._players)].player_id
+            for i in range(len(self._players))
+        ]
+        payouts = self._pot_manager.payout(pots, scores, table_order=table_order)
         for player in active_players:
             if player.player_id in payouts:
                 player.award(payouts[player.player_id])
@@ -393,7 +445,7 @@ class Table:
         self._last_payouts = payouts
         self._last_scores = scores
         self._street = Street.FINISHED
-        self._button_idx = (self._button_idx + 1) % len(self._players)
+        self._button_idx = self._next_chip_player_idx(self._button_idx)
         return payouts
 
     def _get_player_by_id(self, player_id: str) -> Player:
