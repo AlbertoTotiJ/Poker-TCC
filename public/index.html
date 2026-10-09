@@ -48,6 +48,8 @@
       align-items: center;
       z-index: 100;
       backdrop-filter: blur(8px);
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
     .brand {
@@ -72,9 +74,42 @@
       border-radius: 4px;
     }
 
+    /* Chip Legend Bar in Header */
+    .chip-legend-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #ccc;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mini-chip {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.52rem;
+      font-weight: 900;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      border: 1.5px dashed;
+    }
+
     .header-controls {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
     }
 
@@ -124,7 +159,7 @@
       border-radius: 260px;
       border: 14px solid var(--table-rim);
       box-shadow: 
-        inset 0 0 40px rgba(0, 0, 0, 0.7),
+        inset 0 0 45px rgba(0, 0, 0, 0.75),
         0 15px 40px rgba(0, 0, 0, 0.9),
         0 0 0 4px var(--table-border);
       display: flex;
@@ -134,12 +169,213 @@
 
     .table-watermark {
       position: absolute;
-      color: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.035);
       font-size: 3.2rem;
       font-weight: 900;
       letter-spacing: 6px;
       pointer-events: none;
       text-transform: uppercase;
+      top: 56%;
+      transform: translateY(-50%);
+    }
+
+    /* Dealer Container (Top Center of Table) */
+    .dealer-container {
+      position: absolute;
+      top: -36px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 18;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .dealer-bust-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .dealer-avatar {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85), 0 0 16px rgba(212, 175, 55, 0.35);
+      background: #0f1621;
+      position: relative;
+      z-index: 2;
+      animation: dealerFloat 4s ease-in-out infinite;
+    }
+
+    @keyframes dealerFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .dealer-svg {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .dealer-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      margin-top: -6px;
+      z-index: 3;
+    }
+
+    .dealer-badge {
+      background: linear-gradient(135deg, #1b2430, #0a0e14);
+      color: var(--gold-light);
+      border: 1px solid var(--gold);
+      padding: 1px 12px;
+      border-radius: 12px;
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .dealer-speech {
+      background: rgba(0, 0, 0, 0.88);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #f1f1f1;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      max-width: 240px;
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Dealer Chip Tray (Bandeja de Fichas) */
+    .dealer-chip-tray {
+      display: flex;
+      gap: 4px;
+      background: linear-gradient(180deg, #1e293b, #0f172a);
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 3px 8px;
+      margin-top: 4px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
+      z-index: 1;
+      pointer-events: auto;
+    }
+
+    .tray-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .tray-slot:hover {
+      transform: translateY(-2px);
+    }
+
+    .tray-slot .poker-chip {
+      width: 20px;
+      height: 20px;
+      font-size: 0.52rem;
+    }
+
+    /* Poker Chips System */
+    .poker-chip {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+      border: 2.5px dashed rgba(255, 255, 255, 0.85);
+      position: relative;
+      cursor: default;
+      user-select: none;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    .poker-chip::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    .poker-chip span {
+      position: relative;
+      z-index: 2;
+    }
+
+    .chip-gold {
+      background: radial-gradient(circle, #ffe082 30%, #ff8f00 100%);
+      color: #000;
+      border-color: #ffffff;
+    }
+
+    .chip-purple {
+      background: radial-gradient(circle, #ce93d8 30%, #4a148c 100%);
+      color: #fff;
+      border-color: #f3e5f5;
+    }
+
+    .chip-black {
+      background: radial-gradient(circle, #424242 30%, #0d0d0d 100%);
+      color: var(--gold-light);
+      border-color: var(--gold);
+    }
+
+    .chip-green {
+      background: radial-gradient(circle, #81c784 30%, #1b5e20 100%);
+      color: #fff;
+      border-color: #e8f5e9;
+    }
+
+    .chip-red {
+      background: radial-gradient(circle, #e57373 30%, #b71c1c 100%);
+      color: #fff;
+      border-color: #ffebee;
+    }
+
+    .chip-white {
+      background: radial-gradient(circle, #ffffff 30%, #b0bec5 100%);
+      color: #263238;
+      border-color: #78909c;
+    }
+
+    .chips-cluster {
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+      padding: 2px;
+    }
+
+    .chips-cluster .poker-chip:not(:first-child) {
+      margin-left: -13px;
+    }
+
+    .chips-cluster .poker-chip:hover {
+      transform: translateY(-4px) scale(1.18);
+      z-index: 10;
     }
 
     /* Table Center: Pot and Community Cards */
@@ -149,29 +385,55 @@
       align-items: center;
       gap: 14px;
       z-index: 10;
+      margin-top: 36px;
     }
 
     .pot-badge {
-      background: rgba(0, 0, 0, 0.65);
-      border: 1px solid var(--gold);
-      padding: 6px 20px;
-      border-radius: 30px;
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--gold-light);
+      background: rgba(10, 16, 22, 0.88);
+      border: 1.5px solid var(--gold);
+      padding: 6px 18px;
+      border-radius: 26px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      gap: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+    }
+
+    .pot-chips-visual {
+      display: flex;
+      align-items: center;
+      min-height: 26px;
+    }
+
+    .pot-text {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .pot-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--gold-light);
+      letter-spacing: 1px;
+    }
+
+    .pot-val {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #fff;
     }
 
     .community-cards-container {
       display: flex;
       gap: 10px;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.28);
       padding: 10px 16px;
       border-radius: 12px;
       border: 1px dashed rgba(255, 255, 255, 0.15);
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
     }
 
     .card-slot {
@@ -276,7 +538,7 @@
     }
 
     .seat-badge {
-      background: rgba(18, 24, 33, 0.9);
+      background: rgba(18, 24, 33, 0.92);
       border: 2px solid rgba(255, 255, 255, 0.15);
       border-radius: 10px;
       padding: 6px 14px;
@@ -313,6 +575,10 @@
       font-size: 0.85rem;
       font-weight: 800;
       color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
     }
 
     .seat-cards {
@@ -362,14 +628,24 @@
     }
 
     .bet-chips-indicator {
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 0.75rem;
+      background: rgba(10, 14, 20, 0.88);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      padding: 3px 10px;
+      border-radius: 14px;
+      font-size: 0.78rem;
       font-weight: 800;
-      color: #ffeb3b;
-      margin-top: 2px;
+      color: #ffd54f;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      animation: betPop 0.25s ease-out;
+    }
+
+    @keyframes betPop {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
 
     /* Bottom Control Bar */
@@ -449,10 +725,9 @@
     }
 
     .slider-val {
-      font-weight: 800;
+      font-weight: 700;
       color: var(--gold-light);
-      font-size: 1.1rem;
-      min-width: 60px;
+      min-width: 40px;
     }
 
     .quick-bets {
@@ -463,38 +738,40 @@
     .btn-quick {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #eee;
+      color: #fff;
       padding: 4px 10px;
       border-radius: 4px;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       cursor: pointer;
+      transition: all 0.2s;
     }
 
     .btn-quick:hover {
-      background: var(--gold);
-      color: #000;
+      background: rgba(212, 175, 55, 0.2);
+      border-color: var(--gold);
     }
 
-    /* Turn Status Banner */
     .turn-status {
       font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--gold-light);
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #aaa;
     }
 
-    /* Modal dialog */
+    .turn-status strong {
+      color: var(--gold-light);
+    }
+
+    /* Modal Setup */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: rgba(0, 0, 0, 0.8);
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
-      backdrop-filter: blur(4px);
+      z-index: 200;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s;
@@ -590,6 +867,17 @@
       <h1>TEXAS HOLD'EM</h1>
       <span>SIMULADOR TCC</span>
     </div>
+
+    <!-- Casino Chip Legend Bar -->
+    <div class="chip-legend-bar" title="Valores e cores oficiais das fichas de poker">
+      <span class="legend-item"><span class="mini-chip chip-white">1</span>1</span>
+      <span class="legend-item"><span class="mini-chip chip-red">5</span>5</span>
+      <span class="legend-item"><span class="mini-chip chip-green">25</span>25</span>
+      <span class="legend-item"><span class="mini-chip chip-black">100</span>100</span>
+      <span class="legend-item"><span class="mini-chip chip-purple">500</span>500</span>
+      <span class="legend-item"><span class="mini-chip chip-gold">1K</span>1K</span>
+    </div>
+
     <div class="header-controls">
       <button class="btn-header" onclick="openConfigModal()">⚙️ Configurar Mesa</button>
       <button class="btn-header" id="speedBtn" onclick="toggleSpeed()">Velocidade: Normal</button>
@@ -602,11 +890,57 @@
       <div class="poker-table">
         <div class="table-watermark">Texas Hold'em</div>
 
+        <!-- Dealer Bust & Chip Tray (Top Center of Table) -->
+        <div class="dealer-container">
+          <div class="dealer-bust-wrapper">
+            <div class="dealer-avatar" title="Dealer Oficial da Mesa">
+              <svg viewBox="0 0 100 100" class="dealer-svg">
+                <circle cx="50" cy="50" r="48" fill="#141c26" stroke="#d4af37" stroke-width="2.5" />
+                <path d="M 15 95 C 18 70, 35 66, 50 66 C 65 66, 82 70, 85 95 Z" fill="#1a232f" stroke="#0a0e14" stroke-width="1.5" />
+                <polygon points="38,66 50,86 62,66" fill="#f8f9fa" />
+                <polygon points="40,68 50,72 40,76" fill="#c62828" />
+                <polygon points="60,68 50,72 60,76" fill="#c62828" />
+                <circle cx="50" cy="72" r="2.5" fill="#e53935" />
+                <circle cx="50" cy="88" r="1.5" fill="#d4af37" />
+                <rect x="44" y="54" width="12" height="14" fill="#f5cba7" rx="2" />
+                <ellipse cx="50" cy="44" rx="18" ry="20" fill="#f5cba7" />
+                <path d="M 30 40 C 30 22, 42 17, 50 17 C 60 17, 70 22, 70 40 C 67 31, 60 26, 50 26 C 40 26, 33 31, 30 40 Z" fill="#2c1d11" />
+                <path d="M 30 38 C 28 42, 28 48, 31 51 C 32 45, 32 41, 33 38 Z" fill="#2c1d11" />
+                <path d="M 70 38 C 72 42, 72 48, 69 51 C 68 45, 68 41, 67 38 Z" fill="#2c1d11" />
+                <path d="M 37 38 Q 43 36 47 38" stroke="#2c1d11" stroke-width="1.5" fill="none" stroke-linecap="round" />
+                <path d="M 53 38 Q 57 36 63 38" stroke="#2c1d11" stroke-width="1.5" fill="none" stroke-linecap="round" />
+                <ellipse cx="42" cy="43" rx="2.5" ry="3" fill="#1b2430" />
+                <ellipse cx="58" cy="43" rx="2.5" ry="3" fill="#1b2430" />
+                <circle cx="43.2" cy="42" r="0.8" fill="#fff" />
+                <circle cx="59.2" cy="42" r="0.8" fill="#fff" />
+                <path d="M 50 43 L 48 49 L 52 49" stroke="#d5a57a" stroke-width="1.2" fill="none" stroke-linecap="round" />
+                <path d="M 44 53 Q 50 58 56 53" stroke="#8d4925" stroke-width="1.8" fill="none" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="dealer-info">
+              <span class="dealer-badge">DEALER</span>
+              <span class="dealer-speech" id="dealerSpeech">Bem-vindo à mesa!</span>
+            </div>
+            <!-- Dealer Chip Tray (Bandeja de Fichas) -->
+            <div class="dealer-chip-tray" title="Bandeja de Fichas da Mesa">
+              <div class="tray-slot" title="Fichas Brancas ($1)"><div class="poker-chip chip-white"><span>1</span></div></div>
+              <div class="tray-slot" title="Fichas Vermelhas ($5)"><div class="poker-chip chip-red"><span>5</span></div></div>
+              <div class="tray-slot" title="Fichas Verdes ($25)"><div class="poker-chip chip-green"><span>25</span></div></div>
+              <div class="tray-slot" title="Fichas Pretas ($100)"><div class="poker-chip chip-black"><span>100</span></div></div>
+              <div class="tray-slot" title="Fichas Roxas ($500)"><div class="poker-chip chip-purple"><span>500</span></div></div>
+              <div class="tray-slot" title="Fichas Douradas ($1K)"><div class="poker-chip chip-gold"><span>1K</span></div></div>
+            </div>
+          </div>
+        </div>
+
         <!-- Center Elements: Pot & Community Cards -->
         <div class="table-center">
           <div class="pot-badge" id="potBadge">
-            <span>🪙 Pote:</span>
-            <span id="potAmount">0</span>
+            <div class="pot-chips-visual" id="potChipsVisual"></div>
+            <div class="pot-text">
+              <span class="pot-title">POTE:</span>
+              <span class="pot-val" id="potAmount">0</span>
+            </div>
           </div>
 
           <div class="community-cards-container" id="communityCards">
@@ -709,6 +1043,123 @@
     if (!sessionId) {
       sessionId = 'sess_' + Math.random().toString(36).substring(2, 11);
       localStorage.setItem('poker_session_id', sessionId);
+    }
+
+    // Official Poker Chip Denominations
+    const CHIP_DENOMINATIONS = [
+      { value: 1000, color: 'gold', label: '1K' },
+      { value: 500,  color: 'purple', label: '500' },
+      { value: 100,  color: 'black', label: '100' },
+      { value: 25,   color: 'green', label: '25' },
+      { value: 5,    color: 'red', label: '5' },
+      { value: 1,    color: 'white', label: '1' }
+    ];
+
+    function getChipBreakdown(amount) {
+      let remaining = Math.max(0, amount);
+      const result = [];
+      for (const d of CHIP_DENOMINATIONS) {
+        if (remaining >= d.value) {
+          const count = Math.floor(remaining / d.value);
+          result.push({ denom: d, count });
+          remaining %= d.value;
+        }
+      }
+      return result;
+    }
+
+    function renderChipsVisual(amount, maxTotal = 6) {
+      if (!amount || amount <= 0) return '';
+      const breakdown = getChipBreakdown(amount);
+      let html = '<div class="chips-cluster">';
+      let rendered = 0;
+
+      for (const item of breakdown) {
+        const countToRender = Math.min(item.count, Math.max(1, maxTotal - rendered));
+        for (let i = 0; i < countToRender; i++) {
+          html += `
+            <div class="poker-chip chip-${item.denom.color}" title="${item.denom.label} ficha (${item.denom.value})">
+              <span>${item.denom.label}</span>
+            </div>
+          `;
+          rendered++;
+          if (rendered >= maxTotal) break;
+        }
+        if (rendered >= maxTotal) break;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    // Pixel-perfect hand-crafted seat layouts for 2 to 9 players
+    // Human is ALWAYS seat index 0 at bottom center (x:50, y:86)
+    // The top center (x:50, y:4-16) is reserved exclusively for the Dealer bust!
+    const SEAT_LAYOUTS = {
+      2: [
+        { x: 50, y: 86 }, // Humano
+        { x: 28, y: 34 }  // Bot (Top Left, framing Dealer)
+      ],
+      3: [
+        { x: 50, y: 86 }, // Humano
+        { x: 18, y: 50 }, // Bot 1 (Left)
+        { x: 82, y: 50 }  // Bot 2 (Right)
+      ],
+      4: [
+        { x: 50, y: 86 }, // Humano
+        { x: 16, y: 56 }, // Bot 1 (Left)
+        { x: 28, y: 26 }, // Bot 2 (Top Left)
+        { x: 72, y: 26 }  // Bot 3 (Top Right)
+      ],
+      5: [
+        { x: 50, y: 86 }, // Humano
+        { x: 18, y: 66 }, // Bot 1 (Bottom Left)
+        { x: 18, y: 34 }, // Bot 2 (Top Left)
+        { x: 82, y: 34 }, // Bot 3 (Top Right)
+        { x: 82, y: 66 }  // Bot 4 (Bottom Right)
+      ],
+      6: [
+        { x: 50, y: 86 }, // Humano
+        { x: 20, y: 78 }, // Bot 1
+        { x: 15, y: 48 }, // Bot 2
+        { x: 28, y: 24 }, // Bot 3 (Top Left)
+        { x: 72, y: 24 }, // Bot 4 (Top Right)
+        { x: 85, y: 48 }  // Bot 5
+      ],
+      7: [
+        { x: 50, y: 86 }, // Humano
+        { x: 22, y: 80 }, // Bot 1
+        { x: 15, y: 56 }, // Bot 2
+        { x: 20, y: 28 }, // Bot 3
+        { x: 70, y: 24 }, // Bot 4
+        { x: 85, y: 46 }, // Bot 5
+        { x: 80, y: 78 }  // Bot 6
+      ],
+      8: [
+        { x: 50, y: 86 }, // Humano
+        { x: 24, y: 80 },
+        { x: 15, y: 60 },
+        { x: 15, y: 36 },
+        { x: 28, y: 22 },
+        { x: 72, y: 22 },
+        { x: 85, y: 36 },
+        { x: 85, y: 60 }
+      ],
+      9: [
+        { x: 50, y: 86 }, // Humano
+        { x: 28, y: 82 },
+        { x: 15, y: 66 },
+        { x: 14, y: 42 },
+        { x: 28, y: 22 },
+        { x: 72, y: 22 },
+        { x: 86, y: 42 },
+        { x: 85, y: 66 },
+        { x: 72, y: 82 }
+      ]
+    };
+
+    function getSeatPosition(index, totalPlayers) {
+      const layouts = SEAT_LAYOUTS[totalPlayers] || SEAT_LAYOUTS[4];
+      return layouts[index] || { x: 50, y: 50 };
     }
 
     function toggleSpeed() {
@@ -832,8 +1283,28 @@
         return;
       }
 
-      // Pot
+      // Pot with Visual Chips
       document.getElementById('potAmount').innerText = gameState.pot_total;
+      const potChips = document.getElementById('potChipsVisual');
+      if (potChips) {
+        potChips.innerHTML = renderChipsVisual(gameState.pot_total, 8);
+      }
+
+      // Dealer Speech Update
+      const speech = document.getElementById('dealerSpeech');
+      if (speech) {
+        if (gameState.is_hand_finished && gameState.showdown) {
+          const winners = gameState.showdown.winner_names.join(', ');
+          speech.innerText = `🏆 Vitória de ${winners}!`;
+        } else if (gameState.is_human_turn) {
+          speech.innerText = "👉 É a sua vez de jogar!";
+        } else if (gameState.current_player_id) {
+          const pName = gameState.players.find(p => p.id === gameState.current_player_id)?.name || 'máquina';
+          speech.innerText = `Vez de ${pName}...`;
+        } else {
+          speech.innerText = "Embaralhando o baralho...";
+        }
+      }
 
       // Community Cards
       const commContainer = document.getElementById('communityCards');
@@ -895,18 +1366,8 @@
       const players = gameState.players;
       const numPlayers = players.length;
 
-      // Center of table container
-      const centerX = 50;
-      const centerY = 50;
-      const rx = 40; // horizontal radius in %
-      const ry = 36; // vertical radius in %
-
-      // Human is index 0 and positioned at bottom center (angle PI/2)
       players.forEach((p, index) => {
-        const angle = (Math.PI / 2) + index * (2 * Math.PI / numPlayers);
-        const posX = centerX + rx * Math.cos(angle);
-        const posY = centerY + ry * Math.sin(angle);
-
+        const pos = getSeatPosition(index, numPlayers);
         const isHuman = p.is_human;
         const activeClass = p.is_turn ? 'active-turn' : '';
         const eliminatedClass = p.is_eliminated ? 'eliminated' : '';
@@ -920,18 +1381,25 @@
 
         const seatDiv = document.createElement('div');
         seatDiv.className = `player-seat ${isHuman ? 'human' : ''} ${activeClass} ${eliminatedClass}`;
-        seatDiv.style.left = `${posX}%`;
-        seatDiv.style.top = `${posY}%`;
+        seatDiv.style.left = `${pos.x}%`;
+        seatDiv.style.top = `${pos.y}%`;
+
+        const stackChips = renderChipsVisual(p.stack, 2);
 
         seatDiv.innerHTML = `
           ${p.position ? `<div class="pos-chip">${p.position}</div>` : ''}
           <div class="seat-badge">
             <div class="player-name">${p.name}</div>
-            <div class="player-chips">🪙 ${p.stack}</div>
+            <div class="player-chips">${stackChips}<span>${p.stack}</span></div>
             ${p.last_action ? `<div class="action-bubble">${p.last_action}</div>` : ''}
           </div>
           <div class="seat-cards">${cardsHTML}</div>
-          ${p.current_bet > 0 ? `<div class="bet-chips-indicator">Aposta: ${p.current_bet}</div>` : ''}
+          ${p.current_bet > 0 ? `
+            <div class="bet-chips-indicator">
+              ${renderChipsVisual(p.current_bet, 4)}
+              <span>${p.current_bet}</span>
+            </div>
+          ` : ''}
         `;
 
         container.appendChild(seatDiv);
