@@ -10,23 +10,59 @@ Você tem duas formas de jogar:
 
 | Modo | Comando de Execução | Descrição |
 | :--- | :--- | :--- |
-| **🌐 Mesa Gráfica Web** *(Recomendado)* | `python scripts/play_poker_web.py` | Abre uma página interativa no navegador com mesa de feltro verde, distribuição de cartas, fichas e controles visuais. |
+| **🌐 Mesa Gráfica Web** *(Recomendado)* | `python scripts/play_poker_web.py` | Abre uma página interativa no navegador com mesa de feltro verde, distribuição de cartas, fichas e controles visuais. Acessível no PC e no celular via rede Wi-Fi! |
+| **🐳 Container Docker** | `docker compose up` | Sobe o ambiente completo containerizado na porta 5000, pronto para acesso local e em outros dispositivos. |
 | **💻 Console Back-end (CLI)** | `python scripts/play_poker.py` | Roda diretamente no terminal com telemetria detalhada, naipes coloridos e prompts numéricos. |
 
 ---
 
-## 🌐 2. Como Jogar na Interface Web (Navegador)
+## 🌐 2. Como Jogar na Interface Web (PC, Celular ou Tablet)
 
-### Passo a Passo:
+### Execução Local:
 1. Abra o terminal na raiz do projeto e execute:
    ```bash
    python scripts/play_poker_web.py
    ```
-2. O servidor iniciará e abrirá automaticamente a página no seu navegador padrão no endereço:
-   👉 **`http://127.0.0.1:5000`**
+2. O servidor iniciará e exibirá no console:
+   ```text
+   > Acesso Local (este computador): http://localhost:5000
+   > Acesso na Rede (outros dispositivos/celular): http://192.168.x.x:5000
+   ```
+3. **No seu computador:** A página abre automaticamente em `http://localhost:5000`.
+4. **No seu celular ou tablet:** Basta conectar no mesmo Wi-Fi do computador e acessar o link `http://192.168.x.x:5000` pelo navegador do celular! A mesa se redimensiona automaticamente com auto-scale para telas touch.
 
-### Recursos da Mesa Virtual:
+---
+
+## 🐳 3. Como Jogar Usando Docker
+
+Se você prefere executar tudo de forma isolada via containers:
+
+1. Inicie o Docker Desktop (ou serviço Docker).
+2. Na raiz do repositório, execute:
+   ```bash
+   docker compose up
+   ```
+   *(ou `docker compose up --build` na primeira vez ou após alterações)*
+3. Acesse a mesa no seu navegador em:
+   👉 **`http://localhost:5000`**
+4. Para rodar a suíte de testes dentro do container Docker:
+   ```bash
+   docker compose run --rm poker pytest
+   ```
+
+---
+
+## 🌍 4. Jogando Online pelo Site (Vercel)
+
+O projeto está 100% preparado para rodar na nuvem via **Vercel** gratuitamente:
+- Basta importar o repositório no [Vercel Dashboard](https://vercel.com) com 1 clique (veja o guia completo em [`COMO_PUBLICAR_VERCEL.md`](COMO_PUBLICAR_VERCEL.md)).
+- O site gera um link público (ex: `https://poker-tcc.vercel.app`) acessível de qualquer lugar do mundo pelo celular ou PC!
+
+---
+
+## 🎮 5. Recursos da Mesa Virtual:
 - **Escolha de Jogadores (2 a 9):** No modal inicial ou clicando em **"⚙️ Configurar Mesa"**, escolha quantos participantes estarão na mesa (ex: *2 para Heads-up 1v1*, *6 para 6-Max*, ou até *9 para mesa cheia*).
+- **Auto-Scale Responsivo:** A mesa se adapta perfeitamente ao formato e resolução de qualquer tela (monitor ultrawide, tela de notebook, tablet ou smartphone).
 - **Seu Lugar na Mesa:** Você (*Humano*) fica sempre posicionado na cabeceira inferior central da mesa, com visão em primeira pessoa das suas cartas abertas.
 - **Máquinas/Bots:** Ficam distribuídos ao redor da mesa com cartas viradas para baixo e perfis táticos identificados (*Agressivo*, *Conservador* ou *Equilibrado*).
 - **Controles de Ação:** Quando for sua vez (sinalizada por um anel dourado pulsante), os botões da barra inferior se habilitam:
@@ -39,7 +75,7 @@ Você tem duas formas de jogar:
 
 ---
 
-## 💻 3. Como Jogar no Terminal (Modo Console)
+## 💻 6. Como Jogar no Terminal (Modo Console)
 
 Se preferir jogar sem abrir o navegador, execute:
 
@@ -64,7 +100,7 @@ python scripts/play_poker.py
 
 ---
 
-## ⚙️ 4. Parâmetros e Opções Avançadas
+## ⚙️ 7. Parâmetros e Opções Avançadas
 
 Você pode passar parâmetros diretamente na linha de comando:
 
@@ -81,12 +117,12 @@ python scripts/play_poker.py --players 4 --hands 5 --auto
 
 ---
 
-## 🧪 5. Verificação e Testes
+## 🧪 8. Verificação e Testes
 
 Para garantir que todo o motor de regras, avaliador de mãos e servidores estão íntegros:
 
 ```bash
-# Execução da suíte completa de 41 testes unitários:
+# Execução da suíte completa de testes unitários:
 pytest -v
 
 # Validação de formatação e padrões Clean Code (Flake8 e Black):

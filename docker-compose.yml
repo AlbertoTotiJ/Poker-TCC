@@ -1,10 +1,27 @@
 version: "3.9"
+
 services:
   poker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: poker-tcc
     working_dir: /app
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - HOST=0.0.0.0
+      - PORT=5000
     volumes:
       - .:/app
     stdin_open: true
     tty: true
+    command: python scripts/play_poker_web.py --host 0.0.0.0 --port 5000 --no-browser
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

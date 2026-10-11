@@ -18,6 +18,25 @@ RECORD_FILE = DATA_DIR / "partidas_gravadas.jsonl"
 DEFAULT_AUTH_CODE = "TCC2026"
 
 
+def get_record_file() -> Path:
+    """Retorna o caminho seguro para o dataset com fallback para /tmp."""
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        test_file = DATA_DIR / ".write_test"
+        test_file.touch()
+        test_file.unlink(missing_ok=True)
+        return RECORD_FILE
+    except Exception:
+        pass
+
+    tmp_path = Path("/tmp/data/partidas_gravadas.jsonl")
+    try:
+        tmp_path.parent.mkdir(parents=True, exist_ok=True)
+        return tmp_path
+    except Exception:
+        return RECORD_FILE
+
+
 def get_auth_code() -> str:
     """Retorna o código de autenticação configurado ou o padrão TCC2026."""
     return os.environ.get("RESEARCH_ACCESS_CODE", DEFAULT_AUTH_CODE)
@@ -124,8 +143,9 @@ def save_hand_to_neon(
 def save_hand_to_file(hand_data: Dict[str, Any]) -> bool:
     """Grava a mão em formato JSON Lines no arquivo separado de segurança."""
     try:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        with open(RECORD_FILE, "a", encoding="utf-8") as f:
+        target_file = get_record_file()
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(target_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(hand_data, ensure_ascii=False) + "\n")
         return True
     except Exception:
@@ -478,7 +498,9 @@ def save_dataset_to_github(
     if not verify_auth_code(auth_code):
         return {"success": False, "error": "Código de autenticação inválido."}
 
-    if not RECORD_FILE.exists():
+    target_file = get_record_file()
+    actual_file = target_file if target_file.exists() else RECORD_FILE
+    if not actual_file.exists():
         return {
             "success": False,
             "error": "Nenhum arquivo de partidas gravadas encontrado para enviar.",
@@ -492,7 +514,7 @@ def save_dataset_to_github(
             f"data: dataset de partidas gravadas do TCC ({now_str})"
         )
         subprocess.run(
-            ["git", "add", "-f", str(RECORD_FILE)], check=True, capture_output=True
+            ["git", "add", "-f", str(actual_file)], check=True, capture_output=True
         )
         subprocess.run(
             ["git", "commit", "-m", msg], capture_output=True, text=True
@@ -527,7 +549,9 @@ def save_dataset_to_neon(
     if not verify_auth_code(auth_code):
         return {"success": False, "error": "Código de autenticação inválido."}
 
-    if not RECORD_FILE.exists():
+    target_file = get_record_file()
+    actual_file = target_file if target_file.exists() else RECORD_FILE
+    if not actual_file.exists():
         return {
             "success": False,
             "error": "Nenhum arquivo de partidas gravadas encontrado.",
@@ -546,7 +570,7 @@ def save_dataset_to_neon(
     try:
         ensure_neon_schema(conn)
         saved_count = 0
-        with open(RECORD_FILE, "r", encoding="utf-8") as f:
+        with open(actual_file, "r", encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue

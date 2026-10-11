@@ -104,22 +104,33 @@ python scripts/demo_sprint1.py
 # Jogo interativo contra a máquina no terminal
 python scripts/play_poker.py
 
-# Jogo interativo com MESA GRÁFICA VIRTUAL no navegador
+# Jogo interativo com MESA GRÁFICA VIRTUAL (Navegador e Celular)
 python scripts/play_poker_web.py
-# (ou alternativamente: python scripts/play_poker.py --web)
+# (O console exibirá tanto o link local http://localhost:5000 quanto o link de rede http://192.168.x.x:5000 para acesso via celular ou outros dispositivos)
 ```
 
 > 📖 **Guia Passo a Passo:** Para instruções detalhadas de como jogar, regras, opções visuais e comandos, consulte o mini guia [COMO_JOGAR.md](COMO_JOGAR.md).
 
 ### 5.2 Execução com Docker
 
+A aplicação conta com suporte completo a contêineres Docker com portas expostas e binding para todas as interfaces de rede (`0.0.0.0:5000`):
+
 ```bash
-# Construção e inicialização do contêiner
+# Construção e inicialização do contêiner com a mesa gráfica web ativa
 docker compose up --build
 
-# Execução de testes no contêiner
+# Acesso à mesa no navegador:
+# http://localhost:5000 ou http://<ip-da-sua-maquina>:5000
+
+# Execução da suíte de testes dentro do contêiner
 docker compose run --rm poker pytest -v
 ```
+
+### 5.3 Publicação Online na Web (Vercel)
+
+O projeto está configurado para deploy contínuo gratuito na **Vercel**:
+- Consulte o guia passo a passo em [`COMO_PUBLICAR_VERCEL.md`](COMO_PUBLICAR_VERCEL.md).
+- O front-end estático e as funções serverless rodam sem custos, gerando uma URL pública acessível em qualquer dispositivo do mundo.
 
 ---
 

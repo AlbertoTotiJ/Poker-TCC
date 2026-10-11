@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+import socket
 import sys
 import webbrowser
 
@@ -14,9 +15,28 @@ if hasattr(sys.stdout, "reconfigure"):
 from src.visualization.web_server import start_poker_web_server  # noqa: E402
 
 
+def get_local_ip() -> str:
+    """Detecta o endereço IP local da máquina na rede local (Wi-Fi ou Ethernet)."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return "127.0.0.1"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Inicializa a mesa virtual gráfica de Texas Hold'em no navegador."
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="0.0.0.0",
+        help="Endereço de rede para vincular o servidor (padrão: 0.0.0.0).",
     )
     parser.add_argument(
         "--players",
@@ -46,23 +66,34 @@ def main() -> None:
     args = parser.parse_args()
 
     httpd, port = start_poker_web_server(
+        host=args.host,
         port=args.port,
         num_players=args.players,
         starting_stack=args.stack,
     )
 
-    url = f"http://127.0.0.1:{port}"
-    print("=" * 70)
-    print(" MESA GRÁFICA VIRTUAL DE TEXAS HOLD'EM INICIADA! ".center(70, "="))
-    print("=" * 70)
-    print(f" Endereço da Mesa no Navegador: {url}")
-    print(f" Jogadores configurados: {args.players}")
-    print(f" Stack inicial: {args.stack} fichas")
+    local_url = f"http://localhost:{port}"
+    lan_ip = get_local_ip()
+    network_url = (
+        f"http://{lan_ip}:{port}"
+        if lan_ip not in ("127.0.0.1", "localhost")
+        else None
+    )
+
+    print("=" * 72)
+    print(" MESA GRÁFICA VIRTUAL DE TEXAS HOLD'EM INICIADA! ".center(72, "="))
+    print("=" * 72)
+    print(f" > Acesso Local (este computador): {local_url}")
+    if network_url:
+        print(f" > Acesso na Rede (outros dispositivos/celular): {network_url}")
+    print(f" > Endereço Vinculado (Host): {args.host} | Porta: {port}")
+    print(f" > Jogadores configurados: {args.players}")
+    print(f" > Stack inicial: {args.stack} fichas")
     print(" Pressione Ctrl+C no terminal a qualquer momento para encerrar.")
-    print("=" * 70 + "\n")
+    print("=" * 72 + "\n")
 
     if not args.no_browser:
-        webbrowser.open(url)
+        webbrowser.open(local_url)
 
     try:
         httpd.serve_forever()

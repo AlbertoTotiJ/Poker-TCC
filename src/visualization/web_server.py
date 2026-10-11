@@ -327,6 +327,24 @@ class PokerApiHandler(BaseHTTPRequestHandler):
         """Suprime logs padrão de requisições no console para manter saída limpa."""
         return
 
+    def send_error(
+        self,
+        code: int,
+        message: Optional[str] = None,
+        explain: Optional[str] = None,
+    ) -> None:
+        """Emite respostas de erro exclusivamente em JSON padronizado."""
+        err_msg = message or f"Erro HTTP {code}"
+        self.send_response(code)
+        self._set_cors_headers()
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        payload = json.dumps(
+            {"success": False, "error": err_msg, "status_code": code}
+        ).encode("utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
     def _set_cors_headers(self) -> None:
         """Configura cabeçalhos de CORS para permitir requisições seguras."""
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -349,177 +367,282 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 _SESSIONS[sid] = WebPokerSession()
         return _SESSIONS[sid]
 
+    def _resolve_clean_path(
+        self, parsed, data: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Determina a rota inspecionando URL, query, proxy e payload."""
+        if data and isinstance(data, dict):
+            ep = data.get("endpoint") or data.get("action")
+            if ep and isinstance(ep, str):
+                return f"/{ep.lstrip('/')}".rstrip("/")
+
+        for hdr in (
+            "x-forwarded-uri",
+            "x-matched-path",
+            "x-invoke-path",
+            "x-original-uri",
+            "x-now-route-matches",
+        ):
+            val = self.headers.get(hdr)
+            if val:
+                if hdr == "x-now-route-matches" and "=" in val:
+                    val = val.split("=")[-1]
+                uri_path = urlparse(val).path.rstrip("/")
+                if (
+                    uri_path
+                    and not uri_path.endswith("/index.py")
+                    and not uri_path.endswith("/index")
+                ):
+                    return uri_path
+
+        if parsed.query:
+            params = dict(
+                qc.split("=", 1) for qc in parsed.query.split("&") if "=" in qc
+            )
+            for qk in ("__route__", "endpoint", "route"):
+                if qk in params and params[qk]:
+                    r_val = params[qk].lstrip("/")
+                    if not r_val.endswith(".py"):
+                        return f"/{r_val}".rstrip("/")
+
+        raw_path = parsed.path.rstrip("/")
+        if raw_path.endswith(".py"):
+            raw_path = raw_path[:-3]
+        return raw_path
+
     def do_GET(self) -> None:
         """Serve a interface gráfica HTML e retorna estado atual da API."""
-        parsed = urlparse(self.path)
-        clean_path = parsed.path.rstrip("/")
+        try:
+            parsed = urlparse(self.path)
+            clean_path = self._resolve_clean_path(parsed)
 
-        if clean_path in ("", "/", "/index.html"):
-            index_path = get_html_path()
-            if not index_path.exists():
-                self.send_error(404, "Arquivo index.html não encontrado.")
+            if clean_path in ("", "/", "/index.html", "/index"):
+                index_path = get_html_path()
+                if not index_path.exists():
+                    self.send_error(404, "Arquivo index.html não encontrado.")
+                    return
+                content = index_path.read_bytes()
+                self.send_response(200)
+                self._set_cors_headers()
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
                 return
-            content = index_path.read_bytes()
-            self.send_response(200)
-            self._set_cors_headers()
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-            return
 
-        if clean_path.endswith("/state"):
-            query_sid = None
-            if parsed.query:
-                params = dict(
-                    qc.split("=", 1) for qc in parsed.query.split("&") if "=" in qc
+            if clean_path.endswith("/favicon.ico") or clean_path == "/favicon.ico":
+                self.send_response(204)
+                self._set_cors_headers()
+                self.end_headers()
+                return
+
+            if (
+                clean_path in ("/api", "/api/health", "/health", "/api/health.py")
+                or clean_path.endswith("/health")
+            ):
+                self._send_json(
+                    {
+                        "status": "ok",
+                        "service": "poker-tcc",
+                        "message": "Texas Hold'em Poker API online",
+                    }
                 )
-                query_sid = params.get("session_id")
-
-            session = self._resolve_session(query_sid)
-            state = session.get_serialized_state()
-            self._send_json(state)
-            return
-
-        if clean_path.endswith("/check_db"):
-            import os
-            from src.database.recorder import RECORD_FILE, get_neon_connection
-            conn = get_neon_connection()
-            neon_ok = conn is not None
-            if conn:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-            total_hands = 0
-            if RECORD_FILE.exists():
-                try:
-                    with open(RECORD_FILE, "r", encoding="utf-8") as f:
-                        total_hands = sum(1 for line in f if line.strip())
-                except Exception:
-                    pass
-            self._send_json({
-                "success": True,
-                "neon_connected": neon_ok,
-                "database_url_configured": bool(
-                    os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
-                ),
-                "file_exists": RECORD_FILE.exists(),
-                "total_hands_recorded": total_hands,
-                "file_name": RECORD_FILE.name,
-            })
-            return
-
-        if clean_path.endswith("/download_dataset"):
-            from src.database.recorder import RECORD_FILE
-            if not RECORD_FILE.exists():
-                self.send_error(404, "Nenhum arquivo de partidas gravadas encontrado.")
                 return
-            content = RECORD_FILE.read_bytes()
-            self.send_response(200)
-            self._set_cors_headers()
-            self.send_header("Content-Type", "application/x-jsonlines; charset=utf-8")
-            self.send_header(
-                "Content-Disposition", 'attachment; filename="partidas_gravadas.jsonl"'
-            )
-            self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-            return
 
-        self.send_error(404, "Rota não encontrada.")
+            if clean_path.endswith("/state") or clean_path == "/state":
+                query_sid = None
+                if parsed.query:
+                    params = dict(
+                        qc.split("=", 1) for qc in parsed.query.split("&") if "=" in qc
+                    )
+                    query_sid = params.get("session_id")
+
+                session = self._resolve_session(query_sid)
+                state = session.get_serialized_state()
+                self._send_json(state)
+                return
+
+            if clean_path.endswith("/check_db") or clean_path == "/check_db":
+                import os
+                from src.database.recorder import (
+                    RECORD_FILE,
+                    get_neon_connection,
+                    get_record_file,
+                )
+                conn = get_neon_connection()
+                neon_ok = conn is not None
+                if conn:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                rec_file = get_record_file()
+                target_file = rec_file if rec_file.exists() else RECORD_FILE
+                total_hands = 0
+                if target_file.exists():
+                    try:
+                        with open(target_file, "r", encoding="utf-8") as f:
+                            total_hands = sum(1 for line in f if line.strip())
+                    except Exception:
+                        pass
+                self._send_json({
+                    "success": True,
+                    "neon_connected": neon_ok,
+                    "database_url_configured": bool(
+                        os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+                    ),
+                    "file_exists": target_file.exists(),
+                    "total_hands_recorded": total_hands,
+                    "file_name": target_file.name,
+                })
+                return
+
+            if (
+                clean_path.endswith("/download_dataset")
+                or clean_path == "/download_dataset"
+            ):
+                from src.database.recorder import RECORD_FILE, get_record_file
+                rec_file = get_record_file()
+                target_file = rec_file if rec_file.exists() else RECORD_FILE
+                if not target_file.exists():
+                    self.send_error(
+                        404, "Nenhum arquivo de partidas gravadas encontrado."
+                    )
+                    return
+                content = target_file.read_bytes()
+                self.send_response(200)
+                self._set_cors_headers()
+                self.send_header(
+                    "Content-Type", "application/x-jsonlines; charset=utf-8"
+                )
+                self.send_header(
+                    "Content-Disposition",
+                    'attachment; filename="partidas_gravadas.jsonl"',
+                )
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+
+            self.send_error(404, f"Rota GET não encontrada: {clean_path}")
+        except Exception as ex:
+            self._send_json(
+                {"success": False, "error": f"Erro interno do servidor: {str(ex)}"}
+            )
 
     def do_POST(self) -> None:
         """Processa comandos da partida (início, apostas e avanço de turnos)."""
-        parsed = urlparse(self.path)
-        clean_path = parsed.path.rstrip("/")
-
-        content_len = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_len).decode("utf-8") if content_len > 0 else "{}"
-        data = json.loads(body) if body else {}
-
-        sid = (
-            data.get("session_id")
-            or self.headers.get("X-Session-ID")
-            or _DEFAULT_SESSION_ID
-        )
-
-        if clean_path.endswith("/record_batch"):
-            from src.database.recorder import run_recording_batch
-            auth_code = str(data.get("auth_code", ""))
-            num_hands = int(data.get("num_hands", 10))
-            num_players = int(data.get("num_players", 6))
-            result = run_recording_batch(
-                auth_code=auth_code,
-                num_hands=num_hands,
-                num_players=num_players,
+        try:
+            parsed = urlparse(self.path)
+            content_len = int(self.headers.get("Content-Length", 0))
+            body = (
+                self.rfile.read(content_len).decode("utf-8")
+                if content_len > 0
+                else "{}"
             )
-            self._send_json(result)
-            return
-
-        if clean_path.endswith("/save_to_github"):
-            from src.database.recorder import save_dataset_to_github
-            auth_code = str(data.get("auth_code", ""))
-            commit_msg = data.get("commit_message")
-            result = save_dataset_to_github(
-                auth_code=auth_code,
-                commit_message=commit_msg,
-            )
-            self._send_json(result)
-            return
-
-        if clean_path.endswith("/save_to_neon"):
-            from src.database.recorder import save_dataset_to_neon
-            auth_code = str(data.get("auth_code", ""))
-            custom_url = data.get("database_url")
-            result = save_dataset_to_neon(
-                auth_code=auth_code,
-                custom_db_url=custom_url,
-            )
-            self._send_json(result)
-            return
-
-        if clean_path.endswith("/start_game"):
-            num_players = int(data.get("num_players", 4))
-            starting_stack = int(data.get("starting_stack", 1000))
-            new_session = WebPokerSession(
-                num_players=num_players,
-                starting_stack=starting_stack,
-            )
-            _SESSIONS[sid] = new_session
-            PokerApiHandler.session = new_session
-            state = new_session.get_serialized_state()
-            self._send_json({"success": True, "session_id": sid, "state": state})
-            return
-
-        session = self._resolve_session(sid)
-
-        if clean_path.endswith("/action"):
-            action_type = data.get("action_type", "")
-            amount = int(data.get("amount", 0))
             try:
-                desc = session.apply_human_action(action_type, amount)
-                state = session.get_serialized_state()
-                self._send_json({"success": True, "action": desc, "state": state})
-            except Exception as ex:
-                self._send_json({"success": False, "error": str(ex)})
-            return
+                data = json.loads(body) if body else {}
+            except Exception:
+                data = {}
 
-        if clean_path.endswith("/bot_step"):
-            desc = session.step_bot()
-            state = session.get_serialized_state()
-            self._send_json(
-                {"success": True, "action_performed": desc is not None, "state": state}
+            clean_path = self._resolve_clean_path(parsed, data=data)
+
+            sid = (
+                data.get("session_id")
+                or self.headers.get("X-Session-ID")
+                or _DEFAULT_SESSION_ID
             )
-            return
 
-        if clean_path.endswith("/next_hand"):
-            session.start_next_hand()
-            state = session.get_serialized_state()
-            self._send_json({"success": True, "state": state})
-            return
+            if (
+                clean_path.endswith("/record_batch")
+                or clean_path == "/record_batch"
+            ):
+                from src.database.recorder import run_recording_batch
+                auth_code = str(data.get("auth_code", ""))
+                num_hands = int(data.get("num_hands", 10))
+                num_players = int(data.get("num_players", 6))
+                result = run_recording_batch(
+                    auth_code=auth_code,
+                    num_hands=num_hands,
+                    num_players=num_players,
+                )
+                self._send_json(result)
+                return
 
-        self.send_error(404, "Endpoint POST não encontrado.")
+            if (
+                clean_path.endswith("/save_to_github")
+                or clean_path == "/save_to_github"
+            ):
+                from src.database.recorder import save_dataset_to_github
+                auth_code = str(data.get("auth_code", ""))
+                commit_msg = data.get("commit_message")
+                result = save_dataset_to_github(
+                    auth_code=auth_code,
+                    commit_message=commit_msg,
+                )
+                self._send_json(result)
+                return
+
+            if clean_path.endswith("/save_to_neon") or clean_path == "/save_to_neon":
+                from src.database.recorder import save_dataset_to_neon
+                auth_code = str(data.get("auth_code", ""))
+                custom_url = data.get("database_url")
+                result = save_dataset_to_neon(
+                    auth_code=auth_code,
+                    custom_db_url=custom_url,
+                )
+                self._send_json(result)
+                return
+
+            if clean_path.endswith("/start_game") or clean_path == "/start_game":
+                num_players = int(data.get("num_players", 4))
+                starting_stack = int(data.get("starting_stack", 1000))
+                new_session = WebPokerSession(
+                    num_players=num_players,
+                    starting_stack=starting_stack,
+                )
+                _SESSIONS[sid] = new_session
+                PokerApiHandler.session = new_session
+                state = new_session.get_serialized_state()
+                self._send_json({"success": True, "session_id": sid, "state": state})
+                return
+
+            session = self._resolve_session(sid)
+
+            if clean_path.endswith("/action") or clean_path == "/action":
+                action_type = data.get("action_type", "")
+                amount = int(data.get("amount", 0))
+                try:
+                    desc = session.apply_human_action(action_type, amount)
+                    state = session.get_serialized_state()
+                    self._send_json({"success": True, "action": desc, "state": state})
+                except Exception as ex:
+                    self._send_json({"success": False, "error": str(ex)})
+                return
+
+            if clean_path.endswith("/bot_step") or clean_path == "/bot_step":
+                desc = session.step_bot()
+                state = session.get_serialized_state()
+                self._send_json(
+                    {
+                        "success": True,
+                        "action_performed": desc is not None,
+                        "state": state,
+                    }
+                )
+                return
+
+            if clean_path.endswith("/next_hand") or clean_path == "/next_hand":
+                session.start_next_hand()
+                state = session.get_serialized_state()
+                self._send_json({"success": True, "state": state})
+                return
+
+            self.send_error(404, f"Endpoint POST não encontrado: {clean_path}")
+        except Exception as ex:
+            self._send_json(
+                {"success": False, "error": f"Erro interno do servidor: {str(ex)}"}
+            )
 
     def _send_json(self, payload: Dict[str, Any]) -> None:
         """Codifica e transmite payload JSON com cabeçalhos apropriados."""
@@ -532,23 +655,28 @@ class PokerApiHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
 
-def find_free_port(start_port: int = 5000) -> int:
+def find_free_port(start_port: int = 5000, host: str = "0.0.0.0") -> int:
     """Busca a primeira porta TCP livre disponível a partir do número inicial."""
     for port in range(start_port, start_port + 50):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            if sock.connect_ex(("127.0.0.1", port)) != 0:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                sock.bind((host, port))
                 return port
+            except OSError:
+                continue
     return start_port
 
 
 def start_poker_web_server(
+    host: str = "0.0.0.0",
     port: Optional[int] = None,
     num_players: int = 4,
     starting_stack: int = 1000,
 ) -> Tuple[ThreadingHTTPServer, int]:
     """Inicializa e vincula o servidor web na porta disponível configurada."""
-    chosen_port = port if port is not None else find_free_port(5000)
-    server_address = ("127.0.0.1", chosen_port)
+    chosen_port = port if port is not None else find_free_port(5000, host=host)
+    server_address = (host, chosen_port)
 
     PokerApiHandler.session = WebPokerSession(
         num_players=num_players,

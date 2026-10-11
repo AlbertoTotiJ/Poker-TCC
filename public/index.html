@@ -136,15 +136,19 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 10px;
       position: relative;
+      overflow: hidden;
+      min-height: 360px;
     }
 
     .table-viewport {
-      width: 100%;
-      max-width: 1100px;
-      height: 600px;
+      width: 1050px;
+      height: 580px;
       position: relative;
+      transform-origin: center center;
+      transition: transform 0.15s ease-out;
+      flex-shrink: 0;
     }
 
     /* Oval Poker Table */
@@ -1020,6 +1024,84 @@
       font-weight: 700;
       display: none;
     }
+
+    /* Regras de Responsividade para Celulares, Tablets e Notebooks */
+    @media (max-width: 768px) {
+      header {
+        padding: 6px 12px;
+        gap: 6px;
+      }
+
+      .brand h1 {
+        font-size: 0.95rem;
+      }
+
+      .chip-legend-bar {
+        display: none;
+      }
+
+      .header-controls {
+        gap: 6px;
+      }
+
+      .btn-header {
+        padding: 5px 8px;
+        font-size: 0.72rem;
+      }
+
+      main {
+        padding: 4px;
+        min-height: 280px;
+      }
+
+      .controls-bar {
+        padding: 8px 10px;
+        gap: 6px;
+      }
+
+      .actions-row {
+        gap: 6px;
+      }
+
+      .btn-action {
+        padding: 8px 4px;
+        font-size: 0.78rem;
+        border-radius: 6px;
+      }
+
+      .btn-action span {
+        font-size: 0.62rem;
+      }
+
+      .raise-slider-row {
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .quick-bets {
+        gap: 4px;
+      }
+
+      .btn-quick {
+        padding: 4px 6px;
+        font-size: 0.72rem;
+      }
+
+      .turn-status {
+        font-size: 0.8rem;
+        text-align: center;
+      }
+
+      .modal-card {
+        padding: 16px 16px;
+        width: 95%;
+      }
+    }
+
+    button, input, select {
+      touch-action: manipulation;
+    }
   </style>
 </head>
 <body>
@@ -1391,9 +1473,10 @@
         const res = await fetch('/api/start_game', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-          body: JSON.stringify({ session_id: sessionId, num_players: numPlayers, starting_stack: startingStack })
+          body: JSON.stringify({ endpoint: 'start_game', session_id: sessionId, num_players: numPlayers, starting_stack: startingStack })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = JSON.parse(text);
         if (data.success) {
           gameState = data.state;
           renderGame();
@@ -1406,12 +1489,15 @@
 
     async function fetchState() {
       try {
-        const res = await fetch('/api/state?session_id=' + sessionId, {
+        const res = await fetch('/api/state?session_id=' + sessionId + '&endpoint=state', {
           headers: { 'X-Session-ID': sessionId }
         });
-        gameState = await res.json();
-        renderGame();
-        checkBotTurn();
+        if (res.ok) {
+          const text = await res.text();
+          gameState = JSON.parse(text);
+          renderGame();
+          checkBotTurn();
+        }
       } catch (e) {
         console.error(e);
       }
@@ -1431,9 +1517,10 @@
             const res = await fetch('/api/bot_step', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-              body: JSON.stringify({ session_id: sessionId })
+              body: JSON.stringify({ endpoint: 'bot_step', session_id: sessionId })
             });
-            const data = await res.json();
+            const text = await res.text();
+            const data = JSON.parse(text);
             gameState = data.state;
             renderGame();
             checkBotTurn();
@@ -1450,9 +1537,10 @@
         const res = await fetch('/api/action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-          body: JSON.stringify({ session_id: sessionId, action_type: actionType, amount: amount })
+          body: JSON.stringify({ endpoint: 'action', session_id: sessionId, action_type: actionType, amount: amount })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = JSON.parse(text);
         if (data.success) {
           gameState = data.state;
           renderGame();
@@ -1470,9 +1558,10 @@
         const res = await fetch('/api/next_hand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-          body: JSON.stringify({ session_id: sessionId })
+          body: JSON.stringify({ endpoint: 'next_hand', session_id: sessionId })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = JSON.parse(text);
         if (data.success) {
           gameState = data.state;
           renderGame();
@@ -1739,13 +1828,21 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            endpoint: 'record_batch',
             auth_code: code,
             num_hands: numHands,
             num_players: numPlayers
           })
         });
 
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (_) {
+          throw new Error(text.substring(0, 150) || `Resposta inesperada do servidor (HTTP ${res.status})`);
+        }
+
         spinner.style.display = 'none';
         resultBox.style.display = 'block';
 
@@ -1905,9 +2002,10 @@
         const res = await fetch('/api/save_to_github', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ auth_code: code })
+          body: JSON.stringify({ endpoint: 'save_to_github', auth_code: code })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = JSON.parse(text);
         if (data.success) {
           feedback.style.background = 'rgba(76, 175, 80, 0.2)';
           feedback.style.border = '1px solid #4caf50';
@@ -1940,9 +2038,10 @@
         const res = await fetch('/api/save_to_neon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ auth_code: code })
+          body: JSON.stringify({ endpoint: 'save_to_neon', auth_code: code })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = JSON.parse(text);
         if (data.success) {
           feedback.style.background = 'rgba(0, 230, 153, 0.2)';
           feedback.style.border = '1px solid #00e699';
@@ -1966,8 +2065,27 @@
       window.location.href = '/api/download_dataset';
     }
 
-    // Initial fetch
-    window.addEventListener('load', fetchState);
+    /* Ajuste dinâmico e auto-scale da mesa para qualquer tamanho de tela (mobile, tablet, desktop) */
+    function autoScaleTable() {
+      const main = document.querySelector('main');
+      const viewport = document.querySelector('.table-viewport');
+      if (!main || !viewport) return;
+      const availW = main.clientWidth - 8;
+      const availH = main.clientHeight - 8;
+      const baseW = 1050;
+      const baseH = 580;
+      const scale = Math.min(1, Math.min(availW / baseW, availH / baseH));
+      viewport.style.transform = `scale(${Math.max(0.32, scale)})`;
+    }
+
+    window.addEventListener('resize', autoScaleTable);
+    window.addEventListener('orientationchange', () => setTimeout(autoScaleTable, 200));
+
+    // Initial fetch e auto-scale responsivo
+    window.addEventListener('load', () => {
+      autoScaleTable();
+      fetchState();
+    });
   </script>
 </body>
 </html>
