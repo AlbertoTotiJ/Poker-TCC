@@ -20,14 +20,14 @@ from src.visualization.backend_view import (
 _WEB_DIR = Path(__file__).resolve().parent / "web"
 
 _BOT_PRESETS: List[Tuple[str, AgentProfile]] = [
-    ("Bot Alpha (Agressivo)", AgentProfile.AGGRESSIVE),
-    ("Bot Beta (Conservador)", AgentProfile.CONSERVATIVE),
-    ("Bot Gamma (Equilibrado)", AgentProfile.BALANCED),
-    ("Bot Delta (Agressivo)", AgentProfile.AGGRESSIVE),
-    ("Bot Epsilon (Conservador)", AgentProfile.CONSERVATIVE),
-    ("Bot Zeta (Equilibrado)", AgentProfile.BALANCED),
-    ("Bot Eta (Agressivo)", AgentProfile.AGGRESSIVE),
-    ("Bot Theta (Equilibrado)", AgentProfile.BALANCED),
+    ("Matemático 1", AgentProfile.BALANCED),
+    ("Agressivo 1", AgentProfile.AGGRESSIVE),
+    ("Conservador 1", AgentProfile.CONSERVATIVE),
+    ("Matemático 2", AgentProfile.BALANCED),
+    ("Agressivo 2", AgentProfile.AGGRESSIVE),
+    ("Conservador 2", AgentProfile.CONSERVATIVE),
+    ("Matemático 3", AgentProfile.BALANCED),
+    ("Agressivo 3", AgentProfile.AGGRESSIVE),
 ]
 
 
@@ -381,6 +381,52 @@ class PokerApiHandler(BaseHTTPRequestHandler):
             self._send_json(state)
             return
 
+        if clean_path.endswith("/check_db"):
+            import os
+            from src.database.recorder import RECORD_FILE, get_neon_connection
+            conn = get_neon_connection()
+            neon_ok = conn is not None
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            total_hands = 0
+            if RECORD_FILE.exists():
+                try:
+                    with open(RECORD_FILE, "r", encoding="utf-8") as f:
+                        total_hands = sum(1 for line in f if line.strip())
+                except Exception:
+                    pass
+            self._send_json({
+                "success": True,
+                "neon_connected": neon_ok,
+                "database_url_configured": bool(
+                    os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+                ),
+                "file_exists": RECORD_FILE.exists(),
+                "total_hands_recorded": total_hands,
+                "file_name": RECORD_FILE.name,
+            })
+            return
+
+        if clean_path.endswith("/download_dataset"):
+            from src.database.recorder import RECORD_FILE
+            if not RECORD_FILE.exists():
+                self.send_error(404, "Nenhum arquivo de partidas gravadas encontrado.")
+                return
+            content = RECORD_FILE.read_bytes()
+            self.send_response(200)
+            self._set_cors_headers()
+            self.send_header("Content-Type", "application/x-jsonlines; charset=utf-8")
+            self.send_header(
+                "Content-Disposition", 'attachment; filename="partidas_gravadas.jsonl"'
+            )
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
+            return
+
         self.send_error(404, "Rota não encontrada.")
 
     def do_POST(self) -> None:
@@ -397,6 +443,19 @@ class PokerApiHandler(BaseHTTPRequestHandler):
             or self.headers.get("X-Session-ID")
             or _DEFAULT_SESSION_ID
         )
+
+        if clean_path.endswith("/record_batch"):
+            from src.database.recorder import run_recording_batch
+            auth_code = str(data.get("auth_code", ""))
+            num_hands = int(data.get("num_hands", 10))
+            num_players = int(data.get("num_players", 6))
+            result = run_recording_batch(
+                auth_code=auth_code,
+                num_hands=num_hands,
+                num_players=num_players,
+            )
+            self._send_json(result)
+            return
 
         if clean_path.endswith("/start_game"):
             num_players = int(data.get("num_players", 4))
