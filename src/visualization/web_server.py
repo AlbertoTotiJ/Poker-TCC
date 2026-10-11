@@ -534,7 +534,10 @@ class PokerApiHandler(BaseHTTPRequestHandler):
         """Processa comandos da partida (início, apostas e avanço de turnos)."""
         try:
             parsed = urlparse(self.path)
-            content_len = int(self.headers.get("Content-Length", 0))
+            try:
+                content_len = int(self.headers.get("Content-Length", 0) or 0)
+            except (ValueError, TypeError):
+                content_len = 0
             body = (
                 self.rfile.read(content_len).decode("utf-8")
                 if content_len > 0

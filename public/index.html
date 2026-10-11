@@ -1464,20 +1464,32 @@
       document.getElementById('configModal').classList.remove('active');
     }
 
+    async function safeFetchJson(url, options = {}) {
+      const res = await fetch(url, options);
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        const isHtml = text && text.trim().startsWith('<');
+        const preview = isHtml
+          ? `Servidor retornou resposta inesperada (HTTP ${res.status}).`
+          : (text.substring(0, 150) || `Resposta vazia (HTTP ${res.status})`);
+        throw new Error(preview);
+      }
+    }
+
     async function submitConfig() {
       const numPlayers = parseInt(document.getElementById('numPlayersSelect').value);
       const startingStack = parseInt(document.getElementById('startingStackInput').value);
 
       closeConfigModal();
       try {
-        const res = await fetch('/api/start_game', {
+        const data = await safeFetchJson('/api/start_game', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
           body: JSON.stringify({ endpoint: 'start_game', session_id: sessionId, num_players: numPlayers, starting_stack: startingStack })
         });
-        const text = await res.text();
-        const data = JSON.parse(text);
-        if (data.success) {
+        if (data && data.success) {
           gameState = data.state;
           renderGame();
           checkBotTurn();
@@ -1489,12 +1501,11 @@
 
     async function fetchState() {
       try {
-        const res = await fetch('/api/state?session_id=' + sessionId + '&endpoint=state', {
+        const data = await safeFetchJson('/api/state?session_id=' + sessionId + '&endpoint=state', {
           headers: { 'X-Session-ID': sessionId }
         });
-        if (res.ok) {
-          const text = await res.text();
-          gameState = JSON.parse(text);
+        if (data && data.active !== undefined) {
+          gameState = data;
           renderGame();
           checkBotTurn();
         }
@@ -1514,16 +1525,16 @@
       if (!gameState.is_human_turn && gameState.current_player_id) {
         botTimer = setTimeout(async () => {
           try {
-            const res = await fetch('/api/bot_step', {
+            const data = await safeFetchJson('/api/bot_step', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
               body: JSON.stringify({ endpoint: 'bot_step', session_id: sessionId })
             });
-            const text = await res.text();
-            const data = JSON.parse(text);
-            gameState = data.state;
-            renderGame();
-            checkBotTurn();
+            if (data && data.state) {
+              gameState = data.state;
+              renderGame();
+              checkBotTurn();
+            }
           } catch (e) {
             console.error(e);
           }
@@ -1534,18 +1545,16 @@
     async function sendAction(actionType, amount = 0) {
       clearTimeout(botTimer);
       try {
-        const res = await fetch('/api/action', {
+        const data = await safeFetchJson('/api/action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
           body: JSON.stringify({ endpoint: 'action', session_id: sessionId, action_type: actionType, amount: amount })
         });
-        const text = await res.text();
-        const data = JSON.parse(text);
-        if (data.success) {
+        if (data && data.success) {
           gameState = data.state;
           renderGame();
           checkBotTurn();
-        } else {
+        } else if (data) {
           alert(data.error || "Ação inválida");
         }
       } catch (e) {
@@ -1555,14 +1564,12 @@
 
     async function nextHand() {
       try {
-        const res = await fetch('/api/next_hand', {
+        const data = await safeFetchJson('/api/next_hand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
           body: JSON.stringify({ endpoint: 'next_hand', session_id: sessionId })
         });
-        const text = await res.text();
-        const data = JSON.parse(text);
-        if (data.success) {
+        if (data && data.success) {
           gameState = data.state;
           renderGame();
           checkBotTurn();
@@ -1824,7 +1831,7 @@
       resultBox.style.display = 'none';
 
       try {
-        const res = await fetch('/api/record_batch', {
+        const data = await safeFetchJson('/api/record_batch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1834,14 +1841,6 @@
             num_players: numPlayers
           })
         });
-
-        const text = await res.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (_) {
-          throw new Error(text.substring(0, 150) || `Resposta inesperada do servidor (HTTP ${res.status})`);
-        }
 
         spinner.style.display = 'none';
         resultBox.style.display = 'block';
@@ -1999,13 +1998,11 @@
       feedback.innerText = '🐙 Enviando commit e executando git push para o GitHub... Aguarde!';
 
       try {
-        const res = await fetch('/api/save_to_github', {
+        const data = await safeFetchJson('/api/save_to_github', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint: 'save_to_github', auth_code: code })
         });
-        const text = await res.text();
-        const data = JSON.parse(text);
         if (data.success) {
           feedback.style.background = 'rgba(76, 175, 80, 0.2)';
           feedback.style.border = '1px solid #4caf50';
@@ -2035,13 +2032,11 @@
       feedback.innerText = '🐘 Gravando partidas no banco de dados Neon PostgreSQL... Aguarde!';
 
       try {
-        const res = await fetch('/api/save_to_neon', {
+        const data = await safeFetchJson('/api/save_to_neon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint: 'save_to_neon', auth_code: code })
         });
-        const text = await res.text();
-        const data = JSON.parse(text);
         if (data.success) {
           feedback.style.background = 'rgba(0, 230, 153, 0.2)';
           feedback.style.border = '1px solid #00e699';
