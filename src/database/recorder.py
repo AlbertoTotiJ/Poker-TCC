@@ -1,5 +1,6 @@
 """Módulo de autenticação, gravação dupla (arquivo + Neon) e simulação de rodadas."""
 
+from collections import Counter
 from datetime import datetime, timezone
 import json
 import os
@@ -8,6 +9,7 @@ import random
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.agents.heuristic import AgentProfile, HeuristicAgent
+from src.engine.hand_eval import HandScore, evaluate_hand
 from src.engine.player import Player
 from src.engine.table import Street, Table
 
@@ -29,16 +31,20 @@ def verify_auth_code(code: str) -> bool:
     return code.strip() == expected
 
 
-def get_neon_connection():
+def get_neon_connection(custom_url: Optional[str] = None):
     """Tenta obter uma conexão com o banco Neon PostgreSQL se configurado."""
-    db_url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+    db_url = (
+        custom_url
+        or os.environ.get("DATABASE_URL")
+        or os.environ.get("POSTGRES_URL")
+    )
     if not db_url:
         return None
     try:
         import psycopg2
 
         # Conexão com timeout curto para não travar funções serverless
-        conn = psycopg2.connect(db_url, connect_timeout=5)
+        conn = psycopg2.connect(db_url, connect_timeout=7)
         return conn
     except Exception:
         return None
@@ -76,9 +82,11 @@ def ensure_neon_schema(conn) -> bool:
         return False
 
 
-def save_hand_to_neon(hand_data: Dict[str, Any]) -> bool:
+def save_hand_to_neon(
+    hand_data: Dict[str, Any], custom_url: Optional[str] = None
+) -> bool:
     """Salva os dados de uma mão no banco de dados Neon."""
-    conn = get_neon_connection()
+    conn = get_neon_connection(custom_url=custom_url)
     if conn is None:
         return False
     try:
@@ -137,7 +145,7 @@ def build_research_roster(
     if num_players not in (6, 9):
         num_players = 6
 
-    count_each = num_players // 3  # 2 ou 3 de cada perfil
+    count_each = num_players // 3
     players: List[Player] = []
     agents: Dict[str, HeuristicAgent] = {}
     profile_labels: Dict[str, str] = {}
@@ -185,7 +193,6 @@ def build_research_roster(
         profile_labels[pid] = "Conservador"
         idx += 1
 
-    # Embaralha os assentos para variedade posicional
     local_rng = rng if rng is not None else random.Random()
     local_rng.shuffle(players)
 
@@ -201,16 +208,12 @@ def detect_hand_bluffs(
     """Identifica apostas com características de blefe durante a mão."""
     bluffs_found: List[Dict[str, Any]] = []
 
-    # Analisa ações de aposta/raise
     for act in actions_log:
         if act["action_type"] in ("BET", "RAISE") and act["amount"] > 0:
             pid = act["player_id"]
             player = next((p for p in table.players if p.player_id == pid), None)
             if not player or not player.hole_cards:
                 continue
-
-            # Avalia força da mão no momento
-            from src.engine.hand_eval import evaluate_hand
 
             all_player_cards = list(player.hole_cards) + list(table.community_cards)
             if len(all_player_cards) >= 5:
@@ -224,7 +227,6 @@ def detect_hand_bluffs(
                 is_weak = not is_pair and high_val < 11
                 hand_desc = f"Pré-flop: {c1.rank.symbol}{c2.rank.symbol}"
 
-            # Se apostou com mão fraca
             if is_weak and act["amount"] >= table._big_blind * 2:
                 won_hand = pid in winners
                 is_pure_bluff = won_hand and len(table.community_cards) < 5
@@ -281,14 +283,16 @@ def run_recording_batch(
         "Agressivo": 0,
         "Conservador": 0,
     }
+    player_wins: Counter = Counter()
+
+    best_score_overall: Optional[HandScore] = None
+    best_score_details: Optional[Dict[str, Any]] = None
 
     button_idx = 0
 
     for hand_idx in range(1, num_hands + 1):
-        # Filtra jogadores com fichas para jogar a mão
         active_players = [p for p in players if p.stack > 0]
         if len(active_players) < 2:
-            # Recarrega stacks se a maioria foi eliminada
             for p in players:
                 p.stack = starting_stack
             active_players = players
@@ -306,7 +310,6 @@ def run_recording_batch(
 
         actions_log: List[Dict[str, Any]] = []
 
-        # Executa as ações até a conclusão da mão
         while table.street not in (Street.FINISHED, Street.SHOWDOWN):
             actor = table.current_player
             if actor is None:
@@ -328,7 +331,6 @@ def run_recording_batch(
 
             table.apply_action(action)
 
-        # Determina vencedores e distribuição a partir das propriedades nativas da mesa
         button_idx = table.button_idx
         payouts = table.last_payouts
         scores = table.last_scores
@@ -341,11 +343,21 @@ def run_recording_batch(
             if payouts.get(p.player_id, 0) > 0:
                 winning_ids.append(p.player_id)
                 winning_names.append(p.name)
-                comb_name = (
-                    scores[p.player_id].description
-                    if p.player_id in scores
-                    else "Desistência dos adversários"
-                )
+                player_wins[p.player_id] += 1
+                if p.player_id in scores:
+                    sc = scores[p.player_id]
+                    comb_name = sc.description
+                    if best_score_overall is None or sc > best_score_overall:
+                        best_score_overall = sc
+                        best_score_details = {
+                            "combination": sc.description,
+                            "player": p.name,
+                            "profile": profile_labels.get(p.player_id, ""),
+                            "hand_index": hand_idx,
+                        }
+                else:
+                    comb_name = "Desistência dos adversários"
+
                 winners_data.append({
                     "player_id": p.player_id,
                     "name": p.name,
@@ -353,13 +365,13 @@ def run_recording_batch(
                     "combination": comb_name,
                 })
 
-        # Se por algum motivo payouts estiver vazio, fallback
         if not winners_data:
             active_p = [p for p in table.players if p.is_active]
             if active_p:
                 w = active_p[0]
                 winning_ids.append(w.player_id)
                 winning_names.append(w.name)
+                player_wins[w.player_id] += 1
                 winners_data.append({
                     "player_id": w.player_id,
                     "name": w.name,
@@ -367,17 +379,14 @@ def run_recording_batch(
                     "combination": "Desistência",
                 })
 
-        # Atualiza métricas por perfil
         for wid in winning_ids:
             prof = profile_labels.get(wid, "Desconhecido")
             if prof in wins_by_profile:
                 wins_by_profile[prof] += 1
 
-        # Detecção de blefes
         bluffs = detect_hand_bluffs(table, actions_log, profile_labels, winning_ids)
         total_bluffs_detected += len(bluffs)
 
-        # Monta o registro completo da mão
         hand_record: Dict[str, Any] = {
             "hand_index": hand_idx,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -405,19 +414,37 @@ def run_recording_batch(
             "actions": actions_log,
         }
 
-        # Gravação dupla (Arquivo Seguro + Neon)
         if save_hand_to_file(hand_record):
             file_saved_count += 1
         if save_hand_to_neon(hand_record):
             neon_saved_count += 1
 
+        top_comb = (
+            winners_data[0]["combination"] if winners_data else "Desistência"
+        )
         hands_recorded.append({
             "hand_index": hand_idx,
             "pot": table.pot_manager.total_pot,
             "winners": ", ".join(winning_names),
+            "combination": top_comb,
             "bluffs": len(bluffs),
             "board": " ".join(str(c) for c in table.community_cards),
         })
+
+    leaderboard = [
+        {
+            "player_id": p.player_id,
+            "name": p.name,
+            "profile": profile_labels.get(p.player_id, ""),
+            "final_stack": p.stack,
+            "net_profit": p.stack - starting_stack,
+            "wins": player_wins.get(p.player_id, 0),
+        }
+        for p in players
+    ]
+    leaderboard.sort(key=lambda x: x["final_stack"], reverse=True)
+    champion = leaderboard[0] if leaderboard else None
+    highest_pot = max((h["pot"] for h in hands_recorded), default=0)
 
     return {
         "success": True,
@@ -429,6 +456,130 @@ def run_recording_batch(
         "neon_saved_count": neon_saved_count,
         "neon_connected": neon_saved_count > 0,
         "total_bluffs_detected": total_bluffs_detected,
+        "highest_pot": highest_pot,
+        "best_combination": best_score_details or {
+            "combination": "Vitória por desistência dos adversários",
+            "player": champion["name"] if champion else "N/A",
+            "profile": champion["profile"] if champion else "N/A",
+            "hand_index": "-",
+        },
+        "champion": champion,
+        "leaderboard": leaderboard,
         "wins_by_profile": wins_by_profile,
         "hands_summary": hands_recorded,
     }
+
+
+def save_dataset_to_github(
+    auth_code: str,
+    commit_message: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Salva o arquivo de dataset no Git e envia via push para o repositório GitHub."""
+    if not verify_auth_code(auth_code):
+        return {"success": False, "error": "Código de autenticação inválido."}
+
+    if not RECORD_FILE.exists():
+        return {
+            "success": False,
+            "error": "Nenhum arquivo de partidas gravadas encontrado para enviar.",
+        }
+
+    import subprocess
+
+    try:
+        now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+        msg = commit_message or (
+            f"data: dataset de partidas gravadas do TCC ({now_str})"
+        )
+        subprocess.run(
+            ["git", "add", "-f", str(RECORD_FILE)], check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "commit", "-m", msg], capture_output=True, text=True
+        )
+
+        push_proc = subprocess.run(
+            ["git", "push", "origin", "main"],
+            capture_output=True,
+            text=True,
+            timeout=35,
+        )
+        if push_proc.returncode == 0:
+            return {
+                "success": True,
+                "message": "Dataset salvo e enviado com sucesso para o GitHub!",
+                "details": push_proc.stdout.strip() or "Branch main atualizada.",
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Falha no git push: {push_proc.stderr or push_proc.stdout}",
+            }
+    except Exception as ex:
+        return {"success": False, "error": f"Erro ao salvar no GitHub: {str(ex)}"}
+
+
+def save_dataset_to_neon(
+    auth_code: str,
+    custom_db_url: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Salva todas as partidas do arquivo de dataset no banco de dados Neon."""
+    if not verify_auth_code(auth_code):
+        return {"success": False, "error": "Código de autenticação inválido."}
+
+    if not RECORD_FILE.exists():
+        return {
+            "success": False,
+            "error": "Nenhum arquivo de partidas gravadas encontrado.",
+        }
+
+    conn = get_neon_connection(custom_url=custom_db_url)
+    if conn is None:
+        return {
+            "success": False,
+            "error": (
+                "Não foi possível conectar ao Neon. Verifique a URL fornecida "
+                "ou a variável DATABASE_URL."
+            ),
+        }
+
+    try:
+        ensure_neon_schema(conn)
+        saved_count = 0
+        with open(RECORD_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                hand_data = json.loads(line)
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO hands (
+                            hand_index, pot_total, community_cards,
+                            winners, bluffs_detected, hand_details
+                        ) VALUES (%s, %s, %s, %s, %s, %s);
+                        """,
+                        (
+                            hand_data.get("hand_index", 1),
+                            hand_data.get("pot_total", 0),
+                            json.dumps(hand_data.get("community_cards", [])),
+                            json.dumps(hand_data.get("winners", [])),
+                            hand_data.get("bluffs_count", 0),
+                            json.dumps(hand_data, ensure_ascii=False),
+                        ),
+                    )
+                saved_count += 1
+        conn.commit()
+        conn.close()
+        return {
+            "success": True,
+            "message": f"{saved_count} mãos gravadas com sucesso no banco Neon!",
+            "hands_saved": saved_count,
+        }
+    except Exception as ex:
+        try:
+            conn.rollback()
+            conn.close()
+        except Exception:
+            pass
+        return {"success": False, "error": f"Erro ao gravar no Neon: {str(ex)}"}

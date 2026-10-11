@@ -457,6 +457,28 @@ class PokerApiHandler(BaseHTTPRequestHandler):
             self._send_json(result)
             return
 
+        if clean_path.endswith("/save_to_github"):
+            from src.database.recorder import save_dataset_to_github
+            auth_code = str(data.get("auth_code", ""))
+            commit_msg = data.get("commit_message")
+            result = save_dataset_to_github(
+                auth_code=auth_code,
+                commit_message=commit_msg,
+            )
+            self._send_json(result)
+            return
+
+        if clean_path.endswith("/save_to_neon"):
+            from src.database.recorder import save_dataset_to_neon
+            auth_code = str(data.get("auth_code", ""))
+            custom_url = data.get("database_url")
+            result = save_dataset_to_neon(
+                auth_code=auth_code,
+                custom_db_url=custom_url,
+            )
+            self._send_json(result)
+            return
+
         if clean_path.endswith("/start_game"):
             num_players = int(data.get("num_players", 4))
             starting_stack = int(data.get("starting_stack", 1000))

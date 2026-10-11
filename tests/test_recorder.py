@@ -46,4 +46,22 @@ def test_run_recording_batch_simulation() -> None:
     assert res["hands_completed"] == 3
     assert "wins_by_profile" in res
     assert "total_bluffs_detected" in res
+    assert "champion" in res
+    assert "best_combination" in res
+    assert "leaderboard" in res
     assert res["file_saved_count"] >= 3
+
+
+def test_sync_functions_invalid_auth() -> None:
+    from src.database.recorder import (
+        save_dataset_to_github,
+        save_dataset_to_neon,
+    )
+
+    res_gh = save_dataset_to_github(auth_code="ERRADO")
+    assert res_gh["success"] is False
+    assert "inválido" in res_gh["error"].lower()
+
+    res_neon = save_dataset_to_neon(auth_code="ERRADO")
+    assert res_neon["success"] is False
+    assert "inválido" in res_neon["error"].lower()
