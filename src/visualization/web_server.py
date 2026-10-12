@@ -8,7 +8,9 @@ import socket
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+from src.agents.base import BaseAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
+from src.agents.mathematical_agent import MathematicalAgent
 from src.engine.deck import Card, Suit
 from src.engine.player import Player
 from src.engine.table import Action, ActionType, Street, Table
@@ -55,6 +57,8 @@ class WebPokerSession:
         small_blind: int = 10,
         big_blind: int = 20,
         human_name: str = "Você (Humano)",
+        agent_mode: str = "bots",
+        custom_agents: Optional[List[str]] = None,
         rng: Optional[random.Random] = None,
     ) -> None:
         if not (2 <= num_players <= 9):
@@ -64,25 +68,72 @@ class WebPokerSession:
         self.starting_stack: int = starting_stack
         self.small_blind: int = small_blind
         self.big_blind: int = big_blind
+        self.agent_mode: str = agent_mode
         self.rng: random.Random = rng if rng is not None else random.Random()
 
         self.players: List[Player] = [
             Player(player_id=self.human_id, name=human_name, stack=starting_stack)
         ]
-        self.bot_agents: Dict[str, HeuristicAgent] = {}
+        self.bot_agents: Dict[str, BaseAgent] = {}
+        self.agent_types: Dict[str, str] = {self.human_id: "human"}
 
         for i in range(num_players - 1):
             bot_id = f"p_bot_{i + 1}"
-            bot_name, bot_profile = _BOT_PRESETS[i % len(_BOT_PRESETS)]
+            agent_type = "bot"
+            if agent_mode == "math":
+                agent_type = "math"
+            elif agent_mode == "mixed":
+                agent_type = "math" if (i % 2 == 0) else "bot"
+            elif agent_mode == "custom" and custom_agents and i < len(custom_agents):
+                agent_type = custom_agents[i]
+
+            if agent_type == "math":
+                bot_name = f"Agente Matemático {i + 1}"
+                bot: BaseAgent = MathematicalAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    raise_equity_threshold=0.65,
+                    call_ev_margin=-0.02,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            elif agent_type == "aggressive":
+                bot_name = f"Agressivo {i + 1}"
+                bot = HeuristicAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    profile=AgentProfile.AGGRESSIVE,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            elif agent_type == "conservative":
+                bot_name = f"Conservador {i + 1}"
+                bot = HeuristicAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    profile=AgentProfile.CONSERVATIVE,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            elif agent_type == "balanced":
+                bot_name = f"Equilibrado {i + 1}"
+                bot = HeuristicAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    profile=AgentProfile.BALANCED,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            else:
+                bot_name, bot_profile = _BOT_PRESETS[i % len(_BOT_PRESETS)]
+                bot = HeuristicAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    profile=bot_profile,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+
             self.players.append(
                 Player(player_id=bot_id, name=bot_name, stack=starting_stack)
             )
-            self.bot_agents[bot_id] = HeuristicAgent(
-                player_id=bot_id,
-                name=bot_name,
-                profile=bot_profile,
-                rng=random.Random(self.rng.randint(1, 1000000)),
-            )
+            self.bot_agents[bot_id] = bot
+            self.agent_types[bot_id] = agent_type
 
         self.hand_number: int = 0
         self.event_log: List[str] = []
@@ -276,10 +327,25 @@ class WebPokerSession:
 
             is_turn = current is not None and current.player_id == p.player_id
 
+            agent_type = self.agent_types.get(
+                p.player_id, "human" if is_human else "bot"
+            )
+            agent_label = (
+                "Você (Humano)"
+                if is_human
+                else (
+                    "📐 Agente Matemático"
+                    if agent_type == "math"
+                    else "🤖 Bot Padrão"
+                )
+            )
+
             players_data.append(
                 {
                     "id": p.player_id,
                     "name": p.name,
+                    "agent_type": agent_type,
+                    "agent_label": agent_label,
                     "stack": p.stack,
                     "current_bet": p.current_bet,
                     "is_active": p.is_active and is_at_table,
@@ -415,6 +481,7 @@ class WebPokerSession:
 
         return {
             "active": True,
+            "agent_mode": self.agent_mode,
             "hand_number": self.hand_number,
             "street": t.street.name,
             "pot_total": t.pot_manager.total_pot,
@@ -731,9 +798,13 @@ class PokerApiHandler(BaseHTTPRequestHandler):
             if clean_path.endswith("/start_game") or clean_path == "/start_game":
                 num_players = int(data.get("num_players", 4))
                 starting_stack = int(data.get("starting_stack", 1000))
+                agent_mode = str(data.get("agent_mode", "bots"))
+                custom_agents = data.get("custom_agents", None)
                 new_session = WebPokerSession(
                     num_players=num_players,
                     starting_stack=starting_stack,
+                    agent_mode=agent_mode,
+                    custom_agents=custom_agents,
                 )
                 _SESSIONS[sid] = new_session
                 PokerApiHandler.session = new_session
@@ -807,6 +878,7 @@ def start_poker_web_server(
     port: Optional[int] = None,
     num_players: int = 4,
     starting_stack: int = 1000,
+    agent_mode: str = "bots",
 ) -> Tuple[ThreadingHTTPServer, int]:
     """Inicializa e vincula o servidor web na porta disponível configurada."""
     chosen_port = port if port is not None else find_free_port(5000, host=host)
@@ -815,6 +887,7 @@ def start_poker_web_server(
     PokerApiHandler.session = WebPokerSession(
         num_players=num_players,
         starting_stack=starting_stack,
+        agent_mode=agent_mode,
     )
 
     httpd = ThreadingHTTPServer(server_address, PokerApiHandler)

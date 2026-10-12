@@ -55,6 +55,42 @@ def test_web_poker_session_human_action() -> None:
         assert new_state["active"] is True
 
 
+def test_web_poker_session_agent_modes() -> None:
+    # 1. Modo math: todos os bots são MathematicalAgent
+    session_math = WebPokerSession(num_players=3, agent_mode="math")
+    state_math = session_math.get_serialized_state()
+    assert state_math["agent_mode"] == "math"
+    bots = [p for p in state_math["players"] if p["id"] != session_math.human_id]
+    for b in bots:
+        assert b["agent_type"] == "math"
+        assert "Matemático" in b["agent_label"]
+
+    # 2. Modo mixed: alterna entre math e bot
+    session_mixed = WebPokerSession(num_players=4, agent_mode="mixed")
+    state_mixed = session_mixed.get_serialized_state()
+    assert state_mixed["agent_mode"] == "mixed"
+    bots_mixed = [
+        p for p in state_mixed["players"] if p["id"] != session_mixed.human_id
+    ]
+    assert bots_mixed[0]["agent_type"] == "math"
+    assert bots_mixed[1]["agent_type"] == "bot"
+
+    # 3. Modo custom: assentos específicos
+    session_custom = WebPokerSession(
+        num_players=4,
+        agent_mode="custom",
+        custom_agents=["math", "aggressive", "conservative"],
+    )
+    state_custom = session_custom.get_serialized_state()
+    assert state_custom["agent_mode"] == "custom"
+    bots_custom = [
+        p for p in state_custom["players"] if p["id"] != session_custom.human_id
+    ]
+    assert bots_custom[0]["agent_type"] == "math"
+    assert bots_custom[1]["agent_type"] == "aggressive"
+    assert bots_custom[2]["agent_type"] == "conservative"
+
+
 def test_find_free_port_and_start_server() -> None:
     import threading
     import urllib.request

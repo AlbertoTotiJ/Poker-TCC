@@ -1086,6 +1086,168 @@
       display: none;
     }
 
+    /* Botão Selecionar Agentes no Header */
+    .btn-agents {
+      background: linear-gradient(135deg, rgba(0, 230, 153, 0.2), rgba(0, 168, 112, 0.35));
+      border: 1px solid #00e699;
+      color: #69f0ae;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-agents:hover {
+      background: linear-gradient(135deg, rgba(0, 230, 153, 0.35), rgba(0, 168, 112, 0.55));
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0, 230, 153, 0.5);
+    }
+
+    /* Agent Pills in Seat Badges */
+    .agent-pill {
+      font-size: 0.58rem;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .pill-human {
+      background: rgba(33, 150, 243, 0.25);
+      color: #90caf9;
+      border: 1px solid rgba(33, 150, 243, 0.5);
+    }
+    .pill-math {
+      background: rgba(0, 230, 153, 0.2);
+      color: #69f0ae;
+      border: 1px solid #00e699;
+      box-shadow: 0 0 6px rgba(0, 230, 153, 0.3);
+    }
+    .pill-bot {
+      background: rgba(255, 255, 255, 0.08);
+      color: #bbb;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* Modal Selecionar Agentes */
+    .agents-modal-card {
+      max-width: 620px;
+      width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .agents-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .agent-option-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .agent-option-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(212, 175, 55, 0.5);
+      transform: translateY(-1px);
+    }
+    .agent-option-card.selected {
+      background: rgba(0, 230, 153, 0.08);
+      border-color: #00e699;
+      box-shadow: 0 0 14px rgba(0, 230, 153, 0.25);
+    }
+    .agent-option-card.card-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-style: dashed;
+    }
+    .agent-option-card.card-disabled:hover {
+      background: rgba(255, 255, 255, 0.03);
+      transform: none;
+      box-shadow: none;
+    }
+    .agent-option-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .agent-option-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .agent-option-card.selected .agent-option-title {
+      color: #69f0ae;
+    }
+    .agent-badge-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-ready {
+      background: rgba(0, 230, 153, 0.2);
+      color: #69f0ae;
+      border: 1px solid #00e699;
+    }
+    .badge-bot {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ddd;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .badge-wip {
+      background: rgba(255, 171, 0, 0.2);
+      color: #ffd740;
+      border: 1px solid #ffab00;
+    }
+    .agent-option-desc {
+      font-size: 0.8rem;
+      color: #aaa;
+      line-height: 1.35;
+    }
+    .custom-seats-container {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+    .custom-seat-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .custom-seat-row label {
+      font-size: 0.72rem;
+      color: #bbb;
+      font-weight: 600;
+    }
+    .custom-seat-row select {
+      background: #0a0e14;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
     /* Regras de Responsividade para Celulares, Tablets e Notebooks */
     @media (max-width: 768px) {
       header {
@@ -1184,6 +1346,7 @@
     </div>
 
     <div class="header-controls">
+      <button class="btn-header btn-agents" onclick="openAgentsModal()" title="Escolha entre os Agentes Feitos de IA e os Bots Padrão">🤖 Selecionar Agentes</button>
       <button class="btn-header btn-record" onclick="openRecordModal()" title="Gravar rodadas da equipe com código de autenticação">🔴 Gravar Partidas</button>
       <button class="btn-header" onclick="openConfigModal()">⚙️ Configurar Mesa</button>
       <button class="btn-header" id="speedBtn" onclick="toggleSpeed()">Velocidade: Normal</button>
@@ -1313,7 +1476,7 @@
 
       <div class="form-group">
         <label for="numPlayersSelect">Quantidade de Jogadores na Mesa (2 a 9):</label>
-        <select id="numPlayersSelect">
+        <select id="numPlayersSelect" onchange="renderCustomSeatsInputs()">
           <option value="2">2 Jogadores (Heads-up 1v1)</option>
           <option value="3">3 Jogadores</option>
           <option value="4" selected>4 Jogadores (Padrão)</option>
@@ -1326,11 +1489,112 @@
       </div>
 
       <div class="form-group">
+        <label for="configAgentModeSelect">Tipo de Oponentes / Agentes:</label>
+        <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
+          <option value="bots" selected>🤖 Usar Bot (Padrões Anteriores)</option>
+          <option value="math">📐 Agente Matemático (Agente Feito - EV)</option>
+          <option value="mixed">⚔️ Mesa Mista (Agente Matemático vs Bots Padrão)</option>
+          <option value="custom">⚙️ Personalizado por Cadeira</option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label for="startingStackInput">Fichas Iniciais por Jogador:</label>
         <input type="number" id="startingStackInput" value="1000" min="200" step="100">
       </div>
 
       <button class="btn-submit" onclick="submitConfig()">Entrar na Mesa e Jogar</button>
+    </div>
+  </div>
+
+  <!-- Modal Selecionar Agentes -->
+  <div class="modal-overlay" id="agentsModal">
+    <div class="modal-card agents-modal-card">
+      <button class="modal-close-btn" onclick="closeAgentsModal()">×</button>
+      <div class="modal-header">🤖 Selecionar Agentes da Mesa</div>
+
+      <div style="font-size:0.85rem; color:#bbb; line-height:1.4;">
+        Escolha o modelo de inteligência dos oponentes na mesa de poker. Alterne entre os novos agentes de IA desenvolvidos (EV, probabilidade) e os bots heurísticos tradicionais:
+      </div>
+
+      <div class="agents-options-list">
+        <!-- Opção 1: Usar Bot (Padrões Anteriores) -->
+        <div class="agent-option-card selected" id="cardModeBots" onclick="selectAgentMode('bots')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🤖 Usar Bot (Padrões Anteriores)</span>
+            <span class="agent-badge-tag badge-bot">Bots Tradicionais</span>
+          </div>
+          <div class="agent-option-desc">
+            Comportamentos heurísticos clássicos já existentes na mesa: Agressivo, Conservador e Equilibrado baseados em regras predefinidas.
+          </div>
+        </div>
+
+        <!-- Opção 2: Agente Matemático (Agente Feito) -->
+        <div class="agent-option-card" id="cardModeMath" onclick="selectAgentMode('math')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">📐 Agente Matemático (Agente Feito)</span>
+            <span class="agent-badge-tag badge-ready">IA Concluída & Treinada</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente autônomo baseado em Expected Value (EV), Pot Odds exatas e Equidade Monte Carlo. Calcula racionalmente a margem matemática de lucro a longo prazo antes de cada decisão.
+          </div>
+        </div>
+
+        <!-- Opção 3: Mesa Mista -->
+        <div class="agent-option-card" id="cardModeMixed" onclick="selectAgentMode('mixed')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">⚔️ Mesa Mista (Agentes Feitos vs Bots Padrão)</span>
+            <span class="agent-badge-tag badge-ready">Duelo Comparativo</span>
+          </div>
+          <div class="agent-option-desc">
+            Distribui os assentos alternando entre o novo Agente Matemático e os bots clássicos na mesma mesa para comparar desempenhos lado a lado.
+          </div>
+        </div>
+
+        <!-- Opção 4: Personalizar por Cadeira -->
+        <div class="agent-option-card" id="cardModeCustom" onclick="selectAgentMode('custom')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">⚙️ Personalizar por Cadeira</span>
+            <span class="agent-badge-tag badge-bot">Assento por Assento</span>
+          </div>
+          <div class="agent-option-desc">
+            Configure manualmente qual tipo de IA sentará em cada cadeira da mesa.
+          </div>
+          <div id="customSeatsArea" class="custom-seats-container" style="display: none;" onclick="event.stopPropagation()">
+            <!-- Populado via JS baseado no número de jogadores -->
+          </div>
+        </div>
+
+        <!-- Em Desenvolvimento (Próximos Agentes) -->
+        <div class="preview-section-title" style="margin-top:6px;">🚀 Próximos Agentes (Backlog de IA):</div>
+        <div class="agent-option-card card-disabled">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🃏 Agente Blefador (Sprint 2)</span>
+            <span class="agent-badge-tag badge-wip">Em Treinamento</span>
+          </div>
+          <div class="agent-option-desc">
+            Explora fraquezas dos oponentes, aplicando raise com mãos fracas sob condições de bordo e dinâmica de apostas favoráveis.
+          </div>
+        </div>
+        <div class="agent-option-card card-disabled">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🧠 Agente Híbrido / Aprendizado por Reforço (Sprint 3)</span>
+            <span class="agent-badge-tag badge-wip">Em Pesquisa</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente avançado combinando modelo matemático com Q-Learning / Deep RL para tomada de decisão dinâmica e adaptativa.
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn-submit" onclick="applySelectedAgents()" style="flex:1;">
+          ✅ Aplicar e Reiniciar Mesa
+        </button>
+        <button class="btn-header" onclick="closeAgentsModal()" style="padding:12px 18px;">
+          Cancelar
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1381,6 +1645,8 @@
     let gameState = null;
     let botTimer = null;
     let botSpeed = 700; // ms
+    let selectedAgentMode = 'bots';
+    let customAgentsConfig = [];
     const speedModes = [
       { label: "Normal (700ms)", delay: 700 },
       { label: "Rápido (250ms)", delay: 250 },
@@ -1518,11 +1784,118 @@
     }
 
     function openConfigModal() {
+      const configSelect = document.getElementById('configAgentModeSelect');
+      if (configSelect) {
+        configSelect.value = selectedAgentMode;
+      }
       document.getElementById('configModal').classList.add('active');
     }
 
     function closeConfigModal() {
       document.getElementById('configModal').classList.remove('active');
+    }
+
+    function openAgentsModal() {
+      renderCustomSeatsInputs();
+      syncAgentModeUI(selectedAgentMode);
+      document.getElementById('agentsModal').classList.add('active');
+    }
+
+    function closeAgentsModal() {
+      document.getElementById('agentsModal').classList.remove('active');
+    }
+
+    function selectAgentMode(mode) {
+      selectedAgentMode = mode;
+      syncAgentModeUI(mode);
+    }
+
+    function syncAgentModeUI(mode) {
+      ['bots', 'math', 'mixed', 'custom'].forEach(m => {
+        const card = document.getElementById('cardMode' + m.charAt(0).toUpperCase() + m.slice(1));
+        if (card) {
+          if (m === mode) {
+            card.classList.add('selected');
+          } else {
+            card.classList.remove('selected');
+          }
+        }
+      });
+
+      const customArea = document.getElementById('customSeatsArea');
+      if (customArea) {
+        customArea.style.display = mode === 'custom' ? 'grid' : 'none';
+      }
+
+      const configSelect = document.getElementById('configAgentModeSelect');
+      if (configSelect && configSelect.value !== mode) {
+        configSelect.value = mode;
+      }
+    }
+
+    function renderCustomSeatsInputs() {
+      const customArea = document.getElementById('customSeatsArea');
+      if (!customArea) return;
+      const numPlayersSelect = document.getElementById('numPlayersSelect');
+      const numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || (gameState && gameState.players ? gameState.players.length : 4);
+      const botSeatsCount = Math.max(1, numPlayers - 1);
+
+      let html = '';
+      for (let i = 0; i < botSeatsCount; i++) {
+        const defaultVal = customAgentsConfig[i] || (i % 2 === 0 ? 'math' : 'balanced');
+        html += `
+          <div class="custom-seat-row">
+            <label for="customSeatSelect_${i}">Cadeira ${i + 1} (Bot):</label>
+            <select id="customSeatSelect_${i}" onchange="customAgentsConfig[${i}] = this.value">
+              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (EV)</option>
+              <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>🤖 Bot Agressivo</option>
+              <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🤖 Bot Conservador</option>
+              <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>🤖 Bot Equilibrado</option>
+            </select>
+          </div>
+        `;
+      }
+      customArea.innerHTML = html;
+    }
+
+    function getCustomAgentsList(numPlayers) {
+      const botSeatsCount = Math.max(1, numPlayers - 1);
+      const list = [];
+      for (let i = 0; i < botSeatsCount; i++) {
+        const el = document.getElementById(`customSeatSelect_${i}`);
+        list.push(el ? el.value : (customAgentsConfig[i] || 'math'));
+      }
+      return list;
+    }
+
+    async function applySelectedAgents() {
+      const numPlayersSelect = document.getElementById('numPlayersSelect');
+      const numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || (gameState && gameState.players ? gameState.players.length : 4);
+      const startingStack = parseInt(document.getElementById('startingStackInput')?.value || 1000);
+      const customAgents = getCustomAgentsList(numPlayers);
+
+      closeAgentsModal();
+      try {
+        const data = await safeFetchJson('/api/start_game', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
+          body: JSON.stringify({
+            endpoint: 'start_game',
+            session_id: sessionId,
+            num_players: numPlayers,
+            starting_stack: startingStack,
+            agent_mode: selectedAgentMode,
+            custom_agents: selectedAgentMode === 'custom' ? customAgents : null
+          })
+        });
+        if (data && data.success) {
+          gameState = data.state;
+          renderGame();
+          checkBotTurn();
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     async function safeFetchJson(url, options = {}) {
@@ -1542,13 +1915,21 @@
     async function submitConfig() {
       const numPlayers = parseInt(document.getElementById('numPlayersSelect').value);
       const startingStack = parseInt(document.getElementById('startingStackInput').value);
+      const customAgents = getCustomAgentsList(numPlayers);
 
       closeConfigModal();
       try {
         const data = await safeFetchJson('/api/start_game', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-          body: JSON.stringify({ endpoint: 'start_game', session_id: sessionId, num_players: numPlayers, starting_stack: startingStack })
+          body: JSON.stringify({
+            endpoint: 'start_game',
+            session_id: sessionId,
+            num_players: numPlayers,
+            starting_stack: startingStack,
+            agent_mode: selectedAgentMode,
+            custom_agents: selectedAgentMode === 'custom' ? customAgents : null
+          })
         });
         if (data && data.success) {
           gameState = data.state;
@@ -1644,6 +2025,11 @@
       if (!gameState || !gameState.active) {
         openConfigModal();
         return;
+      }
+
+      if (gameState.agent_mode && gameState.agent_mode !== selectedAgentMode) {
+        selectedAgentMode = gameState.agent_mode;
+        syncAgentModeUI(selectedAgentMode);
       }
 
       // Pot with Visual Chips
@@ -1775,11 +2161,18 @@
         seatDiv.style.top = `${seatConfig.y}%`;
 
         const stackChips = renderChipsVisual(p.stack, 2);
+        const isMath = p.agent_type === 'math';
+        const agentPillHTML = isHuman
+          ? '<span class="agent-pill pill-human">👤 Você</span>'
+          : (isMath
+              ? '<span class="agent-pill pill-math" title="Agente Feito - EV & Probabilidade">📐 Matemático</span>'
+              : '<span class="agent-pill pill-bot" title="Bot Padrão Heurístico">🤖 Bot</span>');
 
         seatDiv.innerHTML = `
           <div class="seat-badge">
             ${p.position ? `<div class="pos-chip">${p.position}</div>` : ''}
-            <div class="player-name">${p.name}</div>
+            ${agentPillHTML}
+            <div class="player-name" title="${p.name}">${p.name}</div>
             <div class="player-chips">${stackChips}<span>${p.stack}</span></div>
             ${p.last_action ? `<div class="action-bubble">${p.last_action}</div>` : ''}
           </div>
