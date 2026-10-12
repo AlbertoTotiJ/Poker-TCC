@@ -157,8 +157,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 90%;
-      height: 80%;
+      width: 78%;
+      height: 68%;
       background: radial-gradient(ellipse at center, #136034 0%, #0a4020 60%, #062b15 100%);
       border-radius: 260px;
       border: 14px solid var(--table-rim);
@@ -387,9 +387,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
       z-index: 10;
-      margin-top: 36px;
+      margin-top: 16px;
     }
 
     .pot-badge {
@@ -529,11 +529,30 @@
       position: absolute;
       transform: translate(-50%, -50%);
       display: flex;
-      flex-direction: column;
       align-items: center;
       gap: 6px;
       z-index: 20;
-      transition: all 0.4s ease;
+      transition: all 0.3s ease;
+    }
+
+    /* Top seats: Badge outside (top), cards below on felt */
+    .player-seat.seat-top {
+      flex-direction: column;
+    }
+
+    /* Bottom seats: Badge outside (bottom), cards above on felt */
+    .player-seat.seat-bottom {
+      flex-direction: column-reverse;
+    }
+
+    /* Left seats: Badge outside (left), cards on right inside felt */
+    .player-seat.seat-left {
+      flex-direction: row;
+    }
+
+    /* Right seats: Badge outside (right), cards on left inside felt */
+    .player-seat.seat-right {
+      flex-direction: row-reverse;
     }
 
     .player-seat.eliminated {
@@ -567,15 +586,15 @@
     }
 
     .seat-badge {
-      background: rgba(18, 24, 33, 0.92);
-      border: 2px solid rgba(255, 255, 255, 0.15);
+      background: rgba(14, 20, 28, 0.96);
+      border: 2px solid rgba(255, 255, 255, 0.18);
       border-radius: 10px;
-      padding: 6px 14px;
+      padding: 5px 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 130px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      min-width: 110px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85);
       position: relative;
     }
 
@@ -592,9 +611,9 @@
 
     .player-name {
       font-size: 0.8rem;
-      font-weight: 700;
+      font-weight: 800;
       color: #fff;
-      max-width: 120px;
+      max-width: 115px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -602,7 +621,7 @@
 
     .player-chips {
       font-size: 0.85rem;
-      font-weight: 800;
+      font-weight: 900;
       color: var(--gold-light);
       display: flex;
       align-items: center;
@@ -616,60 +635,77 @@
     }
 
     .seat-cards .poker-card {
-      width: 48px;
-      height: 68px;
+      width: 44px;
+      height: 62px;
+      font-size: 0.85rem;
     }
 
     .player-seat.human .seat-cards .poker-card {
-      width: 58px;
-      height: 82px;
+      width: 52px;
+      height: 74px;
+      font-size: 0.95rem;
     }
 
     .pos-chip {
       position: absolute;
-      top: -10px;
-      right: -10px;
-      width: 24px;
-      height: 24px;
+      top: -8px;
+      right: -8px;
+      width: 22px;
+      height: 22px;
       background: var(--gold);
       color: #000;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 900;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 1px solid #fff;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      border: 1.5px solid #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+      z-index: 30;
     }
 
     .action-bubble {
       position: absolute;
-      bottom: -18px;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.92);
       border: 1px solid var(--gold);
       color: var(--gold-light);
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 12px;
+      padding: 2px 7px;
+      border-radius: 10px;
       white-space: nowrap;
+      z-index: 25;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .player-seat.seat-top .action-bubble {
+      top: -16px;
+    }
+
+    .player-seat.seat-bottom .action-bubble {
+      bottom: -16px;
+    }
+
+    .player-seat.seat-left .action-bubble,
+    .player-seat.seat-right .action-bubble {
+      top: -15px;
     }
 
     .bet-chips-indicator {
-      background: rgba(10, 14, 20, 0.88);
-      border: 1px solid rgba(212, 175, 55, 0.4);
-      padding: 3px 10px;
-      border-radius: 14px;
-      font-size: 0.78rem;
+      background: rgba(10, 14, 20, 0.9);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.74rem;
       font-weight: 800;
       color: #ffd54f;
-      margin-top: 4px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      gap: 5px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
       animation: betPop 0.25s ease-out;
+      white-space: nowrap;
     }
 
     @keyframes betPop {
@@ -1404,75 +1440,75 @@
       return html;
     }
 
-    // Pixel-perfect hand-crafted seat layouts for 2 to 9 players
-    // Human is ALWAYS seat index 0 at bottom center (x:50, y:86)
-    // The top center (x:50, y:4-16) is reserved exclusively for the Dealer bust!
+    // Layout de assentos com nomes e fichas fora da mesa (feltro)
+    // Humano é o índice 0 (centro inferior: bottom).
+    // O Dealer fica no topo central (x:50), preservando visão completa.
     const SEAT_LAYOUTS = {
       2: [
-        { x: 50, y: 86 }, // Humano
-        { x: 28, y: 34 }  // Bot (Top Left, framing Dealer)
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 30, y: 13, pos: 'top' }     // Bot
       ],
       3: [
-        { x: 50, y: 86 }, // Humano
-        { x: 18, y: 50 }, // Bot 1 (Left)
-        { x: 82, y: 50 }  // Bot 2 (Right)
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 9, y: 48, pos: 'left' },    // Bot 1
+        { x: 91, y: 48, pos: 'right' }   // Bot 2
       ],
       4: [
-        { x: 50, y: 86 }, // Humano
-        { x: 16, y: 56 }, // Bot 1 (Left)
-        { x: 28, y: 26 }, // Bot 2 (Top Left)
-        { x: 72, y: 26 }  // Bot 3 (Top Right)
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 9, y: 50, pos: 'left' },    // Bot 1
+        { x: 28, y: 13, pos: 'top' },    // Bot 2
+        { x: 72, y: 13, pos: 'top' }     // Bot 3
       ],
       5: [
-        { x: 50, y: 86 }, // Humano
-        { x: 18, y: 66 }, // Bot 1 (Bottom Left)
-        { x: 18, y: 34 }, // Bot 2 (Top Left)
-        { x: 82, y: 34 }, // Bot 3 (Top Right)
-        { x: 82, y: 66 }  // Bot 4 (Bottom Right)
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 10, y: 64, pos: 'left' },   // Bot 1
+        { x: 26, y: 13, pos: 'top' },    // Bot 2
+        { x: 74, y: 13, pos: 'top' },    // Bot 3
+        { x: 90, y: 64, pos: 'right' }   // Bot 4
       ],
       6: [
-        { x: 50, y: 86 }, // Humano
-        { x: 20, y: 78 }, // Bot 1
-        { x: 15, y: 48 }, // Bot 2
-        { x: 28, y: 24 }, // Bot 3 (Top Left)
-        { x: 72, y: 24 }, // Bot 4 (Top Right)
-        { x: 85, y: 48 }  // Bot 5
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 19, y: 82, pos: 'bottom' }, // Bot 1
+        { x: 9, y: 46, pos: 'left' },    // Bot 2
+        { x: 28, y: 13, pos: 'top' },    // Bot 3
+        { x: 72, y: 13, pos: 'top' },    // Bot 4
+        { x: 91, y: 48, pos: 'right' }   // Bot 5
       ],
       7: [
-        { x: 50, y: 86 }, // Humano
-        { x: 22, y: 80 }, // Bot 1
-        { x: 15, y: 56 }, // Bot 2
-        { x: 20, y: 28 }, // Bot 3
-        { x: 70, y: 24 }, // Bot 4
-        { x: 85, y: 46 }, // Bot 5
-        { x: 80, y: 78 }  // Bot 6
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 20, y: 82, pos: 'bottom' }, // Bot 1
+        { x: 9, y: 52, pos: 'left' },    // Bot 2
+        { x: 15, y: 20, pos: 'top' },    // Bot 3
+        { x: 72, y: 13, pos: 'top' },    // Bot 4
+        { x: 91, y: 46, pos: 'right' },  // Bot 5
+        { x: 80, y: 80, pos: 'bottom' }  // Bot 6
       ],
       8: [
-        { x: 50, y: 86 }, // Humano
-        { x: 24, y: 80 },
-        { x: 15, y: 60 },
-        { x: 15, y: 36 },
-        { x: 28, y: 22 },
-        { x: 72, y: 22 },
-        { x: 85, y: 36 },
-        { x: 85, y: 60 }
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 24, y: 84, pos: 'bottom' }, // Bot 1
+        { x: 9, y: 60, pos: 'left' },    // Bot 2
+        { x: 9, y: 34, pos: 'left' },    // Bot 3
+        { x: 28, y: 13, pos: 'top' },    // Bot 4
+        { x: 72, y: 13, pos: 'top' },    // Bot 5
+        { x: 91, y: 34, pos: 'right' },  // Bot 6
+        { x: 91, y: 60, pos: 'right' }   // Bot 7
       ],
       9: [
-        { x: 50, y: 86 }, // Humano
-        { x: 28, y: 82 },
-        { x: 15, y: 66 },
-        { x: 14, y: 42 },
-        { x: 28, y: 22 },
-        { x: 72, y: 22 },
-        { x: 86, y: 42 },
-        { x: 85, y: 66 },
-        { x: 72, y: 82 }
+        { x: 50, y: 88, pos: 'bottom' }, // Humano
+        { x: 26, y: 84, pos: 'bottom' }, // Bot 1
+        { x: 9, y: 64, pos: 'left' },    // Bot 2
+        { x: 9, y: 36, pos: 'left' },    // Bot 3
+        { x: 28, y: 13, pos: 'top' },    // Bot 4
+        { x: 72, y: 13, pos: 'top' },    // Bot 5
+        { x: 91, y: 36, pos: 'right' },  // Bot 6
+        { x: 91, y: 64, pos: 'right' },  // Bot 7
+        { x: 74, y: 84, pos: 'bottom' }  // Bot 8
       ]
     };
 
     function getSeatPosition(index, totalPlayers) {
       const layouts = SEAT_LAYOUTS[totalPlayers] || SEAT_LAYOUTS[4];
-      return layouts[index] || { x: 50, y: 50 };
+      return layouts[index] || { x: 50, y: 50, pos: 'bottom' };
     }
 
     function toggleSpeed() {
@@ -1718,8 +1754,10 @@
       const numPlayers = players.length;
 
       players.forEach((p, index) => {
-        const pos = getSeatPosition(index, numPlayers);
+        const seatConfig = getSeatPosition(index, numPlayers);
+        const posClass = `seat-${seatConfig.pos || 'bottom'}`;
         const isHuman = p.is_human;
+        const activeClass = p.is_turn ? 'active-turn' : '';
         const isFolded = !p.is_active && !p.is_eliminated;
         const foldedClass = isFolded ? 'folded' : '';
         const eliminatedClass = p.is_eliminated ? 'eliminated' : '';
@@ -1732,15 +1770,15 @@
         }
 
         const seatDiv = document.createElement('div');
-        seatDiv.className = `player-seat ${isHuman ? 'human' : ''} ${activeClass} ${eliminatedClass} ${foldedClass}`;
-        seatDiv.style.left = `${pos.x}%`;
-        seatDiv.style.top = `${pos.y}%`;
+        seatDiv.className = `player-seat ${posClass} ${isHuman ? 'human' : ''} ${activeClass} ${eliminatedClass} ${foldedClass}`;
+        seatDiv.style.left = `${seatConfig.x}%`;
+        seatDiv.style.top = `${seatConfig.y}%`;
 
         const stackChips = renderChipsVisual(p.stack, 2);
 
         seatDiv.innerHTML = `
-          ${p.position ? `<div class="pos-chip">${p.position}</div>` : ''}
           <div class="seat-badge">
+            ${p.position ? `<div class="pos-chip">${p.position}</div>` : ''}
             <div class="player-name">${p.name}</div>
             <div class="player-chips">${stackChips}<span>${p.stack}</span></div>
             ${p.last_action ? `<div class="action-bubble">${p.last_action}</div>` : ''}
