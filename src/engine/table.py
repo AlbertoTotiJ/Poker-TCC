@@ -88,6 +88,14 @@ class Table:
         return tuple(self._players)
 
     @property
+    def small_blind(self) -> int:
+        return self._small_blind
+
+    @property
+    def big_blind(self) -> int:
+        return self._big_blind
+
+    @property
     def dealer(self) -> Dealer:
         return self._dealer
 
