@@ -76,7 +76,7 @@ def _load_env_fallback() -> None:
 def get_neon_connection_with_diag(
     custom_url: Optional[str] = None,
 ) -> Tuple[Any, Optional[str]]:
-    """Tenta obter uma conexão com o banco Neon PostgreSQL e retorna diagnóstico em caso de falha."""
+    """Tenta obter uma conexão com o Neon e retorna diagnóstico em falha."""
     _load_env_fallback()
     db_url = (
         custom_url
@@ -86,7 +86,10 @@ def get_neon_connection_with_diag(
     if not db_url:
         return (
             None,
-            "DATABASE_URL não configurada no ambiente. Adicione a variável DATABASE_URL no painel da Vercel ou informe a URL do Neon diretamente.",
+            (
+                "DATABASE_URL não configurada no ambiente. Adicione a variável "
+                "DATABASE_URL na Vercel ou informe a URL do Neon diretamente."
+            ),
         )
     try:
         import psycopg2
@@ -96,7 +99,10 @@ def get_neon_connection_with_diag(
     except ImportError:
         return (
             None,
-            "Driver psycopg2 não está disponível no runtime. Certifique-se de que psycopg2-binary está listado no requirements.txt.",
+            (
+                "Driver psycopg2 não está disponível no runtime. Certifique-se de "
+                "que psycopg2-binary está listado no requirements.txt."
+            ),
         )
     except Exception as ex:
         return (None, f"Falha ao conectar no Neon: {str(ex)}")
@@ -564,7 +570,7 @@ def _save_via_github_api(
     file_path: str = "data/partidas_gravadas.jsonl",
     branch: str = "main",
 ) -> Dict[str, Any]:
-    """Envia o arquivo diretamente para o repositório do GitHub usando a API REST oficial."""
+    """Envia o arquivo para o GitHub usando a API REST oficial."""
     import base64
     import json
     import urllib.error
@@ -600,7 +606,7 @@ def _save_via_github_api(
                 msg = str(e)
             return {
                 "success": False,
-                "error": f"Erro de permissão ou autenticação no GitHub ({e.code}): {msg}",
+                "error": f"Erro de permissão no GitHub ({e.code}): {msg}",
             }
     except Exception as e:
         return {
@@ -679,7 +685,7 @@ def save_dataset_to_github(
     )
     repo = os.environ.get("GITHUB_REPO", "AlbertoTotiJ/Poker-TCC")
 
-    # 1. Se houver token configurado ou fornecido, usa a API oficial do GitHub (compatível com Serverless)
+    # 1. Se houver token, usa a API oficial do GitHub (compatível com Serverless)
     if token:
         try:
             file_bytes = actual_file.read_bytes()
@@ -695,7 +701,7 @@ def save_dataset_to_github(
                 "error": f"Erro ao salvar via GitHub API: {str(ex)}",
             }
 
-    # 2. Se não houver token, tenta utilizar o executável 'git' caso instalado no host local
+    # 2. Se não houver token, tenta utilizar o executável 'git' no host local
     import shutil
 
     if shutil.which("git"):
@@ -725,9 +731,10 @@ def save_dataset_to_github(
                     or "Branch main atualizada.",
                 }
             else:
+                err_out = push_proc.stderr or push_proc.stdout
                 return {
                     "success": False,
-                    "error": f"Falha no git push: {push_proc.stderr or push_proc.stdout}",
+                    "error": f"Falha no git push: {err_out}",
                 }
         except Exception as ex:
             return {
@@ -735,13 +742,13 @@ def save_dataset_to_github(
                 "error": f"Erro ao executar git local: {str(ex)}",
             }
 
-    # 3. Caso esteja na Vercel (onde git não existe) e nenhum token tenha sido fornecido
+    # 3. Caso esteja na Vercel (sem git local) e sem token configurado
     return {
         "success": False,
         "error": (
-            "No ambiente da Vercel, o utilitário 'git' não está instalado no sistema. "
-            "Para salvar diretamente no GitHub pela nuvem, configure a variável de ambiente GITHUB_TOKEN no painel da Vercel "
-            "(ou insira o token no formulário), ou utilize o botão 'Baixar Arquivo' para fazer o download do dataset (.jsonl)."
+            "No ambiente da Vercel, o 'git' não está instalado. "
+            "Configure a variável GITHUB_TOKEN no painel da Vercel "
+            "ou utilize o botão 'Baixar Arquivo' para download do dataset (.jsonl)."
         ),
     }
 
@@ -766,8 +773,10 @@ def save_dataset_to_neon(
     if conn is None:
         return {
             "success": False,
-            "error": diag_err
-            or "Não foi possível conectar ao Neon. Verifique a URL fornecida ou a variável DATABASE_URL.",
+            "error": (
+                diag_err
+                or "Não foi possível conectar ao Neon. Verifique DATABASE_URL."
+            ),
         }
 
     try:
