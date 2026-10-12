@@ -541,6 +541,31 @@
       filter: grayscale(1);
     }
 
+    .player-seat.folded {
+      opacity: 0.45;
+      filter: grayscale(0.85);
+    }
+
+    .folded-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-10deg);
+      background: rgba(198, 40, 40, 0.92);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
+      z-index: 25;
+      pointer-events: none;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
     .seat-badge {
       background: rgba(18, 24, 33, 0.92);
       border: 2px solid rgba(255, 255, 255, 0.15);
@@ -1695,7 +1720,8 @@
       players.forEach((p, index) => {
         const pos = getSeatPosition(index, numPlayers);
         const isHuman = p.is_human;
-        const activeClass = p.is_turn ? 'active-turn' : '';
+        const isFolded = !p.is_active && !p.is_eliminated;
+        const foldedClass = isFolded ? 'folded' : '';
         const eliminatedClass = p.is_eliminated ? 'eliminated' : '';
 
         let cardsHTML = '';
@@ -1706,7 +1732,7 @@
         }
 
         const seatDiv = document.createElement('div');
-        seatDiv.className = `player-seat ${isHuman ? 'human' : ''} ${activeClass} ${eliminatedClass}`;
+        seatDiv.className = `player-seat ${isHuman ? 'human' : ''} ${activeClass} ${eliminatedClass} ${foldedClass}`;
         seatDiv.style.left = `${pos.x}%`;
         seatDiv.style.top = `${pos.y}%`;
 
@@ -1719,7 +1745,10 @@
             <div class="player-chips">${stackChips}<span>${p.stack}</span></div>
             ${p.last_action ? `<div class="action-bubble">${p.last_action}</div>` : ''}
           </div>
-          <div class="seat-cards">${cardsHTML}</div>
+          <div class="seat-cards" style="position: relative;">
+            ${cardsHTML}
+            ${isFolded ? '<div class="folded-overlay">FOLD (DESISTIU)</div>' : ''}
+          </div>
           ${p.current_bet > 0 ? `
             <div class="bet-chips-indicator">
               ${renderChipsVisual(p.current_bet, 4)}
