@@ -819,3 +819,24 @@ def start_poker_web_server(
 
     httpd = ThreadingHTTPServer(server_address, PokerApiHandler)
     return httpd, chosen_port
+
+
+if __name__ == "__main__":
+    import webbrowser
+
+    httpd, port = start_poker_web_server(host="0.0.0.0", port=5000)
+    print("=" * 72)
+    print(" MESA GRÁFICA VIRTUAL DE TEXAS HOLD'EM INICIADA! ".center(72, "="))
+    print("=" * 72)
+    print(f" > Acesso Local (este computador): http://localhost:{port}")
+    print(" Pressione Ctrl+C a qualquer momento para encerrar.")
+    print("=" * 72)
+    try:
+        webbrowser.open(f"http://localhost:{port}")
+    except Exception:
+        pass
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nServidor encerrado pelo usuário.")
+        httpd.server_close()
