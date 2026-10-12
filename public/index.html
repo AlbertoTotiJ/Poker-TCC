@@ -1604,8 +1604,13 @@
       <button class="modal-close-btn" onclick="closeRecordModal()">×</button>
       <div class="modal-header">🔴 Gravação de Rodadas de Pesquisa</div>
 
-      <div style="font-size:0.85rem; color:#bbb; margin-bottom:14px; line-height:1.4;">
+      <div style="font-size:0.85rem; color:#bbb; margin-bottom:10px; line-height:1.4;">
         Área restrita da equipe de pesquisa. Insira o código de autenticação para simular as rodadas e inspecionar todos os dados antes de salvar.
+      </div>
+
+      <div id="recordConnStatus" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:8px 12px; border-radius:6px; font-size:0.78rem; margin-bottom:14px;">
+        <span id="neonStatusBadge">🐘 Neon: <strong style="color:#aaa;">Verificando...</strong></span>
+        <span id="githubStatusBadge">🐙 GitHub: <strong style="color:#aaa;">Verificando...</strong></span>
       </div>
 
       <div class="form-group">
@@ -2283,11 +2288,41 @@
       }
     }
 
+    async function updateRecordConnectionsStatus() {
+      const neonBadge = document.getElementById('neonStatusBadge');
+      const githubBadge = document.getElementById('githubStatusBadge');
+      if (!neonBadge || !githubBadge) return;
+      try {
+        const res = await safeFetchJson('/api/check_db');
+        if (res && res.success) {
+          if (res.neon_connected) {
+            neonBadge.innerHTML = '🐘 Neon: <strong style="color:#69f0ae;">🟢 Conectado</strong>';
+          } else if (res.database_url_configured) {
+            const diag = (res.neon_diag || 'Erro na conexão').replace(/"/g, '&quot;');
+            neonBadge.innerHTML = `<span title="${diag}">🐘 Neon: <strong style="color:#ef5350;">🔴 Erro Conexão</strong></span>`;
+          } else {
+            neonBadge.innerHTML = '🐘 Neon: <strong style="color:#ffb74d;">⚪ DATABASE_URL ausente</strong>';
+          }
+
+          if (res.github_token_configured) {
+            githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#69f0ae;">🟢 API Ativa</strong>';
+          } else if (res.git_cli_available) {
+            githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#64b5f6;">🟢 Git Local</strong>';
+          } else {
+            githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#ffb74d;">⚪ Sem Token</strong>';
+          }
+        }
+      } catch (e) {
+        // Silencioso se der erro de rede inicial
+      }
+    }
+
     function openRecordModal() {
       document.getElementById('recordModal').classList.add('active');
       document.getElementById('recordStatusArea').style.display = 'none';
       document.getElementById('recordResultBox').style.display = 'none';
       document.getElementById('btnStartRecord').disabled = false;
+      updateRecordConnectionsStatus();
     }
 
     function closeRecordModal() {
@@ -2445,7 +2480,7 @@
           <div class="sync-actions-row">
             <button class="btn-sync-action btn-sync-github" onclick="syncToGitHub()">
               <span>🐙 Salvar no GitHub</span>
-              <small style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">Commit & Push</small>
+              <small style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">Commit & Push / API</small>
             </button>
             <button class="btn-sync-action btn-sync-neon" onclick="syncToNeon()">
               <span>🐘 Salvar no Neon</span>
@@ -2456,6 +2491,22 @@
               <small style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">Formato .jsonl</small>
             </button>
           </div>
+
+          <details style="margin-top: 10px; font-size: 0.78rem; color: #aaa; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px;">
+            <summary style="cursor: pointer; color: var(--gold-light); font-weight: 600;">
+              ⚙️ Conexão Manual Opcional (se não configurada na Vercel)
+            </summary>
+            <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+              <div>
+                <label style="display:block; font-size:0.72rem; color:#bbb; margin-bottom:2px;">URL do Neon (postgresql://...):</label>
+                <input type="password" id="customNeonUrl" placeholder="postgresql://user:pass@ep-xyz.neon.tech/neondb?sslmode=require" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 8px; border-radius:4px; font-size:0.75rem;">
+              </div>
+              <div>
+                <label style="display:block; font-size:0.72rem; color:#bbb; margin-bottom:2px;">GitHub Personal Access Token (para push via API na nuvem):</label>
+                <input type="password" id="customGithubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 8px; border-radius:4px; font-size:0.75rem;">
+              </div>
+            </div>
+          </details>
 
           <div id="syncFeedback" class="sync-status-msg"></div>
         `;
@@ -2474,24 +2525,31 @@
 
     async function syncToGitHub() {
       const code = document.getElementById('recordAuthCode').value.trim();
+      const tokenEl = document.getElementById('customGithubToken');
+      const customToken = tokenEl ? tokenEl.value.trim() : '';
       const feedback = document.getElementById('syncFeedback');
       feedback.style.display = 'block';
       feedback.style.background = 'rgba(255,255,255,0.08)';
       feedback.style.border = '1px solid rgba(255,255,255,0.2)';
       feedback.style.color = '#fff';
-      feedback.innerText = '🐙 Enviando commit e executando git push para o GitHub... Aguarde!';
+      feedback.innerText = '🐙 Enviando dataset para o GitHub... Aguarde!';
 
       try {
         const data = await safeFetchJson('/api/save_to_github', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: 'save_to_github', auth_code: code })
+          body: JSON.stringify({
+            endpoint: 'save_to_github',
+            auth_code: code,
+            github_token: customToken || undefined
+          })
         });
         if (data.success) {
           feedback.style.background = 'rgba(76, 175, 80, 0.2)';
           feedback.style.border = '1px solid #4caf50';
           feedback.style.color = '#a5d6a7';
           feedback.innerHTML = `✅ ${data.message} (${data.details || 'main atualizada'})`;
+          updateRecordConnectionsStatus();
         } else {
           feedback.style.background = 'rgba(244, 67, 54, 0.2)';
           feedback.style.border = '1px solid #f44336';
@@ -2508,6 +2566,8 @@
 
     async function syncToNeon() {
       const code = document.getElementById('recordAuthCode').value.trim();
+      const neonEl = document.getElementById('customNeonUrl');
+      const customNeon = neonEl ? neonEl.value.trim() : '';
       const feedback = document.getElementById('syncFeedback');
       feedback.style.display = 'block';
       feedback.style.background = 'rgba(255,255,255,0.08)';
@@ -2519,13 +2579,18 @@
         const data = await safeFetchJson('/api/save_to_neon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: 'save_to_neon', auth_code: code })
+          body: JSON.stringify({
+            endpoint: 'save_to_neon',
+            auth_code: code,
+            database_url: customNeon || undefined
+          })
         });
         if (data.success) {
           feedback.style.background = 'rgba(0, 230, 153, 0.2)';
           feedback.style.border = '1px solid #00e699';
           feedback.style.color = '#69f0ae';
           feedback.innerHTML = `✅ ${data.message}`;
+          updateRecordConnectionsStatus();
         } else {
           feedback.style.background = 'rgba(244, 67, 54, 0.2)';
           feedback.style.border = '1px solid #f44336';
@@ -2537,7 +2602,6 @@
         feedback.style.border = '1px solid #f44336';
         feedback.style.color = '#ef9a9a';
         feedback.innerText = `❌ Erro de conexão: ${e.message}`;
-      }
     }
 
     function downloadRecordedDataset() {

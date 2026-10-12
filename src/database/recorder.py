@@ -50,23 +50,62 @@ def verify_auth_code(code: str) -> bool:
     return code.strip() == expected
 
 
-def get_neon_connection(custom_url: Optional[str] = None):
-    """Tenta obter uma conexão com o banco Neon PostgreSQL se configurado."""
+def _load_env_fallback() -> None:
+    """Carrega variáveis do arquivo .env caso existam e não estejam no os.environ."""
+    env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    if not env_path.exists():
+        return
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(env_path)
+    except Exception:
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k, v = k.strip(), v.strip().strip('"').strip("'")
+                        if k and k not in os.environ:
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+
+def get_neon_connection_with_diag(
+    custom_url: Optional[str] = None,
+) -> Tuple[Any, Optional[str]]:
+    """Tenta obter uma conexão com o banco Neon PostgreSQL e retorna diagnóstico em caso de falha."""
+    _load_env_fallback()
     db_url = (
         custom_url
         or os.environ.get("DATABASE_URL")
         or os.environ.get("POSTGRES_URL")
     )
     if not db_url:
-        return None
+        return (
+            None,
+            "DATABASE_URL não configurada no ambiente. Adicione a variável DATABASE_URL no painel da Vercel ou informe a URL do Neon diretamente.",
+        )
     try:
         import psycopg2
 
-        # Conexão com timeout curto para não travar funções serverless
-        conn = psycopg2.connect(db_url, connect_timeout=7)
-        return conn
-    except Exception:
-        return None
+        conn = psycopg2.connect(db_url, connect_timeout=8)
+        return (conn, None)
+    except ImportError:
+        return (
+            None,
+            "Driver psycopg2 não está disponível no runtime. Certifique-se de que psycopg2-binary está listado no requirements.txt.",
+        )
+    except Exception as ex:
+        return (None, f"Falha ao conectar no Neon: {str(ex)}")
+
+
+def get_neon_connection(custom_url: Optional[str] = None):
+    """Tenta obter uma conexão com o banco Neon PostgreSQL se configurado."""
+    conn, _ = get_neon_connection_with_diag(custom_url=custom_url)
+    return conn
 
 
 def ensure_neon_schema(conn) -> bool:
@@ -517,11 +556,107 @@ def run_recording_batch(
     }
 
 
+def _save_via_github_api(
+    token: str,
+    file_bytes: bytes,
+    commit_message: str,
+    repo: str = "AlbertoTotiJ/Poker-TCC",
+    file_path: str = "data/partidas_gravadas.jsonl",
+    branch: str = "main",
+) -> Dict[str, Any]:
+    """Envia o arquivo diretamente para o repositório do GitHub usando a API REST oficial."""
+    import base64
+    import json
+    import urllib.error
+    import urllib.request
+
+    clean_token = token.strip()
+    if clean_token.lower().startswith("bearer "):
+        clean_token = clean_token[7:].strip()
+    elif clean_token.lower().startswith("token "):
+        clean_token = clean_token[6:].strip()
+
+    url = f"https://api.github.com/repos/{repo}/contents/{file_path}"
+    headers = {
+        "Authorization": f"Bearer {clean_token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Poker-TCC-App",
+    }
+
+    sha = None
+    try:
+        req_get = urllib.request.Request(
+            f"{url}?ref={branch}", headers=headers, method="GET"
+        )
+        with urllib.request.urlopen(req_get, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            sha = data.get("sha")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            try:
+                err_body = json.loads(e.read().decode("utf-8"))
+                msg = err_body.get("message", str(e))
+            except Exception:
+                msg = str(e)
+            return {
+                "success": False,
+                "error": f"Erro de permissão ou autenticação no GitHub ({e.code}): {msg}",
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Falha ao consultar repositório no GitHub: {str(e)}",
+        }
+
+    content_b64 = base64.b64encode(file_bytes).decode("ascii")
+    payload: Dict[str, Any] = {
+        "message": commit_message,
+        "content": content_b64,
+        "branch": branch,
+    }
+    if sha:
+        payload["sha"] = sha
+
+    req_data = json.dumps(payload).encode("utf-8")
+    req_put = urllib.request.Request(
+        url,
+        data=req_data,
+        headers={**headers, "Content-Type": "application/json"},
+        method="PUT",
+    )
+
+    try:
+        with urllib.request.urlopen(req_put, timeout=30) as resp:
+            resp_body = json.loads(resp.read().decode("utf-8"))
+            commit_sha = resp_body.get("commit", {}).get("sha", "")[:7]
+            return {
+                "success": True,
+                "message": "Dataset salvo e enviado com sucesso para o GitHub!",
+                "details": f"Commit {commit_sha} na branch {branch} (via GitHub API).",
+            }
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = json.loads(e.read().decode("utf-8"))
+            msg = err_body.get("message", str(e))
+        except Exception:
+            msg = str(e)
+        return {
+            "success": False,
+            "error": f"Falha ao gravar no GitHub via API ({e.code}): {msg}",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Erro na requisição para GitHub: {str(e)}",
+        }
+
+
 def save_dataset_to_github(
     auth_code: str,
     commit_message: Optional[str] = None,
+    github_token: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Salva o arquivo de dataset no Git e envia via push para o repositório GitHub."""
+    """Salva o arquivo de dataset no Git/GitHub (via API REST ou via git CLI local)."""
     if not verify_auth_code(auth_code):
         return {"success": False, "error": "Código de autenticação inválido."}
 
@@ -533,39 +668,82 @@ def save_dataset_to_github(
             "error": "Nenhum arquivo de partidas gravadas encontrado para enviar.",
         }
 
-    import subprocess
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+    msg = commit_message or (
+        f"data: dataset de partidas gravadas do TCC ({now_str})"
+    )
+    token = (
+        github_token
+        or os.environ.get("GITHUB_TOKEN")
+        or os.environ.get("GITHUB_PAT")
+    )
+    repo = os.environ.get("GITHUB_REPO", "AlbertoTotiJ/Poker-TCC")
 
-    try:
-        now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
-        msg = commit_message or (
-            f"data: dataset de partidas gravadas do TCC ({now_str})"
-        )
-        subprocess.run(
-            ["git", "add", "-f", str(actual_file)], check=True, capture_output=True
-        )
-        subprocess.run(
-            ["git", "commit", "-m", msg], capture_output=True, text=True
-        )
-
-        push_proc = subprocess.run(
-            ["git", "push", "origin", "main"],
-            capture_output=True,
-            text=True,
-            timeout=35,
-        )
-        if push_proc.returncode == 0:
-            return {
-                "success": True,
-                "message": "Dataset salvo e enviado com sucesso para o GitHub!",
-                "details": push_proc.stdout.strip() or "Branch main atualizada.",
-            }
-        else:
+    # 1. Se houver token configurado ou fornecido, usa a API oficial do GitHub (compatível com Serverless)
+    if token:
+        try:
+            file_bytes = actual_file.read_bytes()
+            return _save_via_github_api(
+                token=token,
+                file_bytes=file_bytes,
+                commit_message=msg,
+                repo=repo,
+            )
+        except Exception as ex:
             return {
                 "success": False,
-                "error": f"Falha no git push: {push_proc.stderr or push_proc.stdout}",
+                "error": f"Erro ao salvar via GitHub API: {str(ex)}",
             }
-    except Exception as ex:
-        return {"success": False, "error": f"Erro ao salvar no GitHub: {str(ex)}"}
+
+    # 2. Se não houver token, tenta utilizar o executável 'git' caso instalado no host local
+    import shutil
+
+    if shutil.which("git"):
+        import subprocess
+
+        try:
+            subprocess.run(
+                ["git", "add", "-f", str(actual_file)],
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "commit", "-m", msg], capture_output=True, text=True
+            )
+
+            push_proc = subprocess.run(
+                ["git", "push", "origin", "main"],
+                capture_output=True,
+                text=True,
+                timeout=35,
+            )
+            if push_proc.returncode == 0:
+                return {
+                    "success": True,
+                    "message": "Dataset salvo e enviado com sucesso para o GitHub!",
+                    "details": push_proc.stdout.strip()
+                    or "Branch main atualizada.",
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Falha no git push: {push_proc.stderr or push_proc.stdout}",
+                }
+        except Exception as ex:
+            return {
+                "success": False,
+                "error": f"Erro ao executar git local: {str(ex)}",
+            }
+
+    # 3. Caso esteja na Vercel (onde git não existe) e nenhum token tenha sido fornecido
+    return {
+        "success": False,
+        "error": (
+            "No ambiente da Vercel, o utilitário 'git' não está instalado no sistema. "
+            "Para salvar diretamente no GitHub pela nuvem, configure a variável de ambiente GITHUB_TOKEN no painel da Vercel "
+            "(ou insira o token no formulário), ou utilize o botão 'Baixar Arquivo' para fazer o download do dataset (.jsonl)."
+        ),
+    }
 
 
 def save_dataset_to_neon(
@@ -584,14 +762,12 @@ def save_dataset_to_neon(
             "error": "Nenhum arquivo de partidas gravadas encontrado.",
         }
 
-    conn = get_neon_connection(custom_url=custom_db_url)
+    conn, diag_err = get_neon_connection_with_diag(custom_url=custom_db_url)
     if conn is None:
         return {
             "success": False,
-            "error": (
-                "Não foi possível conectar ao Neon. Verifique a URL fornecida "
-                "ou a variável DATABASE_URL."
-            ),
+            "error": diag_err
+            or "Não foi possível conectar ao Neon. Verifique a URL fornecida ou a variável DATABASE_URL.",
         }
 
     try:

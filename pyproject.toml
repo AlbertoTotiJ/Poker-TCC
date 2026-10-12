@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Simulador Texas Hold'em e Análise de Blefes em Agentes Autônomos"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "psycopg2-binary>=2.9.9",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

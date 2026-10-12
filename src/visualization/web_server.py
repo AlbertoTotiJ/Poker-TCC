@@ -667,12 +667,13 @@ class PokerApiHandler(BaseHTTPRequestHandler):
 
             if clean_path.endswith("/check_db") or clean_path == "/check_db":
                 import os
+                import shutil
                 from src.database.recorder import (
                     RECORD_FILE,
-                    get_neon_connection,
+                    get_neon_connection_with_diag,
                     get_record_file,
                 )
-                conn = get_neon_connection()
+                conn, neon_diag = get_neon_connection_with_diag()
                 neon_ok = conn is not None
                 if conn:
                     try:
@@ -688,12 +689,18 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                             total_hands = sum(1 for line in f if line.strip())
                     except Exception:
                         pass
+                has_github_token = bool(
+                    os.environ.get("GITHUB_TOKEN") or os.environ.get("GITHUB_PAT")
+                )
                 self._send_json({
                     "success": True,
                     "neon_connected": neon_ok,
+                    "neon_diag": neon_diag,
                     "database_url_configured": bool(
                         os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
                     ),
+                    "github_token_configured": has_github_token,
+                    "git_cli_available": shutil.which("git") is not None,
                     "file_exists": target_file.exists(),
                     "total_hands_recorded": total_hands,
                     "file_name": target_file.name,
@@ -782,9 +789,11 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 from src.database.recorder import save_dataset_to_github
                 auth_code = str(data.get("auth_code", ""))
                 commit_msg = data.get("commit_message")
+                token = data.get("github_token")
                 result = save_dataset_to_github(
                     auth_code=auth_code,
                     commit_message=commit_msg,
+                    github_token=token,
                 )
                 self._send_json(result)
                 return
