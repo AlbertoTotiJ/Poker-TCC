@@ -1596,8 +1596,14 @@
       const speech = document.getElementById('dealerSpeech');
       if (speech) {
         if (gameState.is_hand_finished && gameState.showdown) {
-          const winners = gameState.showdown.winner_names.join(', ');
-          speech.innerText = `🏆 Vitória de ${winners}!`;
+          const sd = gameState.showdown;
+          if (sd.is_split_pot) {
+            speech.innerText = `🤝 Empate! Pote dividido entre ${sd.winner_names.join(' e ')}!`;
+          } else if (sd.scores && sd.scores.length > 0) {
+            speech.innerText = `🏆 Vitória de ${sd.winner_names.join(', ')}!`;
+          } else {
+            speech.innerText = `🏆 Vitória de ${sd.winner_names.join(', ')} por desistência!`;
+          }
         } else if (gameState.is_human_turn) {
           speech.innerText = "👉 É a sua vez de jogar!";
         } else if (gameState.current_player_id) {
@@ -1629,14 +1635,32 @@
       // Showdown banner
       const banner = document.getElementById('showdownBanner');
       if (gameState.is_hand_finished && gameState.showdown) {
-        const winners = gameState.showdown.winner_names.join(', ');
-        let summaryText = `Vencedor(a): ${winners}!`;
-        if (gameState.showdown.scores.length > 0) {
-          const topScore = gameState.showdown.scores[0];
-          summaryText += ` (${topScore.combination})`;
+        const sd = gameState.showdown;
+        let summaryHTML = '';
+
+        if (sd.summary_message) {
+          summaryHTML = `<div style="font-size:0.95rem;"><strong>${sd.summary_message}</strong></div>`;
+        } else {
+          const winners = (sd.winner_names || []).join(', ');
+          const comb = sd.winning_combination || (sd.scores && sd.scores[0] ? sd.scores[0].combination : '');
+          summaryHTML = sd.is_split_pot
+            ? `<div style="font-size:0.95rem;">🤝 <strong>EMPATE (SPLIT POT):</strong> ${winners} dividem o pote! (${comb})</div>`
+            : `<div style="font-size:0.95rem;">🏆 <strong>Vencedor(a):</strong> ${winners}! ${comb ? `(${comb})` : ''}</div>`;
         }
+
+        if (sd.pot_awards && sd.pot_awards.length > 1) {
+          const awardsList = sd.pot_awards.map(aw => {
+            const wStr = (aw.winners || []).join(', ');
+            return `<div style="font-size:0.8rem; color:#ffd54f; margin-top:2px;">• ${aw.pot_type} ($${aw.amount}): ${wStr} (${aw.combination})</div>`;
+          }).join('');
+          summaryHTML += `<div style="margin-top:4px;">${awardsList}</div>`;
+        }
+
         banner.style.display = 'block';
-        banner.innerHTML = `<div>${summaryText}</div><button class="btn-quick" style="margin-top:6px; font-weight:800;" onclick="nextHand()">Próxima Mão ❯</button>`;
+        banner.innerHTML = `
+          ${summaryHTML}
+          <button class="btn-quick" style="margin-top:8px; font-weight:800; background:#ffd54f; color:#111; padding:6px 14px; border-radius:6px; cursor:pointer;" onclick="nextHand()">Próxima Mão ❯</button>
+        `;
       } else {
         banner.style.display = 'none';
       }

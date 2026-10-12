@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Set
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from src.engine.hand_eval import HandScore
 
@@ -8,6 +8,21 @@ from src.engine.hand_eval import HandScore
 class Pot:
     amount: int = 0
     eligible_players: Set[str] = field(default_factory=set)
+
+
+@dataclass
+class PotAward:
+    """Detalhamento da distribuição de um pote individual (principal ou lateral)."""
+
+    pot_index: int
+    pot_type: str
+    amount: int
+    eligible_player_ids: List[str]
+    winning_player_ids: List[str]
+    winning_score: Optional[HandScore]
+    payouts: Dict[str, int]
+    is_split: bool
+    odd_chip_awarded_to: Optional[str] = None
 
 
 class PotManager:
@@ -92,50 +107,93 @@ class PotManager:
 
         return merged_pots
 
-    def payout(
+    def resolve_pots(
         self,
         pots: List[Pot],
         player_scores: Dict[str, HandScore],
         table_order: Optional[Sequence[str]] = None,
-    ) -> Dict[str, int]:
-        """Distribui as fichas aos vencedores elegíveis por mérito de HandScore.
-
-        Args:
-            pots: Lista de potes calculados.
-            player_scores: Avaliações de mão dos jogadores que foram ao showdown.
-            table_order: Ordem horária de assentos a partir do botão para
-                atribuição de fichas ímpares (odd chips).
-
-        Returns:
-            Dicionário com o montante de fichas ganho por cada jogador.
-        """
+    ) -> Tuple[Dict[str, int], List[PotAward]]:
+        """Calcula a partição e premiação de cada pote (principal e side pots)."""
         winnings: Dict[str, int] = {pid: 0 for pid in player_scores}
+        awards: List[PotAward] = []
 
-        for pot in pots:
+        for idx, pot in enumerate(pots):
             contenders = [pid for pid in pot.eligible_players if pid in player_scores]
+            pot_type = "Principal" if idx == 0 else f"Paralelo #{idx}"
+            pot_payouts: Dict[str, int] = {}
+            odd_chip_recipient = None
+
             if not contenders:
+                fallback_recipients = [
+                    pid for pid in pot.eligible_players if pid in winnings
+                ] or list(winnings.keys())
+                if fallback_recipients:
+                    fb_share = pot.amount // len(fallback_recipients)
+                    for pid in fallback_recipients:
+                        winnings[pid] += fb_share
+                        pot_payouts[pid] = fb_share
+                awards.append(
+                    PotAward(
+                        pot_index=idx,
+                        pot_type=pot_type,
+                        amount=pot.amount,
+                        eligible_player_ids=list(pot.eligible_players),
+                        winning_player_ids=fallback_recipients,
+                        winning_score=None,
+                        payouts=pot_payouts,
+                        is_split=len(fallback_recipients) > 1,
+                    )
+                )
                 continue
 
             highest_score = max(player_scores[pid] for pid in contenders)
             winners = [pid for pid in contenders if player_scores[pid] == highest_score]
 
-            # Ordenação prioritária para divisão de fichas indivisíveis (odd chips)
             if table_order:
                 order_map = {pid: i for i, pid in enumerate(table_order)}
                 winners.sort(key=lambda pid: order_map.get(pid, 9999))
             else:
                 winners.sort()
 
+            is_split = len(winners) > 1 and len(contenders) > 1
             share = pot.amount // len(winners)
             remainder = pot.amount % len(winners)
 
             for winner in winners:
                 winnings[winner] += share
+                pot_payouts[winner] = share
 
-            # Atribui o chip ímpar ao primeiro vencedor conforme prioridade posicional
-            for i in range(remainder):
-                winnings[winners[i]] += 1
+            if remainder > 0 and winners:
+                odd_chip_recipient = winners[0]
+                for i in range(remainder):
+                    target = winners[i % len(winners)]
+                    winnings[target] += 1
+                    pot_payouts[target] = pot_payouts.get(target, 0) + 1
 
+            awards.append(
+                PotAward(
+                    pot_index=idx,
+                    pot_type=pot_type,
+                    amount=pot.amount,
+                    eligible_player_ids=list(pot.eligible_players),
+                    winning_player_ids=winners,
+                    winning_score=highest_score,
+                    payouts=pot_payouts,
+                    is_split=is_split,
+                    odd_chip_awarded_to=odd_chip_recipient,
+                )
+            )
+
+        return winnings, awards
+
+    def payout(
+        self,
+        pots: List[Pot],
+        player_scores: Dict[str, HandScore],
+        table_order: Optional[Sequence[str]] = None,
+    ) -> Dict[str, int]:
+        """Distribui as fichas aos vencedores elegíveis por mérito de HandScore."""
+        winnings, _ = self.resolve_pots(pots, player_scores, table_order=table_order)
         return winnings
 
     def reset(self) -> None:

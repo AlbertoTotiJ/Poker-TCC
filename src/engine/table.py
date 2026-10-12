@@ -7,7 +7,7 @@ from src.engine.dealer import Dealer
 from src.engine.deck import Card
 from src.engine.hand_eval import HandScore, evaluate_hand
 from src.engine.player import Player
-from src.engine.pot import PotManager
+from src.engine.pot import PotAward, PotManager
 
 
 class Street(Enum):
@@ -81,6 +81,7 @@ class Table:
         self._incomplete_raise_locked_players: Set[str] = set()
         self._last_payouts: Dict[str, int] = {}
         self._last_scores: Dict[str, HandScore] = {}
+        self._last_pot_awards: List[PotAward] = []
 
     @property
     def players(self) -> Tuple[Player, ...]:
@@ -123,6 +124,10 @@ class Table:
         return dict(self._last_scores)
 
     @property
+    def last_pot_awards(self) -> List[PotAward]:
+        return list(self._last_pot_awards)
+
+    @property
     def current_player(self) -> Optional[Player]:
         if self._street in (Street.SHOWDOWN, Street.FINISHED):
             return None
@@ -155,6 +160,7 @@ class Table:
         self._incomplete_raise_locked_players.clear()
         self._last_payouts.clear()
         self._last_scores.clear()
+        self._last_pot_awards.clear()
 
         # Garante que o botão pertença a um jogador com fichas
         if self._players[self._button_idx].stack == 0:
@@ -417,6 +423,18 @@ class Table:
         winner.award(total)
         self._last_payouts = {winner.player_id: total}
         self._last_scores = {}
+        self._last_pot_awards = [
+            PotAward(
+                pot_index=0,
+                pot_type="Principal",
+                amount=total,
+                eligible_player_ids=[winner.player_id],
+                winning_player_ids=[winner.player_id],
+                winning_score=None,
+                payouts={winner.player_id: total},
+                is_split=False,
+            )
+        ]
         self._street = Street.FINISHED
         self._button_idx = self._next_chip_player_idx(self._button_idx)
 
@@ -437,13 +455,16 @@ class Table:
             self._players[(self._button_idx + 1 + i) % len(self._players)].player_id
             for i in range(len(self._players))
         ]
-        payouts = self._pot_manager.payout(pots, scores, table_order=table_order)
+        payouts, awards = self._pot_manager.resolve_pots(
+            pots, scores, table_order=table_order
+        )
         for player in active_players:
             if player.player_id in payouts:
                 player.award(payouts[player.player_id])
 
         self._last_payouts = payouts
         self._last_scores = scores
+        self._last_pot_awards = awards
         self._street = Street.FINISHED
         self._button_idx = self._next_chip_player_idx(self._button_idx)
         return payouts

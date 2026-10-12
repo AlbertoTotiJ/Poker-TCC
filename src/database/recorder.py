@@ -358,31 +358,54 @@ def run_recording_batch(
         winners_data: List[Dict[str, Any]] = []
         winning_names: List[str] = []
         winning_ids: List[str] = []
+        is_hand_split = False
+        winning_comb_desc = "Desistência dos adversários"
+
+        pot_awards = getattr(table, "last_pot_awards", [])
+        if pot_awards:
+            main_award = pot_awards[0]
+            winning_ids = list(main_award.winning_player_ids)
+            winning_names = [
+                next(p.name for p in table.players if p.player_id == wid)
+                for wid in winning_ids
+            ]
+            is_hand_split = main_award.is_split
+            if main_award.winning_score:
+                winning_comb_desc = main_award.winning_score.description
+                if (
+                    best_score_overall is None
+                    or main_award.winning_score > best_score_overall
+                ):
+                    best_score_overall = main_award.winning_score
+                    best_score_details = {
+                        "combination": main_award.winning_score.description,
+                        "player": winning_names[0] if winning_names else "N/A",
+                        "profile": (
+                            profile_labels.get(winning_ids[0], "")
+                            if winning_ids
+                            else ""
+                        ),
+                        "hand_index": hand_idx,
+                    }
+        else:
+            for p in table.players:
+                if payouts.get(p.player_id, 0) > 0:
+                    winning_ids.append(p.player_id)
+                    winning_names.append(p.name)
 
         for p in table.players:
             if payouts.get(p.player_id, 0) > 0:
-                winning_ids.append(p.player_id)
-                winning_names.append(p.name)
-                player_wins[p.player_id] += 1
-                if p.player_id in scores:
-                    sc = scores[p.player_id]
-                    comb_name = sc.description
-                    if best_score_overall is None or sc > best_score_overall:
-                        best_score_overall = sc
-                        best_score_details = {
-                            "combination": sc.description,
-                            "player": p.name,
-                            "profile": profile_labels.get(p.player_id, ""),
-                            "hand_index": hand_idx,
-                        }
-                else:
-                    comb_name = "Desistência dos adversários"
-
+                p_comb = (
+                    scores[p.player_id].description
+                    if p.player_id in scores
+                    else "Desistência dos adversários"
+                )
                 winners_data.append({
                     "player_id": p.player_id,
                     "name": p.name,
                     "payout": payouts[p.player_id],
-                    "combination": comb_name,
+                    "combination": p_comb,
+                    "is_main_winner": p.player_id in winning_ids,
                 })
 
         if not winners_data:
@@ -391,15 +414,16 @@ def run_recording_batch(
                 w = active_p[0]
                 winning_ids.append(w.player_id)
                 winning_names.append(w.name)
-                player_wins[w.player_id] += 1
                 winners_data.append({
                     "player_id": w.player_id,
                     "name": w.name,
                     "payout": table.pot_manager.total_pot,
                     "combination": "Desistência",
+                    "is_main_winner": True,
                 })
 
         for wid in winning_ids:
+            player_wins[wid] += 1
             prof = profile_labels.get(wid, "Desconhecido")
             if prof in wins_by_profile:
                 wins_by_profile[prof] += 1
@@ -440,13 +464,16 @@ def run_recording_batch(
             neon_saved_count += 1
 
         top_comb = (
-            winners_data[0]["combination"] if winners_data else "Desistência"
+            f"{winning_comb_desc} (Empate)"
+            if is_hand_split
+            else winning_comb_desc
         )
         hands_recorded.append({
             "hand_index": hand_idx,
             "pot": table.pot_manager.total_pot,
             "winners": ", ".join(winning_names),
             "combination": top_comb,
+            "is_split": is_hand_split,
             "bluffs": len(bluffs),
             "board": " ".join(str(c) for c in table.community_cards),
         })

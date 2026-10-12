@@ -56,3 +56,31 @@ def test_payout_with_side_pots() -> None:
     # p2 ganha o side pot de 60 (pois p1 não é elegível para o side pot)
     assert payouts["p2"] == 60
     assert payouts["p3"] == 0
+
+
+def test_resolve_pots_with_true_tie_and_odd_chip() -> None:
+    pm = PotManager()
+    # Pote ímpar de 75 fichas (3 apostam 25, p3 desiste) dividido entre p1 e p2
+    pm.add_contribution("p1", 25)
+    pm.add_contribution("p2", 25)
+    pm.add_contribution("p3", 25)
+
+    pots = pm.build_pots({"p1", "p2"})
+    assert len(pots) == 1
+    assert pots[0].amount == 75
+
+    score = evaluate_hand([Card.from_str(c) for c in ["As", "Ks", "Qs", "Js", "Ts"]])
+    scores = {"p1": score, "p2": score}
+
+    # Ordem da mesa onde p2 tem prioridade posicional (mais próximo à esquerda do botão)
+    table_order = ["p2", "p1"]
+    winnings, awards = pm.resolve_pots(pots, scores, table_order=table_order)
+
+    assert len(awards) == 1
+    assert awards[0].is_split is True
+    assert set(awards[0].winning_player_ids) == {"p1", "p2"}
+    assert awards[0].odd_chip_awarded_to == "p2"
+    # 75 // 2 = 37, p2 ganha o chip ímpar (38), p1 ganha 37
+    assert winnings["p2"] == 38
+    assert winnings["p1"] == 37
+    assert sum(winnings.values()) == 75

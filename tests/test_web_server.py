@@ -210,3 +210,39 @@ def test_record_batch_and_vercel_routing() -> None:
     finally:
         httpd.shutdown()
         httpd.server_close()
+
+
+def test_web_poker_session_split_pot_and_tie_resolution() -> None:
+    from src.engine.deck import Card, Rank, Suit
+    from src.visualization.web_server import WebPokerSession
+
+    session = WebPokerSession(num_players=2, starting_stack=1000)
+    assert session.table is not None
+
+    # Injeta um bordo onde a mesa possui o Royal Flush (ambos empatam jogando a mesa)
+    royal_board = [
+        Card(Rank.ACE, Suit.SPADES),
+        Card(Rank.KING, Suit.SPADES),
+        Card(Rank.QUEEN, Suit.SPADES),
+        Card(Rank.JACK, Suit.SPADES),
+        Card(Rank.TEN, Suit.SPADES),
+    ]
+    session.table._dealer._community_cards = list(royal_board)
+
+    # Força ambos os jogadores a irem ao showdown
+    session.table._resolve_showdown()
+    session._log_hand_conclusion()
+
+    state = session.get_serialized_state()
+    assert state["active"] is True
+    assert state["is_hand_finished"] is True
+
+    sd = state.get("showdown")
+    assert sd is not None
+    assert sd["is_split_pot"] is True
+    assert len(sd["winner_names"]) == 2
+    assert "🤝 Empate" in sd["summary_message"]
+    assert sd["pot_awards"][0]["is_split"] is True
+
+    # Verifica se o log de eventos registrou o empate detalhado
+    assert any("🤝 Empate no Showdown" in ev for ev in session.event_log)

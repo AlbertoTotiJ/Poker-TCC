@@ -183,8 +183,60 @@ class WebPokerSession:
 
         if self.table.street == Street.FINISHED:
             self._button_idx = self.table.button_idx
+            self._log_hand_conclusion()
 
         return desc
+
+    def _log_hand_conclusion(self) -> None:
+        """Gera um registro detalhado do desfecho da mão para o log de eventos."""
+        t = self.table
+        if t is None or t.street != Street.FINISHED:
+            return
+
+        awards = getattr(t, "last_pot_awards", [])
+        if not awards:
+            return
+
+        main_award = awards[0]
+        win_names = [
+            next((p.name for p in self.players if p.player_id == pid), pid)
+            for pid in main_award.winning_player_ids
+        ]
+
+        if main_award.is_split:
+            each_val = main_award.amount // max(1, len(win_names))
+            comb_text = (
+                main_award.winning_score.description
+                if main_award.winning_score
+                else "combinações equivalentes"
+            )
+            self.event_log.append(
+                f"🤝 Empate no Showdown! Pote de {main_award.amount} fichas dividido "
+                f"entre {', '.join(win_names)} ({each_val} para cada) com {comb_text}."
+            )
+        elif main_award.winning_score is not None:
+            comb_text = main_award.winning_score.description
+            winner = win_names[0] if win_names else "Alguém"
+            self.event_log.append(
+                f"🏆 {winner} venceu com {comb_text} e levou o pote de "
+                f"{main_award.amount} fichas!"
+            )
+        else:
+            winner = win_names[0] if win_names else "Alguém"
+            self.event_log.append(
+                f"🏆 {winner} venceu a mão por desistência dos adversários "
+                f"({main_award.amount} fichas)."
+            )
+
+        for aw in awards[1:]:
+            side_winners = [
+                next((p.name for p in self.players if p.player_id == pid), pid)
+                for pid in aw.winning_player_ids
+            ]
+            self.event_log.append(
+                f"💰 Pote Paralelo ({aw.amount} fichas): levado por "
+                f"{', '.join(side_winners)}."
+            )
 
     def get_serialized_state(self) -> Dict[str, Any]:
         """Gera o snapshot estruturado do estado da mesa para a interface."""
@@ -260,23 +312,102 @@ class WebPokerSession:
         if is_finished:
             payouts_list = []
             for pid, amt in t.last_payouts.items():
-                p = next(p for p in self.players if p.player_id == pid)
-                payouts_list.append({"name": p.name, "amount": amt})
+                p = next((p for p in self.players if p.player_id == pid), None)
+                if p:
+                    payouts_list.append(
+                        {"name": p.name, "amount": amt, "player_id": pid}
+                    )
 
+            # Scores ordenados pelo HandScore de forma decrescente (melhor mão no topo)
+            sorted_scores = sorted(
+                t.last_scores.items(), key=lambda item: item[1], reverse=True
+            )
             scores_list = []
-            for pid, score in t.last_scores.items():
-                p = next(p for p in self.players if p.player_id == pid)
-                comb = format_hand_combination(score)
-                best = [card_to_dict(c) for c in score.cards]
-                scores_list.append(
-                    {"name": p.name, "combination": comb, "best_cards": best}
+            for pid, score in sorted_scores:
+                p = next((p for p in self.players if p.player_id == pid), None)
+                if p:
+                    comb = format_hand_combination(score)
+                    best = [card_to_dict(c) for c in score.cards]
+                    scores_list.append(
+                        {
+                            "name": p.name,
+                            "player_id": pid,
+                            "combination": comb,
+                            "full_description": score.description,
+                            "best_cards": best,
+                        }
+                    )
+
+            awards_data = []
+            is_true_tie = False
+            main_winning_names: List[str] = []
+            main_winning_comb = ""
+
+            for aw in getattr(t, "last_pot_awards", []):
+                win_names = [
+                    next((p.name for p in self.players if p.player_id == pid), pid)
+                    for pid in aw.winning_player_ids
+                ]
+                comb_str = (
+                    format_hand_combination(aw.winning_score)
+                    if aw.winning_score
+                    else "Desistência"
+                )
+                if aw.pot_index == 0:
+                    main_winning_names = win_names
+                    main_winning_comb = comb_str
+                    if aw.is_split:
+                        is_true_tie = True
+
+                awards_data.append(
+                    {
+                        "pot_index": aw.pot_index,
+                        "pot_type": aw.pot_type,
+                        "amount": aw.amount,
+                        "winners": win_names,
+                        "combination": comb_str,
+                        "is_split": aw.is_split,
+                        "payouts": {
+                            next(
+                                (p.name for p in self.players if p.player_id == k), k
+                            ): v
+                            for k, v in aw.payouts.items()
+                        },
+                    }
                 )
 
-            winner_names = [item["name"] for item in payouts_list if item["amount"] > 0]
+            winner_names = main_winning_names or [
+                item["name"] for item in payouts_list if item["amount"] > 0
+            ]
+            winning_comb = main_winning_comb or (
+                scores_list[0]["combination"] if scores_list else "Desistência"
+            )
+
+            if is_true_tie:
+                each_amt = (
+                    awards_data[0]["amount"] // max(1, len(main_winning_names))
+                    if awards_data
+                    else 0
+                )
+                summary_msg = (
+                    f"🤝 Empate (Split Pot)! {', '.join(main_winning_names)} dividiram "
+                    f"o pote ({each_amt} fichas cada) com {winning_comb}!"
+                )
+            elif scores_list:
+                w_name = winner_names[0] if winner_names else "Vencedor"
+                summary_msg = f"🏆 Vitória de {w_name} com {winning_comb}!"
+            else:
+                w_name = winner_names[0] if winner_names else "Vencedor"
+                summary_msg = f"🏆 Vitória de {w_name} por desistência dos adversários!"
+
             showdown_data = {
                 "payouts": payouts_list,
                 "scores": scores_list,
                 "winner_names": winner_names,
+                "winning_combination": winning_comb,
+                "is_split_pot": is_true_tie,
+                "summary_message": summary_msg,
+                "pot_awards": awards_data,
             }
 
         survivors = [p for p in self.players if p.stack > 0]
