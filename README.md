@@ -51,7 +51,10 @@ O projeto é organizado em módulos desacoplados para garantir isolamento entre 
 │   ├── agents/             # Implementação dos jogadores autônomos
 │   │   ├── base.py         # Interface abstrata padrão para agentes
 │   │   ├── heuristic.py    # Agentes baseados em regras/heurísticas de probabilidade
-│   │   └── rl/             # Agentes baseados em aprendizado por reforço / Teoria dos Jogos
+│   │   ├── mathematical_agent.py # Agente Matemático (Probabilístico, EV e equidade)
+│   │   ├── bluffer_agent.py # Agente Blefador (Exploração e pressão psicológica)
+│   │   ├── hybrid_agent.py # Agente Híbrido (Piso matemático com blefes calculados)
+│   │   └── README.md       # Documentação técnica e pipeline dos agentes
 │   │
 │   ├── telemetry/          # Mecanismos de observação e persistência
 │   │   ├── tracker.py      # Captura de logs de ações a cada street (pre-flop ao showdown)
@@ -144,9 +147,11 @@ O projeto está configurado para deploy contínuo gratuito na **Vercel**:
   - [x] Controlador de mesa, blinds, streets e showdown (`src/engine/table.py` & `src/engine/player.py`).
   - [x] Suíte de 27 testes unitários com 100% de aprovação (`tests/`).
   - [x] Script de demonstração executável (`scripts/demo_sprint1.py`).
-- [ ] **Sprint 2: Interface e Agentes Baseline**
-  - [ ] Interface de agente com observação parcial (`src/agents/base.py`).
-  - [ ] Agentes baseline (`Random`, `Tight-Aggressive`, `Passive`).
+- [ ] **Sprint 2: Módulo de Agentes Autônomos de IA**
+  - [x] Documentação e especificação arquitetural ([`read.me agents.md`](read.me%20agents.md) e [`src/agents/README.md`](src/agents/README.md)).
+  - [ ] Agente Matemático probabilístico e analítico (`src/agents/mathematical_agent.py`).
+  - [ ] Agente Blefador e exploração de oponentes (`src/agents/bluffer_agent.py`).
+  - [ ] Agente Híbrido combinando equidade e blefes (`src/agents/hybrid_agent.py`).
 - [ ] **Sprint 3: Telemetria e Persistência**
   - [ ] Modelos de dados e schemas (`src/telemetry/schemas.py`).
   - [ ] Rastreador de trajetórias pré-flop ao showdown (`src/telemetry/tracker.py`).
