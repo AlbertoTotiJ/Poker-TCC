@@ -9,7 +9,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from src.agents.base import BaseAgent
+from src.agents.bluffer_agent import BlufferAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
+from src.agents.hybrid_agent import HybridAgent
 from src.agents.mathematical_agent import MathematicalAgent
 from src.engine.deck import Card, Suit
 from src.engine.player import Player
@@ -84,6 +86,9 @@ class WebPokerSession:
                 agent_type = "math"
             elif agent_mode == "mixed":
                 agent_type = "math" if (i % 2 == 0) else "bot"
+            elif agent_mode == "all_ai":
+                ai_cycle = ["math", "bluffer", "hybrid"]
+                agent_type = ai_cycle[i % len(ai_cycle)]
             elif agent_mode == "custom" and custom_agents and i < len(custom_agents):
                 agent_type = custom_agents[i]
 
@@ -94,6 +99,24 @@ class WebPokerSession:
                     name=bot_name,
                     raise_equity_threshold=0.65,
                     call_ev_margin=-0.02,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            elif agent_type == "bluffer":
+                bot_name = f"Agente Blefador {i + 1}"
+                bot = BlufferAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    bluff_frequency=0.45,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            elif agent_type == "hybrid":
+                bot_name = f"Agente Híbrido {i + 1}"
+                bot = HybridAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    math_threshold=0.60,
+                    bluff_prob=0.25,
+                    num_simulations=100,
                     rng=random.Random(self.rng.randint(1, 1000000)),
                 )
             elif agent_type == "aggressive":
@@ -330,15 +353,22 @@ class WebPokerSession:
             agent_type = self.agent_types.get(
                 p.player_id, "human" if is_human else "bot"
             )
-            agent_label = (
-                "Você (Humano)"
-                if is_human
-                else (
-                    "📐 Agente Matemático"
-                    if agent_type == "math"
-                    else "🤖 Bot Padrão"
-                )
-            )
+            if is_human:
+                agent_label = "Você (Humano)"
+            elif agent_type == "math":
+                agent_label = "📐 Agente Matemático"
+            elif agent_type == "bluffer":
+                agent_label = "🃏 Agente Blefador"
+            elif agent_type == "hybrid":
+                agent_label = "🧠 Agente Híbrido"
+            elif agent_type == "aggressive":
+                agent_label = "⚔️ Agressivo"
+            elif agent_type == "conservative":
+                agent_label = "🛡️ Conservador"
+            elif agent_type == "balanced":
+                agent_label = "⚖️ Equilibrado"
+            else:
+                agent_label = "🤖 Bot Padrão"
 
             players_data.append(
                 {
@@ -820,10 +850,14 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 auth_code = str(data.get("auth_code", ""))
                 num_hands = int(data.get("num_hands", 10))
                 num_players = int(data.get("num_players", 6))
+                roster_mode = str(data.get("roster_mode", "")).strip()
                 result = run_recording_batch(
                     auth_code=auth_code,
                     num_hands=num_hands,
                     num_players=num_players,
+                    roster_mode=roster_mode or (
+                        "classic_9" if num_players == 9 else "classic_6"
+                    ),
                 )
                 self._send_json(result)
                 return

@@ -8,7 +8,11 @@ from pathlib import Path
 import random
 from typing import Any, Dict, List, Optional, Tuple
 
+from src.agents.base import BaseAgent
+from src.agents.bluffer_agent import BlufferAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
+from src.agents.hybrid_agent import HybridAgent
+from src.agents.mathematical_agent import MathematicalAgent
 from src.engine.hand_eval import HandScore, evaluate_hand
 from src.engine.player import Player
 from src.engine.table import Street, Table
@@ -250,70 +254,389 @@ def save_hand_to_file(hand_data: Dict[str, Any]) -> bool:
         return False
 
 
+ROSTER_CONFIGS: Dict[str, Dict[str, Any]] = {
+    "classic_6": {
+        "name": "Clássica 6-Max",
+        "description": "2 Matemáticos Reais, 2 Agressivos, 2 Conservadores",
+        "num_players": 6,
+    },
+    "classic_9": {
+        "name": "Mesa Cheia 9-Max",
+        "description": "3 Matemáticos Reais, 3 Agressivos, 3 Conservadores",
+        "num_players": 9,
+    },
+    "math_vs_bots": {
+        "name": "Duelo: Matemáticos vs Bots",
+        "description": (
+            "3 Matemáticos Reais vs 3 Bots Heurísticos "
+            "(1 Agressivo, 1 Conservador, 1 Equilibrado)"
+        ),
+        "num_players": 6,
+    },
+    "full_ai_tournament": {
+        "name": "Torneio Completo de IAs",
+        "description": "2 Matemáticos Reais, 2 Blefadores, 2 Híbridos",
+        "num_players": 6,
+    },
+    "bluff_challenge": {
+        "name": "Desafio de Blefe",
+        "description": "2 Blefadores, 2 Matemáticos Reais, 2 Conservadores",
+        "num_players": 6,
+    },
+    "hybrid_lab": {
+        "name": "Laboratório Híbrido",
+        "description": "3 Agentes Híbridos vs 3 Agentes Matemáticos Reais",
+        "num_players": 6,
+    },
+    "math_tournament": {
+        "name": "Torneio Puro de IA Matemática",
+        "description": "6 Agentes Matemáticos Reais com calibrações variadas",
+        "num_players": 6,
+    },
+    "all_models_9": {
+        "name": "Grande Torneio Multimodelo 9-Max",
+        "description": (
+            "3 Matemáticos, 2 Blefadores, 2 Híbridos, 1 Agressivo, 1 Conservador"
+        ),
+        "num_players": 9,
+    },
+}
+
+
 def build_research_roster(
     num_players: int = 6,
     starting_stack: int = 1000,
+    roster_mode: str = "classic_6",
     rng: Optional[random.Random] = None,
-) -> Tuple[List[Player], Dict[str, HeuristicAgent], Dict[str, str]]:
-    """Gera o elenco balanceado com os 3 perfis de jogadores.
+) -> Tuple[List[Player], Dict[str, BaseAgent], Dict[str, str]]:
+    """Gera o elenco balanceado de agentes para experimentos e gravação.
 
-    Para 6 jogadores: 2 Matemáticos, 2 Agressivos, 2 Conservadores.
-    Para 9 jogadores: 3 Matemáticos, 3 Agressivos, 3 Conservadores.
+    Suporta os agentes atuais (Matemático Real, Bots Heurísticos) e os novos agentes
+    táticos de pesquisa (Blefador e Híbrido).
     """
-    if num_players not in (6, 9):
-        num_players = 6
+    local_rng = rng if rng is not None else random.Random()
 
-    count_each = num_players // 3
+    # Normalização de roster_mode
+    if roster_mode not in ROSTER_CONFIGS:
+        roster_mode = "classic_9" if num_players == 9 else "classic_6"
+
+    expected_players = ROSTER_CONFIGS[roster_mode]["num_players"]
+    if num_players not in (6, 9) or roster_mode not in ("classic_6", "classic_9"):
+        num_players = expected_players
+
     players: List[Player] = []
-    agents: Dict[str, HeuristicAgent] = {}
+    agents: Dict[str, BaseAgent] = {}
     profile_labels: Dict[str, str] = {}
 
-    idx = 1
-    # 1. Matemáticos
-    for i in range(1, count_each + 1):
-        pid = f"bot_mat_{i}"
-        pname = f"Matemático {i}"
-        players.append(Player(player_id=pid, name=pname, stack=starting_stack))
-        agents[pid] = HeuristicAgent(
-            player_id=pid,
-            name=pname,
-            profile=AgentProfile.BALANCED,
-            rng=rng,
-        )
-        profile_labels[pid] = "Matemático"
-        idx += 1
+    def _add_player(pid: str, name: str, agent: BaseAgent, profile: str) -> None:
+        players.append(Player(player_id=pid, name=name, stack=starting_stack))
+        agents[pid] = agent
+        profile_labels[pid] = profile
 
-    # 2. Agressivos
-    for i in range(1, count_each + 1):
-        pid = f"bot_agr_{i}"
-        pname = f"Agressivo {i}"
-        players.append(Player(player_id=pid, name=pname, stack=starting_stack))
-        agents[pid] = HeuristicAgent(
-            player_id=pid,
-            name=pname,
-            profile=AgentProfile.AGGRESSIVE,
-            rng=rng,
+    if roster_mode == "math_vs_bots":
+        # 3 Matemáticos Reais vs 3 Bots (Agressivo, Conservador, Equilibrado)
+        for i in range(1, 4):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        _add_player(
+            "bot_agr_1",
+            "Agressivo 1",
+            HeuristicAgent(
+                "bot_agr_1",
+                "Agressivo 1",
+                profile=AgentProfile.AGGRESSIVE,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Agressivo",
         )
-        profile_labels[pid] = "Agressivo"
-        idx += 1
-
-    # 3. Conservadores
-    for i in range(1, count_each + 1):
-        pid = f"bot_con_{i}"
-        pname = f"Conservador {i}"
-        players.append(Player(player_id=pid, name=pname, stack=starting_stack))
-        agents[pid] = HeuristicAgent(
-            player_id=pid,
-            name=pname,
-            profile=AgentProfile.CONSERVATIVE,
-            rng=rng,
+        _add_player(
+            "bot_con_1",
+            "Conservador 1",
+            HeuristicAgent(
+                "bot_con_1",
+                "Conservador 1",
+                profile=AgentProfile.CONSERVATIVE,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Conservador",
         )
-        profile_labels[pid] = "Conservador"
-        idx += 1
+        _add_player(
+            "bot_bal_1",
+            "Equilibrado 1",
+            HeuristicAgent(
+                "bot_bal_1",
+                "Equilibrado 1",
+                profile=AgentProfile.BALANCED,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Equilibrado",
+        )
 
-    local_rng = rng if rng is not None else random.Random()
+    elif roster_mode == "full_ai_tournament":
+        # 2 Matemáticos, 2 Blefadores, 2 Híbridos
+        for i in range(1, 3):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        for i in range(1, 3):
+            pid = f"bot_blf_{i}"
+            pname = f"Blefador {i}"
+            _add_player(
+                pid,
+                pname,
+                BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    bluff_frequency=0.42,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador",
+            )
+        for i in range(1, 3):
+            pid = f"bot_hyb_{i}"
+            pname = f"Híbrido {i}"
+            _add_player(
+                pid,
+                pname,
+                HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Híbrido",
+            )
+
+    elif roster_mode == "bluff_challenge":
+        # 2 Blefadores, 2 Matemáticos, 2 Conservadores
+        for i in range(1, 3):
+            pid = f"bot_blf_{i}"
+            pname = f"Blefador {i}"
+            _add_player(
+                pid,
+                pname,
+                BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    bluff_frequency=0.45,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador",
+            )
+        for i in range(1, 3):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        for i in range(1, 3):
+            pid = f"bot_con_{i}"
+            pname = f"Conservador {i}"
+            _add_player(
+                pid,
+                pname,
+                HeuristicAgent(
+                    player_id=pid,
+                    name=pname,
+                    profile=AgentProfile.CONSERVATIVE,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Conservador",
+            )
+
+    elif roster_mode == "hybrid_lab":
+        # 3 Híbridos vs 3 Matemáticos
+        for i in range(1, 4):
+            pid = f"bot_hyb_{i}"
+            pname = f"Híbrido {i}"
+            _add_player(
+                pid,
+                pname,
+                HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Híbrido",
+            )
+        for i in range(1, 4):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+
+    elif roster_mode == "math_tournament":
+        # 6 Matemáticos com limiares variados
+        thresholds = [0.58, 0.60, 0.64, 0.67, 0.70, 0.73]
+        for i, th in enumerate(thresholds, start=1):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático (Th {int(th * 100)}%)"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    raise_equity_threshold=th,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+
+    elif roster_mode == "all_models_9":
+        # 3 Matemáticos, 2 Blefadores, 2 Híbridos, 1 Agressivo, 1 Conservador
+        for i in range(1, 4):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        for i in range(1, 3):
+            pid = f"bot_blf_{i}"
+            pname = f"Blefador {i}"
+            _add_player(
+                pid,
+                pname,
+                BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    bluff_frequency=0.42,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador",
+            )
+        for i in range(1, 3):
+            pid = f"bot_hyb_{i}"
+            pname = f"Híbrido {i}"
+            _add_player(
+                pid,
+                pname,
+                HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Híbrido",
+            )
+        _add_player(
+            "bot_agr_1",
+            "Agressivo 1",
+            HeuristicAgent(
+                "bot_agr_1",
+                "Agressivo 1",
+                profile=AgentProfile.AGGRESSIVE,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Agressivo",
+        )
+        _add_player(
+            "bot_con_1",
+            "Conservador 1",
+            HeuristicAgent(
+                "bot_con_1",
+                "Conservador 1",
+                profile=AgentProfile.CONSERVATIVE,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Conservador",
+        )
+
+    else:
+        # classic_6 ou classic_9
+        count_each = num_players // 3
+        for i in range(1, count_each + 1):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        for i in range(1, count_each + 1):
+            pid = f"bot_agr_{i}"
+            pname = f"Agressivo {i}"
+            _add_player(
+                pid,
+                pname,
+                HeuristicAgent(
+                    player_id=pid,
+                    name=pname,
+                    profile=AgentProfile.AGGRESSIVE,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Agressivo",
+            )
+        for i in range(1, count_each + 1):
+            pid = f"bot_con_{i}"
+            pname = f"Conservador {i}"
+            _add_player(
+                pid,
+                pname,
+                HeuristicAgent(
+                    player_id=pid,
+                    name=pname,
+                    profile=AgentProfile.CONSERVATIVE,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Conservador",
+            )
+
     local_rng.shuffle(players)
-
     return players, agents, profile_labels
 
 
@@ -369,6 +692,7 @@ def run_recording_batch(
     auth_code: str,
     num_hands: int = 10,
     num_players: int = 6,
+    roster_mode: str = "classic_6",
     starting_stack: int = 1000,
     small_blind: int = 10,
     big_blind: int = 20,
@@ -382,12 +706,18 @@ def run_recording_batch(
         }
 
     num_hands = max(1, min(100, int(num_hands)))
-    num_players = 9 if num_players == 9 else 6
+
+    if roster_mode in ROSTER_CONFIGS:
+        num_players = ROSTER_CONFIGS[roster_mode]["num_players"]
+    else:
+        num_players = 9 if num_players == 9 else 6
+        roster_mode = "classic_9" if num_players == 9 else "classic_6"
 
     rng = random.Random(rng_seed)
     players, agents, profile_labels = build_research_roster(
         num_players=num_players,
         starting_stack=starting_stack,
+        roster_mode=roster_mode,
         rng=rng,
     )
 
@@ -398,9 +728,7 @@ def run_recording_batch(
     total_bluffs_detected = 0
 
     wins_by_profile: Dict[str, int] = {
-        "Matemático": 0,
-        "Agressivo": 0,
-        "Conservador": 0,
+        label: 0 for label in sorted(set(profile_labels.values()))
     }
     player_wins: Counter = Counter()
 
@@ -524,14 +852,14 @@ def run_recording_batch(
         for wid in winning_ids:
             player_wins[wid] += 1
             prof = profile_labels.get(wid, "Desconhecido")
-            if prof in wins_by_profile:
-                wins_by_profile[prof] += 1
+            wins_by_profile[prof] = wins_by_profile.get(prof, 0) + 1
 
         bluffs = detect_hand_bluffs(table, actions_log, profile_labels, winning_ids)
         total_bluffs_detected += len(bluffs)
 
         hand_record: Dict[str, Any] = {
             "hand_index": hand_idx,
+            "roster_mode": roster_mode,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "pot_total": table.pot_manager.total_pot,
             "community_cards": [str(c) for c in table.community_cards],
@@ -597,6 +925,8 @@ def run_recording_batch(
     return {
         "success": True,
         "auth_verified": True,
+        "roster_mode": roster_mode,
+        "roster_name": ROSTER_CONFIGS.get(roster_mode, {}).get("name", roster_mode),
         "hands_requested": num_hands,
         "hands_completed": len(hands_recorded),
         "file_saved_count": file_saved_count,

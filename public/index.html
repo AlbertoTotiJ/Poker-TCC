@@ -1626,11 +1626,24 @@
       </div>
 
       <div class="form-group">
-        <label for="recordTableFormat">Composição dos Bots na Mesa:</label>
-        <select id="recordTableFormat">
-          <option value="6" selected>6 Jogadores (2 Matemáticos, 2 Agressivos, 2 Conservadores)</option>
-          <option value="9">9 Jogadores (3 Matemáticos, 3 Agressivos, 3 Conservadores)</option>
+        <label for="recordTableFormat">Composição e Modelos de Agentes de IA:</label>
+        <select id="recordTableFormat" onchange="updateRosterDescriptionNotice()">
+          <optgroup label="🤖 Torneios de IA & Pesquisa Científica (TCC)">
+            <option value="math_vs_bots" data-players="6" selected>📐 Duelo: 3 Matemáticos Reais vs 3 Bots Heurísticos (6 Jogadores)</option>
+            <option value="full_ai_tournament" data-players="6">🏆 Torneio Completo de IAs: 2 Matemáticos, 2 Blefadores, 2 Híbridos (6 Jogadores)</option>
+            <option value="bluff_challenge" data-players="6">🃏 Desafio de Blefe: 2 Blefadores, 2 Matemáticos, 2 Conservadores (6 Jogadores)</option>
+            <option value="hybrid_lab" data-players="6">🧠 Laboratório Híbrido: 3 Agentes Híbridos vs 3 Matemáticos Reais (6 Jogadores)</option>
+            <option value="math_tournament" data-players="6">🔬 Torneio Puro Matemático: 6 Agentes Matemáticos Reais (6 Jogadores)</option>
+            <option value="all_models_9" data-players="9">🌟 Grande Torneio Multimodelo: 3 Matemáticos, 2 Blefadores, 2 Híbridos, 2 Bots (9 Jogadores)</option>
+          </optgroup>
+          <optgroup label="⚖️ Composições Clássicas">
+            <option value="classic_6" data-players="6">6 Jogadores Clássica (2 Matemáticos Reais, 2 Agressivos, 2 Conservadores)</option>
+            <option value="classic_9" data-players="9">9 Jogadores Clássica (3 Matemáticos Reais, 3 Agressivos, 3 Conservadores)</option>
+          </optgroup>
         </select>
+        <div id="rosterDescriptionNotice" style="font-size:0.74rem; color:#bbb; margin-top:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-left:3px solid var(--gold-light); padding:6px 10px; border-radius:4px; line-height:1.35;">
+          📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).
+        </div>
       </div>
 
       <button class="btn-submit" id="btnStartRecord" onclick="submitRecordBatch()" style="width:100%;">
@@ -2340,12 +2353,34 @@
       }
     }
 
+    function updateRosterDescriptionNotice() {
+      const select = document.getElementById('recordTableFormat');
+      if (!select) return;
+      const val = select.value;
+      const notice = document.getElementById('rosterDescriptionNotice');
+      if (!notice) return;
+
+      const descMap = {
+        'math_vs_bots': '📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).',
+        'full_ai_tournament': '🏆 <strong>Torneio Completo de IAs:</strong> Batalha multimodelo entre os 3 agentes do projeto: 2 Matemáticos (probabilísticos), 2 Blefadores (fold equity) e 2 Híbridos (estratégia integrada).',
+        'bluff_challenge': '🃏 <strong>Desafio de Blefe:</strong> Avalia como os Agentes Blefadores exploram oponentes conservadores e se conseguem dobrar o cálculo frio dos Agentes Matemáticos.',
+        'hybrid_lab': '🧠 <strong>Laboratório Híbrido:</strong> 3 Agentes Híbridos (combinam EV matemático e semi-blefes/armadilhas) contra 3 Agentes Matemáticos estritos.',
+        'math_tournament': '🔬 <strong>Torneio Puro Matemático:</strong> 6 Agentes Matemáticos Reais com calibrações de limiar de equidade variando de 58% a 73% para análise de sensibilidade paramétrica.',
+        'all_models_9': '🌟 <strong>Grande Torneio 9-Max:</strong> Mesa cheia integrando todos os agentes: 3 Matemáticos, 2 Blefadores, 2 Híbridos, 1 Agressivo e 1 Conservador.',
+        'classic_6': '⚖️ <strong>Clássica 6-Max:</strong> 2 Agentes Matemáticos Reais, 2 Agressivos e 2 Conservadores.',
+        'classic_9': '🏟️ <strong>Clássica 9-Max:</strong> 3 Agentes Matemáticos Reais, 3 Agressivos e 3 Conservadores.'
+      };
+
+      notice.innerHTML = descMap[val] || 'Composição personalizada selecionada.';
+    }
+
     function openRecordModal() {
       document.getElementById('recordModal').classList.add('active');
       document.getElementById('recordStatusArea').style.display = 'none';
       document.getElementById('recordResultBox').style.display = 'none';
       document.getElementById('btnStartRecord').disabled = false;
       updateRecordConnectionsStatus();
+      updateRosterDescriptionNotice();
     }
 
     function closeRecordModal() {
@@ -2355,7 +2390,10 @@
     async function submitRecordBatch() {
       const code = document.getElementById('recordAuthCode').value.trim();
       const numHands = parseInt(document.getElementById('recordNumHands').value) || 10;
-      const numPlayers = parseInt(document.getElementById('recordTableFormat').value) || 6;
+      const rosterSelect = document.getElementById('recordTableFormat');
+      const rosterMode = rosterSelect ? rosterSelect.value : 'classic_6';
+      const selectedOpt = rosterSelect ? rosterSelect.options[rosterSelect.selectedIndex] : null;
+      const numPlayers = selectedOpt ? (parseInt(selectedOpt.getAttribute('data-players')) || 6) : 6;
 
       if (!code) {
         alert("Por favor, digite o código de autenticação da equipe.");
@@ -2380,7 +2418,8 @@
             endpoint: 'record_batch',
             auth_code: code,
             num_hands: numHands,
-            num_players: numPlayers
+            num_players: numPlayers,
+            roster_mode: rosterMode
           })
         });
 
@@ -2406,12 +2445,30 @@
         const hands = data.hands_summary || [];
         const leaderboard = data.leaderboard || [];
 
+        let winBadgesHTML = '';
+        for (const [prof, count] of Object.entries(wins)) {
+          let icon = '🤖';
+          if (prof.includes('Matemático')) icon = '📐';
+          else if (prof.includes('Blefador')) icon = '🃏';
+          else if (prof.includes('Híbrido')) icon = '🧠';
+          else if (prof.includes('Agressivo')) icon = '⚔️';
+          else if (prof.includes('Conservador')) icon = '🛡️';
+          else if (prof.includes('Equilibrado')) icon = '⚖️';
+
+          winBadgesHTML += `
+            <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:6px 10px; display:inline-flex; align-items:center; gap:6px; font-size:0.8rem;">
+              <span>${icon} <strong>${prof}</strong>:</span>
+              <span style="color:var(--gold-light); font-weight:800;">${count} vitórias</span>
+            </div>
+          `;
+        }
+
         let leaderboardHTML = `
           <table class="record-preview-table">
             <thead>
               <tr>
                 <th>Jogador</th>
-                <th>Perfil</th>
+                <th>Perfil de IA</th>
                 <th>Stack Final</th>
                 <th>Saldo</th>
                 <th>Vitórias</th>
@@ -2422,10 +2479,18 @@
         leaderboard.forEach(p => {
           const profitClass = p.net_profit >= 0 ? 'color: #69f0ae;' : 'color: #ff5252;';
           const profitStr = (p.net_profit >= 0 ? '+' : '') + p.net_profit;
+          let profIcon = '🤖';
+          if (p.profile.includes('Matemático')) profIcon = '📐';
+          else if (p.profile.includes('Blefador')) profIcon = '🃏';
+          else if (p.profile.includes('Híbrido')) profIcon = '🧠';
+          else if (p.profile.includes('Agressivo')) profIcon = '⚔️';
+          else if (p.profile.includes('Conservador')) profIcon = '🛡️';
+          else if (p.profile.includes('Equilibrado')) profIcon = '⚖️';
+
           leaderboardHTML += `
             <tr>
               <td><strong>${p.name}</strong></td>
-              <td>${p.profile}</td>
+              <td>${profIcon} ${p.profile}</td>
               <td>${p.final_stack}</td>
               <td style="${profitClass}"><strong>${profitStr}</strong></td>
               <td>${p.wins}</td>
@@ -2467,10 +2532,19 @@
 
         resultBox.innerHTML = `
           <div style="color: #69f0ae; font-weight: 800; font-size: 1.05rem; margin-bottom: 4px;">
-            ✅ Simulação Concluída (${data.hands_completed} Rodadas)
+            ✅ Simulação Concluída (${data.hands_completed} Rodadas - ${data.roster_name || 'Lineup de Pesquisa'})
           </div>
           <div style="font-size: 0.8rem; color: #bbb; margin-bottom: 12px;">
-            Confira as métricas e o resultado das mãos antes de sincronizar ou salvar:
+            Lineup ativo: <strong>${data.roster_name || rosterMode}</strong>. Confira as métricas e o resultado das mãos antes de sincronizar:
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 0.72rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+              🏆 Vitórias por Modelo / Perfil de IA:
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              ${winBadgesHTML || '<span style="color:#888;">Sem vitórias registradas</span>'}
+            </div>
           </div>
 
           <div class="record-stat-grid">
