@@ -712,7 +712,6 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 )
                 if raw_db_url:
                     try:
-                        from urllib.parse import urlparse
                         p_url = urlparse(raw_db_url)
                         neon_host = p_url.hostname or ""
                         neon_db = p_url.path.lstrip("/") or ""
