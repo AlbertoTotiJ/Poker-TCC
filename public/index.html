@@ -1609,9 +1609,10 @@
       </div>
 
       <div id="recordConnStatus" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:8px 12px; border-radius:6px; font-size:0.78rem; margin-bottom:14px;">
-        <span id="neonStatusBadge">🐘 Neon: <strong style="color:#aaa;">Verificando...</strong></span>
-        <span id="githubStatusBadge">🐙 GitHub: <strong style="color:#aaa;">Verificando...</strong></span>
+        <span id="neonStatusBadge" style="cursor:help;">🐘 Neon: <strong style="color:#aaa;">Verificando...</strong></span>
+        <span id="githubStatusBadge" style="cursor:help;">🐙 GitHub: <strong style="color:#aaa;">Verificando...</strong></span>
       </div>
+      <div id="connDetailNotice" style="display:none; font-size:0.73rem; color:#ddd; background:rgba(0,0,0,0.35); border-left:3px solid #ffb74d; padding:6px 10px; border-radius:4px; margin-top:-8px; margin-bottom:14px; line-height:1.35;"></div>
 
       <div class="form-group">
         <label for="recordAuthCode">Código de Autenticação da Equipe:</label>
@@ -2291,25 +2292,45 @@
     async function updateRecordConnectionsStatus() {
       const neonBadge = document.getElementById('neonStatusBadge');
       const githubBadge = document.getElementById('githubStatusBadge');
+      const noticeBox = document.getElementById('connDetailNotice');
       if (!neonBadge || !githubBadge) return;
       try {
         const res = await safeFetchJson('/api/check_db');
         if (res && res.success) {
+          const notices = [];
+
           if (res.neon_connected) {
             neonBadge.innerHTML = '🐘 Neon: <strong style="color:#69f0ae;">🟢 Conectado</strong>';
+            neonBadge.title = 'Banco de dados Neon PostgreSQL conectado e operacional.';
           } else if (res.database_url_configured) {
             const diag = (res.neon_diag || 'Erro na conexão').replace(/"/g, '&quot;');
             neonBadge.innerHTML = `<span title="${diag}">🐘 Neon: <strong style="color:#ef5350;">🔴 Erro Conexão</strong></span>`;
+            neonBadge.onclick = () => alert('Diagnóstico Neon:\n' + (res.neon_diag || 'Verifique as credenciais da DATABASE_URL no Neon.'));
+            notices.push('⚠️ <strong>Neon:</strong> Falha ao autenticar no banco com DATABASE_URL. Clique no status para ver o diagnóstico.');
           } else {
             neonBadge.innerHTML = '🐘 Neon: <strong style="color:#ffb74d;">⚪ DATABASE_URL ausente</strong>';
+            neonBadge.title = 'DATABASE_URL não configurada no ambiente da Vercel. Você pode informar a URL do Neon manualmente abaixo.';
           }
 
           if (res.github_token_configured) {
             githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#69f0ae;">🟢 API Ativa</strong>';
+            githubBadge.title = 'Token de acesso do GitHub configurado para salvar via API.';
           } else if (res.git_cli_available) {
             githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#64b5f6;">🟢 Git Local</strong>';
+            githubBadge.title = 'Comandos Git locais disponíveis no computador do desenvolvedor.';
           } else {
             githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#ffb74d;">⚪ Sem Token</strong>';
+            githubBadge.title = 'Na nuvem (Vercel), salve via token no formulário abaixo ou use o botão Baixar Arquivo.';
+            notices.push('ℹ️ <strong>GitHub na Nuvem:</strong> Para sincronizar direto pela Vercel, informe seu Token abaixo ou utilize <em>Baixar Arquivo</em> (.jsonl).');
+          }
+
+          if (noticeBox) {
+            if (notices.length > 0) {
+              noticeBox.style.display = 'block';
+              noticeBox.innerHTML = notices.join('<br>');
+            } else {
+              noticeBox.style.display = 'none';
+            }
           }
         }
       } catch (e) {

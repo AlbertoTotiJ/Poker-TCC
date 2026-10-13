@@ -73,6 +73,34 @@ def _load_env_fallback() -> None:
             pass
 
 
+def _connect_via_pg8000(db_url: str) -> Any:
+    """Estabelece conexão com PostgreSQL via driver puro em Python pg8000."""
+    import ssl
+    from urllib.parse import unquote, urlparse
+    import pg8000.dbapi
+
+    parsed = urlparse(db_url)
+    username = unquote(parsed.username or "")
+    password = unquote(parsed.password or "")
+    database = unquote(parsed.path.lstrip("/") or "neondb")
+    host = parsed.hostname or ""
+    port = int(parsed.port or 5432)
+
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    return pg8000.dbapi.connect(
+        user=username,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+        ssl_context=ssl_context,
+        timeout=8,
+    )
+
+
 def get_neon_connection_with_diag(
     custom_url: Optional[str] = None,
 ) -> Tuple[Any, Optional[str]]:
@@ -91,21 +119,32 @@ def get_neon_connection_with_diag(
                 "DATABASE_URL na Vercel ou informe a URL do Neon diretamente."
             ),
         )
+
+    psycopg2_err: Optional[str] = None
+    # 1. Tenta conectar via psycopg2
     try:
         import psycopg2
 
         conn = psycopg2.connect(db_url, connect_timeout=8)
         return (conn, None)
-    except ImportError:
-        return (
-            None,
-            (
-                "Driver psycopg2 não está disponível no runtime. Certifique-se de "
-                "que psycopg2-binary está listado no requirements.txt."
-            ),
-        )
+    except ImportError as ie:
+        psycopg2_err = f"psycopg2 indisponível: {str(ie)}"
     except Exception as ex:
-        return (None, f"Falha ao conectar no Neon: {str(ex)}")
+        psycopg2_err = f"psycopg2: {str(ex)}"
+
+    # 2. Fallback resiliente via pg8000 (driver 100% Python puro para Serverless)
+    try:
+        conn = _connect_via_pg8000(db_url)
+        return (conn, None)
+    except ImportError as ie:
+        pg8000_err = f"pg8000 indisponível: {str(ie)}"
+    except Exception as ex:
+        pg8000_err = f"pg8000: {str(ex)}"
+
+    return (
+        None,
+        f"Falha de conexão com o Neon: [{psycopg2_err}] | [{pg8000_err}]",
+    )
 
 
 def get_neon_connection(custom_url: Optional[str] = None):
@@ -116,7 +155,7 @@ def get_neon_connection(custom_url: Optional[str] = None):
 
 def ensure_neon_schema(conn) -> bool:
     """Garante que a estrutura de tabelas do Neon exista."""
-    schema_sql = """
+    schema_matches = """
     CREATE TABLE IF NOT EXISTS matches (
         id SERIAL PRIMARY KEY,
         session_id VARCHAR(64),
@@ -124,7 +163,8 @@ def ensure_neon_schema(conn) -> bool:
         hands_played INT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
-
+    """
+    schema_hands = """
     CREATE TABLE IF NOT EXISTS hands (
         id SERIAL PRIMARY KEY,
         hand_index INT,
@@ -136,14 +176,23 @@ def ensure_neon_schema(conn) -> bool:
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
     """
+    cur = conn.cursor()
     try:
-        with conn.cursor() as cur:
-            cur.execute(schema_sql)
+        cur.execute(schema_matches)
+        cur.execute(schema_hands)
         conn.commit()
         return True
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         return False
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
 
 
 def save_hand_to_neon(
@@ -153,36 +202,40 @@ def save_hand_to_neon(
     conn = get_neon_connection(custom_url=custom_url)
     if conn is None:
         return False
+    cur = conn.cursor()
     try:
         ensure_neon_schema(conn)
-        with conn.cursor() as cur:
-            insert_sql = """
-            INSERT INTO hands (
-                hand_index, pot_total, community_cards, winners,
-                bluffs_detected, hand_details
-            ) VALUES (%s, %s, %s, %s, %s, %s);
-            """
-            cur.execute(
-                insert_sql,
-                (
-                    hand_data.get("hand_index", 1),
-                    hand_data.get("pot_total", 0),
-                    json.dumps(hand_data.get("community_cards", [])),
-                    json.dumps(hand_data.get("winners", [])),
-                    hand_data.get("bluffs_count", 0),
-                    json.dumps(hand_data, ensure_ascii=False),
-                ),
-            )
+        insert_sql = """
+        INSERT INTO hands (
+            hand_index, pot_total, community_cards, winners,
+            bluffs_detected, hand_details
+        ) VALUES (%s, %s, %s, %s, %s, %s);
+        """
+        cur.execute(
+            insert_sql,
+            (
+                hand_data.get("hand_index", 1),
+                hand_data.get("pot_total", 0),
+                json.dumps(hand_data.get("community_cards", [])),
+                json.dumps(hand_data.get("winners", [])),
+                hand_data.get("bluffs_count", 0),
+                json.dumps(hand_data, ensure_ascii=False),
+            ),
+        )
         conn.commit()
-        conn.close()
         return True
     except Exception:
         try:
             conn.rollback()
-            conn.close()
         except Exception:
             pass
         return False
+    finally:
+        try:
+            cur.close()
+            conn.close()
+        except Exception:
+            pass
 
 
 def save_hand_to_file(hand_data: Dict[str, Any]) -> bool:
@@ -779,34 +832,34 @@ def save_dataset_to_neon(
             ),
         }
 
+    cur = conn.cursor()
     try:
         ensure_neon_schema(conn)
         saved_count = 0
+        insert_sql = """
+        INSERT INTO hands (
+            hand_index, pot_total, community_cards,
+            winners, bluffs_detected, hand_details
+        ) VALUES (%s, %s, %s, %s, %s, %s);
+        """
         with open(actual_file, "r", encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
                 hand_data = json.loads(line)
-                with conn.cursor() as cur:
-                    cur.execute(
-                        """
-                        INSERT INTO hands (
-                            hand_index, pot_total, community_cards,
-                            winners, bluffs_detected, hand_details
-                        ) VALUES (%s, %s, %s, %s, %s, %s);
-                        """,
-                        (
-                            hand_data.get("hand_index", 1),
-                            hand_data.get("pot_total", 0),
-                            json.dumps(hand_data.get("community_cards", [])),
-                            json.dumps(hand_data.get("winners", [])),
-                            hand_data.get("bluffs_count", 0),
-                            json.dumps(hand_data, ensure_ascii=False),
-                        ),
-                    )
+                cur.execute(
+                    insert_sql,
+                    (
+                        hand_data.get("hand_index", 1),
+                        hand_data.get("pot_total", 0),
+                        json.dumps(hand_data.get("community_cards", [])),
+                        json.dumps(hand_data.get("winners", [])),
+                        hand_data.get("bluffs_count", 0),
+                        json.dumps(hand_data, ensure_ascii=False),
+                    ),
+                )
                 saved_count += 1
         conn.commit()
-        conn.close()
         return {
             "success": True,
             "message": f"{saved_count} mãos gravadas com sucesso no banco Neon!",
@@ -815,7 +868,12 @@ def save_dataset_to_neon(
     except Exception as ex:
         try:
             conn.rollback()
-            conn.close()
         except Exception:
             pass
         return {"success": False, "error": f"Erro ao gravar no Neon: {str(ex)}"}
+    finally:
+        try:
+            cur.close()
+            conn.close()
+        except Exception:
+            pass

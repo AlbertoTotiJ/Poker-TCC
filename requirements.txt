@@ -1,4 +1,5 @@
 # Dependências de execução do servidor Vercel
 # O motor de regras e a interface web utilizam a biblioteca padrão do Python.
-# O driver psycopg2-binary é necessário para conexões com o banco Neon PostgreSQL na nuvem:
+# Drivers para conexões com o banco Neon PostgreSQL na nuvem:
 psycopg2-binary>=2.9.9
+pg8000>=1.31.2
