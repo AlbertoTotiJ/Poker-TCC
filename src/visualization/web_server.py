@@ -676,6 +676,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 conn, neon_diag = get_neon_connection_with_diag()
                 neon_ok = conn is not None
                 neon_hands_count = 0
+                neon_columns = []
+                neon_sample = []
                 if conn:
                     try:
                         cur = conn.cursor()
@@ -683,9 +685,24 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                         row = cur.fetchone()
                         if row:
                             neon_hands_count = int(row[0])
+                        cur.execute(
+                            "SELECT column_name FROM information_schema.columns "
+                            "WHERE table_name = 'hands';"
+                        )
+                        neon_columns = [r[0] for r in cur.fetchall()]
+                        cur.execute(
+                            "SELECT id, pot_total, created_at FROM hands "
+                            "ORDER BY id DESC LIMIT 2;"
+                        )
+                        for r in cur.fetchall():
+                            neon_sample.append({
+                                "id": r[0],
+                                "pot_total": r[1],
+                                "created_at": str(r[2]),
+                            })
                         cur.close()
-                    except Exception:
-                        pass
+                    except Exception as ex:
+                        neon_diag = f"Erro na inspeção: {str(ex)}"
                     finally:
                         try:
                             conn.close()
@@ -723,6 +740,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     "neon_connected": neon_ok,
                     "neon_diag": neon_diag,
                     "neon_hands_count": neon_hands_count,
+                    "neon_columns": neon_columns,
+                    "neon_sample": neon_sample,
                     "neon_host": neon_host,
                     "neon_database": neon_db,
                     "database_url_configured": bool(raw_db_url),
