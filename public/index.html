@@ -1665,6 +1665,7 @@
       sessionId = 'sess_' + Math.random().toString(36).substring(2, 11);
       localStorage.setItem('poker_session_id', sessionId);
     }
+    let lastSimulatedFullRecords = [];
 
     // Official Poker Chip Denominations
     const CHIP_DENOMINATIONS = [
@@ -2300,8 +2301,9 @@
           const notices = [];
 
           if (res.neon_connected) {
-            neonBadge.innerHTML = '🐘 Neon: <strong style="color:#69f0ae;">🟢 Conectado</strong>';
-            neonBadge.title = 'Banco de dados Neon PostgreSQL conectado e operacional.';
+            const countStr = (res.neon_hands_count !== undefined) ? ` (${res.neon_hands_count} ${res.neon_hands_count === 1 ? 'mão' : 'mãos'} salvas)` : '';
+            neonBadge.innerHTML = `🐘 Neon: <strong style="color:#69f0ae;">🟢 Conectado${countStr}</strong>`;
+            neonBadge.title = `Banco de dados Neon PostgreSQL conectado e operacional. Total gravado no banco: ${res.neon_hands_count || 0}.`;
           } else if (res.database_url_configured) {
             const diag = (res.neon_diag || 'Erro na conexão').replace(/"/g, '&quot;');
             neonBadge.innerHTML = `<span title="${diag}">🐘 Neon: <strong style="color:#ef5350;">🔴 Erro Conexão</strong></span>`;
@@ -2394,6 +2396,9 @@
           btnStart.disabled = false;
           return;
         }
+
+        lastSimulatedFullRecords = data.full_records || [];
+        updateRecordConnectionsStatus();
 
         const wins = data.wins_by_profile || {};
         const champ = data.champion || {};
@@ -2597,14 +2602,19 @@
       feedback.innerText = '🐘 Gravando partidas no banco de dados Neon PostgreSQL... Aguarde!';
 
       try {
+        const payload = {
+          endpoint: 'save_to_neon',
+          auth_code: code,
+          database_url: customNeon || undefined
+        };
+        if (lastSimulatedFullRecords && lastSimulatedFullRecords.length > 0) {
+          payload.hands = lastSimulatedFullRecords;
+        }
+
         const data = await safeFetchJson('/api/save_to_neon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: 'save_to_neon',
-            auth_code: code,
-            database_url: customNeon || undefined
-          })
+          body: JSON.stringify(payload)
         });
         if (data.success) {
           feedback.style.background = 'rgba(0, 230, 153, 0.2)';
@@ -2627,7 +2637,20 @@
     }
 
     function downloadRecordedDataset() {
-      window.location.href = '/api/download_dataset';
+      if (lastSimulatedFullRecords && lastSimulatedFullRecords.length > 0) {
+        const lines = lastSimulatedFullRecords.map(r => JSON.stringify(r)).join('\n') + '\n';
+        const blob = new Blob([lines], { type: 'application/x-jsonlines;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'partidas_gravadas.jsonl';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        window.location.href = '/api/download_dataset';
+      }
     }
 
     /* Ajuste dinâmico e auto-scale da mesa para qualquer tamanho de tela (mobile, tablet, desktop) */

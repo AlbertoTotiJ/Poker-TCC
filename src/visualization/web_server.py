@@ -675,11 +675,22 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 )
                 conn, neon_diag = get_neon_connection_with_diag()
                 neon_ok = conn is not None
+                neon_hands_count = 0
                 if conn:
                     try:
-                        conn.close()
+                        cur = conn.cursor()
+                        cur.execute("SELECT COUNT(*) FROM hands;")
+                        row = cur.fetchone()
+                        if row:
+                            neon_hands_count = int(row[0])
+                        cur.close()
                     except Exception:
                         pass
+                    finally:
+                        try:
+                            conn.close()
+                        except Exception:
+                            pass
                 rec_file = get_record_file()
                 target_file = rec_file if rec_file.exists() else RECORD_FILE
                 total_hands = 0
@@ -696,6 +707,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     "success": True,
                     "neon_connected": neon_ok,
                     "neon_diag": neon_diag,
+                    "neon_hands_count": neon_hands_count,
                     "database_url_configured": bool(
                         os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
                     ),
@@ -802,9 +814,11 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 from src.database.recorder import save_dataset_to_neon
                 auth_code = str(data.get("auth_code", ""))
                 custom_url = data.get("database_url")
+                hands = data.get("hands")
                 result = save_dataset_to_neon(
                     auth_code=auth_code,
                     custom_db_url=custom_url,
+                    hands=hands,
                 )
                 self._send_json(result)
                 return

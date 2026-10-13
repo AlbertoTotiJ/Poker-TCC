@@ -209,7 +209,7 @@ def save_hand_to_neon(
         INSERT INTO hands (
             hand_index, pot_total, community_cards, winners,
             bluffs_detected, hand_details
-        ) VALUES (%s, %s, %s, %s, %s, %s);
+        ) VALUES (%s, %s, CAST(%s AS jsonb), CAST(%s AS jsonb), %s, CAST(%s AS jsonb));
         """
         cur.execute(
             insert_sql,
@@ -392,6 +392,7 @@ def run_recording_batch(
     )
 
     hands_recorded: List[Dict[str, Any]] = []
+    full_hand_records: List[Dict[str, Any]] = []
     neon_saved_count = 0
     file_saved_count = 0
     total_bluffs_detected = 0
@@ -556,6 +557,8 @@ def run_recording_batch(
             "actions": actions_log,
         }
 
+        full_hand_records.append(hand_record)
+
         if save_hand_to_file(hand_record):
             file_saved_count += 1
         if save_hand_to_neon(hand_record):
@@ -612,6 +615,7 @@ def run_recording_batch(
         "leaderboard": leaderboard,
         "wins_by_profile": wins_by_profile,
         "hands_summary": hands_recorded,
+        "full_records": full_hand_records,
     }
 
 
@@ -809,17 +813,34 @@ def save_dataset_to_github(
 def save_dataset_to_neon(
     auth_code: str,
     custom_db_url: Optional[str] = None,
+    hands: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
-    """Salva todas as partidas do arquivo de dataset no banco de dados Neon."""
+    """Salva partidas no banco Neon (a partir da lista fornecida ou do arquivo)."""
     if not verify_auth_code(auth_code):
         return {"success": False, "error": "Código de autenticação inválido."}
 
-    target_file = get_record_file()
-    actual_file = target_file if target_file.exists() else RECORD_FILE
-    if not actual_file.exists():
+    hands_to_save: List[Dict[str, Any]] = []
+    if hands and isinstance(hands, list) and len(hands) > 0:
+        hands_to_save = hands
+    else:
+        target_file = get_record_file()
+        actual_file = target_file if target_file.exists() else RECORD_FILE
+        if actual_file.exists():
+            with open(actual_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            hands_to_save.append(json.loads(line))
+                        except Exception:
+                            pass
+
+    if not hands_to_save:
         return {
             "success": False,
-            "error": "Nenhum arquivo de partidas gravadas encontrado.",
+            "error": (
+                "Nenhuma partida encontrada para salvar. "
+                "Simule as rodadas primeiro."
+            ),
         }
 
     conn, diag_err = get_neon_connection_with_diag(custom_url=custom_db_url)
@@ -840,25 +861,21 @@ def save_dataset_to_neon(
         INSERT INTO hands (
             hand_index, pot_total, community_cards,
             winners, bluffs_detected, hand_details
-        ) VALUES (%s, %s, %s, %s, %s, %s);
+        ) VALUES (%s, %s, CAST(%s AS jsonb), CAST(%s AS jsonb), %s, CAST(%s AS jsonb));
         """
-        with open(actual_file, "r", encoding="utf-8") as f:
-            for line in f:
-                if not line.strip():
-                    continue
-                hand_data = json.loads(line)
-                cur.execute(
-                    insert_sql,
-                    (
-                        hand_data.get("hand_index", 1),
-                        hand_data.get("pot_total", 0),
-                        json.dumps(hand_data.get("community_cards", [])),
-                        json.dumps(hand_data.get("winners", [])),
-                        hand_data.get("bluffs_count", 0),
-                        json.dumps(hand_data, ensure_ascii=False),
-                    ),
-                )
-                saved_count += 1
+        for hand_data in hands_to_save:
+            cur.execute(
+                insert_sql,
+                (
+                    hand_data.get("hand_index", 1),
+                    hand_data.get("pot_total", 0),
+                    json.dumps(hand_data.get("community_cards", [])),
+                    json.dumps(hand_data.get("winners", [])),
+                    hand_data.get("bluffs_count", 0),
+                    json.dumps(hand_data, ensure_ascii=False),
+                ),
+            )
+            saved_count += 1
         conn.commit()
         return {
             "success": True,
