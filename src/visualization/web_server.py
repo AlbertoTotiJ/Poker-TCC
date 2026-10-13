@@ -703,14 +703,30 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 has_github_token = bool(
                     os.environ.get("GITHUB_TOKEN") or os.environ.get("GITHUB_PAT")
                 )
+                neon_host = ""
+                neon_db = ""
+                raw_db_url = (
+                    os.environ.get("DATABASE_URL")
+                    or os.environ.get("POSTGRES_URL")
+                    or ""
+                )
+                if raw_db_url:
+                    try:
+                        from urllib.parse import urlparse
+                        p_url = urlparse(raw_db_url)
+                        neon_host = p_url.hostname or ""
+                        neon_db = p_url.path.lstrip("/") or ""
+                    except Exception:
+                        pass
+
                 self._send_json({
                     "success": True,
                     "neon_connected": neon_ok,
                     "neon_diag": neon_diag,
                     "neon_hands_count": neon_hands_count,
-                    "database_url_configured": bool(
-                        os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
-                    ),
+                    "neon_host": neon_host,
+                    "neon_database": neon_db,
+                    "database_url_configured": bool(raw_db_url),
                     "github_token_configured": has_github_token,
                     "git_cli_available": shutil.which("git") is not None,
                     "file_exists": target_file.exists(),
