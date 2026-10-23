@@ -147,11 +147,12 @@ O projeto está configurado para deploy contínuo gratuito na **Vercel**:
   - [x] Controlador de mesa, blinds, streets e showdown (`src/engine/table.py` & `src/engine/player.py`).
   - [x] Suíte de 27 testes unitários com 100% de aprovação (`tests/`).
   - [x] Script de demonstração executável (`scripts/demo_sprint1.py`).
-- [ ] **Sprint 2: Módulo de Agentes Autônomos de IA**
+- [x] **Sprint 2: Módulo de Agentes Autônomos de IA**
   - [x] Documentação e especificação arquitetural ([`read.me agents.md`](read.me%20agents.md) e [`src/agents/README.md`](src/agents/README.md)).
-  - [ ] Agente Matemático probabilístico e analítico (`src/agents/mathematical_agent.py`).
-  - [ ] Agente Blefador e exploração de oponentes (`src/agents/bluffer_agent.py`).
-  - [ ] Agente Híbrido combinando equidade e blefes (`src/agents/hybrid_agent.py`).
+  - [x] Agente Matemático probabilístico e analítico (`src/agents/mathematical_agent.py`).
+  - [x] Agente Blefador e exploração de oponentes (`src/agents/bluffer_agent.py`).
+  - [x] Agente Híbrido combinando equidade e blefes (`src/agents/hybrid_agent.py`).
+  - [x] Suíte de testes unitários dedicada e pipelines de calibração/treinamento (`scripts/train_mathematical_agent.py`, `scripts/train_bluffer_agent.py`).
 - [ ] **Sprint 3: Telemetria e Persistência**
   - [ ] Modelos de dados e schemas (`src/telemetry/schemas.py`).
   - [ ] Rastreador de trajetórias pré-flop ao showdown (`src/telemetry/tracker.py`).
