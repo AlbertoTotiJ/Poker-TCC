@@ -302,8 +302,8 @@ class BlufferAgent(BaseAgent):
         # Cenário A: Custo Zero ou Limp / Cobrir o Big Blind (to_call <= big_blind)
         # O blefador NUNCA dá fold para ver o flop por um BB!
         if to_call <= big_blind:
-            # Chance de aplicar Roubo de Blinds (Pre-Flop Steal calibrado para ~20%)
-            wants_steal = roll < (self.params.cbet_frequency * 0.30)
+            # Roubo de Blinds pré-flop pontual (8%) para maximizar idas ao Flop
+            wants_steal = roll < 0.08
             if can_raise and wants_steal:
                 raise_amt = current_highest_bet + max(min_raise, big_blind * 2)
                 max_pos = player_current_bet + player_stack
@@ -341,34 +341,15 @@ class BlufferAgent(BaseAgent):
         # Cenário B: Enfrentando aumento padrão pré-flop (to_call entre 1 e 3.5 BBs)
         is_standard_raise = to_call <= big_blind * 3.5
         if is_standard_raise:
-            # Possibilidade moderada de 3-Bet Bluff para pressionar o agressor
-            wants_3bet = roll < (self.params.bluff_raise_frequency * 0.30)
-            if can_raise and wants_3bet and (is_speculative or roll < 0.15):
-                raise_amt = current_highest_bet + max(min_raise, int(to_call * 2.4))
-                max_pos = player_current_bet + player_stack
-                raise_amt = min(max_pos, raise_amt)
-                if raise_amt > current_highest_bet:
-                    return BluffDecision(
-                        action_type=ActionType.RAISE,
-                        amount=raise_amt,
-                        is_bluff=True,
-                        tactic=BluffTactic.PREFLOP_3BET.value,
-                        fold_equity=0.60,
-                        reason=(
-                            "Re-aumento 3-Bet de blefe pré-flop pressionando oponente"
-                        ),
-                    )
-
-            # Com mão especulativa ou sorteio favorável, paga para ver o Flop
-            wants_call = is_speculative or (roll < 0.70)
-            if wants_call and ActionType.CALL in legal_actions:
+            # Defesa com mão especulativa ou equidade para disputar o Flop
+            if (is_speculative or roll < 0.60) and ActionType.CALL in legal_actions:
                 return BluffDecision(
                     action_type=ActionType.CALL,
                     amount=0,
                     is_bluff=False,
                     tactic=BluffTactic.PREFLOP_DEFEND.value,
-                    fold_equity=0.40,
-                    reason="Defesa pré-flop com mão especulativa para blefar pós-flop",
+                    fold_equity=0.45,
+                    reason="Defesa pré-flop pagando aumento para disputar o Flop",
                 )
 
         # Cenário C: Aumento pesado / 4-Bet / All-In (to_call > 3.5 BBs)
@@ -459,6 +440,8 @@ class BlufferAgent(BaseAgent):
                 big_blind=big_blind,
                 legal_actions=legal_actions,
                 hand_desc=hand_desc,
+                street=street,
+                num_opponents=num_opponents,
             )
 
         # 2. Oportunidade de Semi-Blefe (draws no Flop e Turn)
@@ -474,6 +457,7 @@ class BlufferAgent(BaseAgent):
                 min_raise=min_raise,
                 big_blind=big_blind,
                 legal_actions=legal_actions,
+                num_opponents=num_opponents,
             )
             if semi_decision is not None:
                 return semi_decision
@@ -481,7 +465,14 @@ class BlufferAgent(BaseAgent):
         # 3. Blefes Puros e Exploração de Fraqueza
         roll = self.rng.random()
         bluff_eligible = fold_equity >= self.params.fold_equity_threshold
-        wants_bluff = roll < (self.params.bluff_frequency * (fold_equity / 0.50))
+        multiway_penalty = 0.40 if num_opponents >= 2 else 1.0
+        if street == Street.RIVER and num_opponents >= 2:
+            multiway_penalty = 0.0
+        wants_bluff = roll < (
+            self.params.bluff_frequency
+            * (fold_equity / 0.50)
+            * multiway_penalty
+        )
 
         # Cenário A: Mesa em Check (to_call == 0) -> C-Bet Steal / Pote Órfão
         if to_call == 0:
@@ -489,6 +480,13 @@ class BlufferAgent(BaseAgent):
                 ActionType.BET in legal_actions
                 or ActionType.RAISE in legal_actions
             )
+            # Em multiway no river, blefe puro tem fold equity zero;
+            # check para ver cartas no showdown
+            if street == Street.RIVER and num_opponents >= 2:
+                wants_bluff = False
+            elif num_opponents >= 2 and street in (Street.FLOP, Street.TURN):
+                wants_bluff = wants_bluff and (roll < 0.15)
+
             if wants_bluff and bluff_eligible and can_bet:
                 sizing = (
                     pot_size
@@ -537,7 +535,8 @@ class BlufferAgent(BaseAgent):
         is_probe_bet = to_call <= max(big_blind * 2, int(pot_size * 0.35))
 
         if (
-            wants_bluff
+            num_opponents == 1
+            and wants_bluff
             and can_raise
             and (is_probe_bet or is_scare)
             and roll < self.params.bluff_raise_frequency
@@ -564,20 +563,24 @@ class BlufferAgent(BaseAgent):
                     semi_bluff_outs=semi_outs,
                 )
 
-        # Float Call: Pagar barato com perspectiva de roubar o pote depois
-        if (
-            ActionType.CALL in legal_actions
-            and to_call <= big_blind * 2
-            and street in (Street.PREFLOP, Street.FLOP)
-            and roll < 0.30
-        ):
+        # Pagar aposta acessível com draws, overcards ou no river para showdown
+        can_call = ActionType.CALL in legal_actions
+        is_massive_overbet = to_call > pot_size * 1.2
+        is_mod_bet = to_call <= max(big_blind * 3, int(pot_size * 0.45))
+        is_river_catch = street == Street.RIVER and to_call <= pot_size * 0.50
+        wants_call = (
+            not is_massive_overbet
+            and (semi_outs >= 4 or is_mod_bet or is_river_catch or roll < 0.60)
+        )
+
+        if can_call and wants_call:
             return BluffDecision(
                 action_type=ActionType.CALL,
                 amount=0,
                 is_bluff=False,
                 tactic=BluffTactic.FLOAT_CALL.value,
                 fold_equity=fold_equity,
-                reason="Call posicional de flutuação para blefar na street seguinte",
+                reason="Call de flutuação e defesa com perspectiva de showdown",
                 semi_bluff_outs=semi_outs,
             )
 
@@ -699,8 +702,8 @@ class BlufferAgent(BaseAgent):
         """Classifica se a mão atual possui valor intrínseco consolidado."""
         if len(all_cards) >= 5:
             score = evaluate_hand(all_cards)
-            # Dois pares ou melhor é tratado como jogo formado legítimo
-            is_strong = score.hand_rank.value >= 3
+            # Qualquer par ou melhor é tratado como jogo formado legítimo para showdown
+            is_strong = score.hand_rank.value >= 2
             return is_strong, score.description
 
         if len(hole_cards) >= 2:
@@ -726,12 +729,41 @@ class BlufferAgent(BaseAgent):
         min_raise: int,
         big_blind: int,
         legal_actions: Sequence[ActionType],
+        num_opponents: int = 1,
     ) -> Optional[BluffDecision]:
         """Avalia e formata manobra de semi-blefe combinando equidade e FE."""
         if self.rng.random() >= self.params.semi_bluff_frequency:
             return None
 
-        # Aposta de semi-blefe quando mesa der check
+        # Em multiway (>= 2 oponentes): controle de pote para ver cartas
+        if num_opponents >= 2:
+            if to_call == 0 and ActionType.CHECK in legal_actions:
+                return BluffDecision(
+                    action_type=ActionType.CHECK,
+                    amount=0,
+                    is_bluff=False,
+                    tactic=BluffTactic.FREE_CHECK.value,
+                    fold_equity=fold_equity,
+                    reason=f"Check de pot control multiway com draw ({semi_outs} outs)",
+                    semi_bluff_outs=semi_outs,
+                )
+            if (
+                to_call > 0
+                and ActionType.CALL in legal_actions
+                and to_call <= max(big_blind * 3, int(pot_size * 0.40))
+            ):
+                return BluffDecision(
+                    action_type=ActionType.CALL,
+                    amount=0,
+                    is_bluff=False,
+                    tactic=BluffTactic.FLOAT_CALL.value,
+                    fold_equity=fold_equity,
+                    reason=f"Call com draw em pote multiway ({semi_outs} outs)",
+                    semi_bluff_outs=semi_outs,
+                )
+            return None
+
+        # Aposta de semi-blefe quando mesa der check (Heads-up)
         if to_call == 0 and ActionType.BET in legal_actions:
             target_bet = int(pot_size * 0.65 * self.params.aggression_multiplier)
             target_bet = max(big_blind, min(player_stack, target_bet))
@@ -746,7 +778,7 @@ class BlufferAgent(BaseAgent):
                     semi_bluff_outs=semi_outs,
                 )
 
-        # Semi-blefe de re-aumento contra aposta moderada
+        # Semi-blefe de re-aumento contra aposta moderada (Heads-up)
         can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
         if to_call > 0 and can_raise and to_call <= pot_size * 0.40:
             raise_val = current_highest_bet + max(min_raise, int(to_call * 2.2))
@@ -776,25 +808,32 @@ class BlufferAgent(BaseAgent):
         big_blind: int,
         legal_actions: Sequence[ActionType],
         hand_desc: str,
+        street: Optional[Street] = None,
+        num_opponents: int = 1,
     ) -> BluffDecision:
         """Executa aposta legítima por valor ao deter mão forte."""
-        if ActionType.RAISE in legal_actions and player_stack > to_call:
-            raise_val = current_highest_bet + max(
-                min_raise, int(pot_size * 0.50 * self.params.aggression_multiplier)
-            )
-            max_pos = player_current_bet + player_stack
-            raise_val = min(max_pos, raise_val)
+        if to_call > 0 and ActionType.CALL in legal_actions:
             return BluffDecision(
-                action_type=ActionType.RAISE,
-                amount=raise_val,
+                action_type=ActionType.CALL,
+                amount=0,
                 is_bluff=False,
                 tactic=BluffTactic.VALUE_PLAY.value,
-                fold_equity=0.25,
-                reason=f"Aposta de valor legítimo com jogo formado ({hand_desc})",
+                fold_equity=0.20,
+                reason=f"Call de valor para showdown com jogo formado ({hand_desc})",
             )
 
-        if ActionType.BET in legal_actions:
-            bet_val = max(big_blind, int(pot_size * 0.45))
+        # Em mesa multiway (>= 2 oponentes): preferência de pot control para showdown
+        is_multiway = num_opponents >= 2
+        roll = self.rng.random()
+        wants_bet = True
+        if is_multiway:
+            if street == Street.RIVER:
+                wants_bet = roll < 0.10
+            else:
+                wants_bet = roll < 0.20
+
+        if wants_bet and ActionType.BET in legal_actions and player_stack > 0:
+            bet_val = max(big_blind, int(pot_size * 0.30))
             bet_val = min(player_stack, bet_val)
             return BluffDecision(
                 action_type=ActionType.BET,
@@ -805,33 +844,24 @@ class BlufferAgent(BaseAgent):
                 reason=f"Abertura por valor legítimo ({hand_desc})",
             )
 
-        if ActionType.CALL in legal_actions:
-            return BluffDecision(
-                action_type=ActionType.CALL,
-                amount=0,
-                is_bluff=False,
-                tactic=BluffTactic.VALUE_PLAY.value,
-                fold_equity=0.25,
-                reason=f"Call de valor ({hand_desc})",
-            )
-
         if ActionType.CHECK in legal_actions:
             return BluffDecision(
                 action_type=ActionType.CHECK,
                 amount=0,
                 is_bluff=False,
                 tactic=BluffTactic.FREE_CHECK.value,
-                fold_equity=0.25,
-                reason="Check por controle de pote com mão formada",
+                fold_equity=0.30,
+                reason=f"Check de controle de pote para showdown ({hand_desc})",
             )
 
+        fallback = legal_actions[0] if legal_actions else ActionType.FOLD
         return BluffDecision(
-            action_type=ActionType.FOLD,
+            action_type=fallback,
             amount=0,
             is_bluff=False,
-            tactic=BluffTactic.CONTINGENCY.value,
-            fold_equity=0.0,
-            reason="Contingência",
+            tactic=BluffTactic.VALUE_PLAY.value,
+            fold_equity=0.25,
+            reason=f"Ação de valor ({hand_desc})",
         )
 
     def _track_decision_telemetry(self, decision: BluffDecision) -> None:
