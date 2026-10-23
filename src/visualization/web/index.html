@@ -1652,11 +1652,15 @@
       </div>
 
       <div class="form-group">
-        <label for="recordTableFormat">Composição e Modelos de Agentes de IA:</label>
-        <select id="recordTableFormat" onchange="updateRosterDescriptionNotice()">
+        <label for="recordTableFormat">Composição e Configuração da Mesa:</label>
+        <select id="recordTableFormat" onchange="handleRecordTableFormatChange()">
+          <optgroup label="⚙️ Configuração Personalizada">
+            <option value="custom" data-players="9">⚙️ Personalizar Configuração da Mesa (2 a 9 Agentes de IA)</option>
+          </optgroup>
           <optgroup label="🤖 Torneios de IA & Pesquisa Científica (TCC)">
+            <option value="tcc_experiment_9" data-players="9">🎓 Experimento TCC 9-Max: 4 Matemáticos + 5 Blefadores (9 Jogadores)</option>
             <option value="gh_math_showdown" data-players="6" selected>🧠 Duelo GH vs Alberto: 2 GhMath (Gustavo), 2 Matemáticos (Alberto), 2 Bots (6 Jogadores)</option>
-            <option value="math_vs_bots" data-players="6" selected>📐 Duelo: 3 Matemáticos Reais vs 3 Bots Heurísticos (6 Jogadores)</option>
+            <option value="math_vs_bots" data-players="6">📐 Duelo: 3 Matemáticos Reais vs 3 Bots Heurísticos (6 Jogadores)</option>
             <option value="full_ai_tournament" data-players="6">🏆 Torneio Completo de IAs: 2 Matemáticos, 2 Blefadores, 2 Híbridos (6 Jogadores)</option>
             <option value="bluff_challenge" data-players="6">🃏 Desafio de Blefe: 2 Blefadores, 2 Matemáticos, 2 Conservadores (6 Jogadores)</option>
             <option value="hybrid_lab" data-players="6">🧠 Laboratório Híbrido: 3 Agentes Híbridos vs 3 Matemáticos Reais (6 Jogadores)</option>
@@ -1670,6 +1674,33 @@
         </select>
         <div id="rosterDescriptionNotice" style="font-size:0.74rem; color:#bbb; margin-top:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-left:3px solid var(--gold-light); padding:6px 10px; border-radius:4px; line-height:1.35;">
           📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).
+        </div>
+      </div>
+
+      <!-- Seção de Personalização dos Assentos da Mesa de Gravação -->
+      <div id="recordCustomSeatsSection" style="display: none; margin-top: -6px; margin-bottom: 14px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 8px; padding: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 700; color: var(--gold-light); font-size: 0.85rem;">⚙️ Configuração dos Assentos da Mesa</span>
+          <span style="font-size: 0.72rem; color: #81c784; background: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 4px; padding: 2px 6px;">100% IA Autônoma</span>
+        </div>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label for="recordNumPlayersSelect" style="font-size: 0.76rem; color: #ddd;">Quantidade de Jogadores na Mesa (2 a 9):</label>
+          <select id="recordNumPlayersSelect" onchange="renderRecordCustomSeatsInputs()" style="width: 100%; background: #0a0e14; border: 1px solid #444; color: #fff; padding: 6px 8px; border-radius: 4px; font-size: 0.82rem;">
+            <option value="2">2 Jogadores (Heads-up 1v1)</option>
+            <option value="3">3 Jogadores</option>
+            <option value="4">4 Jogadores</option>
+            <option value="5">5 Jogadores</option>
+            <option value="6">6 Jogadores (6-Max)</option>
+            <option value="7">7 Jogadores</option>
+            <option value="8">8 Jogadores</option>
+            <option value="9" selected>9 Jogadores (Mesa Cheia / 9-Max)</option>
+          </select>
+        </div>
+        <div id="recordCustomSeatsNotice" style="font-size: 0.73rem; color: #b3e5fc; background: rgba(3, 169, 244, 0.12); border-left: 3px solid #03a9f4; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; line-height: 1.35;">
+          💡 <strong>Nota da Pesquisa:</strong> Na gravação de partidas, todos os assentos são controlados por Agentes de IA. Ao selecionar <strong>9 Jogadores</strong>, a <strong>Cadeira 9</strong> é configurada como outro agente de IA no lugar do jogador humano.
+        </div>
+        <div id="recordCustomSeatsList" class="custom-seats-container" style="max-height: 240px; overflow-y: auto; padding-right: 4px;">
+          <!-- Preenchido via renderRecordCustomSeatsInputs() -->
         </div>
       </div>
 
@@ -1693,6 +1724,7 @@
     let botSpeed = 700; // ms
     let selectedAgentMode = 'gh_math';
     let customAgentsConfig = [];
+    let recordCustomAgentsConfig = [];
     const speedModes = [
       { label: "Normal (700ms)", delay: 700 },
       { label: "Rápido (250ms)", delay: 250 },
@@ -2214,13 +2246,32 @@
         const stackChips = renderChipsVisual(p.stack, 2);
         const isGhMath = p.agent_type === 'gh_math';
         const isMath = p.agent_type === 'math';
-        const agentPillHTML = isHuman
-          ? '<span class="agent-pill pill-human">👤 Você</span>'
-          : (isGhMath
-              ? '<span class="agent-pill" style="background:rgba(0,230,118,0.22);color:#00e676;border:1px solid #00e676;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="GhMathAgent (Gustavo) - Kelly & Implied Odds">🧠 GhMath (GH)</span>'
-              : (isMath
-                  ? '<span class="agent-pill pill-math" title="Agente Feito - EV & Probabilidade">📐 Matemático</span>'
-                  : '<span class="agent-pill pill-bot" title="Bot Padrão Heurístico">🤖 Bot</span>'));
+        const isBluffer = p.agent_type === 'bluffer';
+        const isHybrid = p.agent_type === 'hybrid';
+        const isAggressive = p.agent_type === 'aggressive';
+        const isConservative = p.agent_type === 'conservative';
+        const isBalanced = p.agent_type === 'balanced';
+
+        let agentPillHTML = '';
+        if (isHuman) {
+          agentPillHTML = '<span class="agent-pill pill-human">👤 Você</span>';
+        } else if (isGhMath) {
+          agentPillHTML = '<span class="agent-pill" style="background:rgba(0,230,118,0.22);color:#00e676;border:1px solid #00e676;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="GhMathAgent (Gustavo) - Kelly & Implied Odds">🧠 GhMath (GH)</span>';
+        } else if (isMath) {
+          agentPillHTML = '<span class="agent-pill pill-math" title="Agente Feito - EV & Probabilidade">📐 Matemático</span>';
+        } else if (isBluffer) {
+          agentPillHTML = '<span class="agent-pill" style="background:rgba(233,30,99,0.22);color:#ff4081;border:1px solid #ff4081;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="Agente Blefador - Fold Equity & Semi-bluff">🃏 Blefador</span>';
+        } else if (isHybrid) {
+          agentPillHTML = '<span class="agent-pill" style="background:rgba(156,39,176,0.22);color:#e040fb;border:1px solid #e040fb;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="Agente Híbrido - EV + Blefe">🧠 Híbrido</span>';
+        } else if (isAggressive) {
+          agentPillHTML = '<span class="agent-pill" style="background:rgba(244,67,54,0.22);color:#ff5252;border:1px solid #ff5252;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="Bot Agressivo">⚔️ Agressivo</span>';
+        } else if (isConservative) {
+          agentPillHTML = '<span class="agent-pill" style="background:rgba(33,150,243,0.22);color:#448aff;border:1px solid #448aff;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="Bot Conservador">🛡️ Conservador</span>';
+        } else if (isBalanced) {
+          agentPillHTML = '<span class="agent-pill" style="background:rgba(255,193,7,0.22);color:#ffd54f;border:1px solid #ffd54f;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="Bot Equilibrado">⚖️ Equilibrado</span>';
+        } else {
+          agentPillHTML = '<span class="agent-pill pill-bot" title="Bot Padrão Heurístico">🤖 Bot</span>';
+        }
 
         seatDiv.innerHTML = `
           <div class="seat-badge">
@@ -2395,6 +2446,8 @@
       if (!notice) return;
 
       const descMap = {
+        'custom': '⚙️ <strong>Mesa Personalizada:</strong> Configuração individual cadeira por cadeira (2 a 9 jogadores). Na mesa cheia (9 jogadores), o 9º assento é preenchido pelo agente selecionado no lugar do jogador humano.',
+        'tcc_experiment_9': '🎓 <strong>Experimento TCC 9-Max:</strong> 4 Agentes Matemáticos Reais (Alberto) vs 5 Agentes Blefadores (9 Jogadores autônomos, com o 9º agente ocupando a 9ª cadeira no lugar do jogador humano).',
         'gh_math_showdown': '🧠 <strong>Duelo GH vs Alberto (XAI Quartz):</strong> 2 GhMathAgent (Gustavo com telemetria cognitiva para Rede Neural) vs 2 Agentes Matemáticos (Alberto) e 2 Bots Heurísticos.',
         'math_vs_bots': '📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).',
         'full_ai_tournament': '🏆 <strong>Torneio Completo de IAs:</strong> Batalha multimodelo entre os 3 agentes do projeto: 2 Matemáticos (probabilísticos), 2 Blefadores (fold equity) e 2 Híbridos (estratégia integrada).',
@@ -2409,13 +2462,67 @@
       notice.innerHTML = descMap[val] || 'Composição personalizada selecionada.';
     }
 
+    function handleRecordTableFormatChange() {
+      const select = document.getElementById('recordTableFormat');
+      const section = document.getElementById('recordCustomSeatsSection');
+      if (select && section) {
+        if (select.value === 'custom') {
+          section.style.display = 'block';
+          renderRecordCustomSeatsInputs();
+        } else {
+          section.style.display = 'none';
+        }
+      }
+      updateRosterDescriptionNotice();
+    }
+
+    function renderRecordCustomSeatsInputs() {
+      const container = document.getElementById('recordCustomSeatsList');
+      if (!container) return;
+      const numPlayersSelect = document.getElementById('recordNumPlayersSelect');
+      const numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || 9;
+
+      let html = '';
+      for (let i = 0; i < numPlayers; i++) {
+        const seatNum = i + 1;
+        const isSeat9 = (seatNum === 9);
+        const defaultVal = recordCustomAgentsConfig[i] || (
+          isSeat9 ? 'bluffer' : (i < 4 ? 'math' : (i % 2 === 0 ? 'gh_math' : 'bluffer'))
+        );
+
+        const highlightStyle = isSeat9
+          ? 'style="border: 1px solid rgba(255, 213, 79, 0.45); background: rgba(255, 213, 79, 0.08); padding: 8px; border-radius: 6px;"'
+          : '';
+
+        const labelText = isSeat9
+          ? '🌟 <strong style="color: #ffd54f;">Cadeira 9 (9º Agente - No lugar do Jogador Humano):</strong>'
+          : `Cadeira ${seatNum} (Agente de IA):`;
+
+        html += `
+          <div class="custom-seat-row" ${highlightStyle}>
+            <label for="recCustomSeatSelect_${i}">${labelText}</label>
+            <select id="recCustomSeatSelect_${i}" onchange="recordCustomAgentsConfig[${i}] = this.value">
+              <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
+              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
+              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>
+              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>🧠 Agente Híbrido</option>
+              <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>⚔️ Bot Agressivo</option>
+              <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🛡️ Bot Conservador</option>
+              <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>⚖️ Bot Equilibrado</option>
+            </select>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
     function openRecordModal() {
       document.getElementById('recordModal').classList.add('active');
       document.getElementById('recordStatusArea').style.display = 'none';
       document.getElementById('recordResultBox').style.display = 'none';
       document.getElementById('btnStartRecord').disabled = false;
       updateRecordConnectionsStatus();
-      updateRosterDescriptionNotice();
+      handleRecordTableFormatChange();
     }
 
     function closeRecordModal() {
@@ -2427,8 +2534,21 @@
       const numHands = parseInt(document.getElementById('recordNumHands').value) || 10;
       const rosterSelect = document.getElementById('recordTableFormat');
       const rosterMode = rosterSelect ? rosterSelect.value : 'classic_6';
-      const selectedOpt = rosterSelect ? rosterSelect.options[rosterSelect.selectedIndex] : null;
-      const numPlayers = selectedOpt ? (parseInt(selectedOpt.getAttribute('data-players')) || 6) : 6;
+      let numPlayers = 6;
+      let customSeatsPayload = undefined;
+
+      if (rosterMode === 'custom') {
+        const numPlayersSelect = document.getElementById('recordNumPlayersSelect');
+        numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || 9;
+        customSeatsPayload = [];
+        for (let i = 0; i < numPlayers; i++) {
+          const el = document.getElementById(`recCustomSeatSelect_${i}`);
+          customSeatsPayload.push(el ? el.value : (recordCustomAgentsConfig[i] || 'math'));
+        }
+      } else {
+        const selectedOpt = rosterSelect ? rosterSelect.options[rosterSelect.selectedIndex] : null;
+        numPlayers = selectedOpt ? (parseInt(selectedOpt.getAttribute('data-players')) || 6) : 6;
+      }
 
       if (!code) {
         alert("Por favor, digite o código de autenticação da equipe.");
@@ -2454,7 +2574,8 @@
             auth_code: code,
             num_hands: numHands,
             num_players: numPlayers,
-            roster_mode: rosterMode
+            roster_mode: rosterMode,
+            custom_seats: customSeatsPayload
           })
         });
 

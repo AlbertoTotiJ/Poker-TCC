@@ -107,3 +107,53 @@ def test_sync_functions_invalid_auth() -> None:
     res_neon = save_dataset_to_neon(auth_code="ERRADO")
     assert res_neon["success"] is False
     assert "inválido" in res_neon["error"].lower()
+
+
+def test_build_research_roster_tcc_experiment_9() -> None:
+    players, agents, profile_labels = build_research_roster(
+        roster_mode="tcc_experiment_9"
+    )
+    assert len(players) == 9
+    assert len(agents) == 9
+    profiles = list(profile_labels.values())
+    assert profiles.count("Matemático") == 4
+    assert profiles.count("Blefador") == 5
+    # Cadeira do 9º agente deve ter a indicação de substituto
+    names = [p.name for p in players]
+    assert any("9º Agente" in n for n in names)
+
+
+def test_build_research_roster_custom_seats_9_max() -> None:
+    custom_seats = [
+        "gh_math", "math", "bluffer", "hybrid",
+        "aggressive", "conservative", "balanced", "math", "bluffer"
+    ]
+    players, agents, profile_labels = build_research_roster(
+        custom_seats=custom_seats
+    )
+    assert len(players) == 9
+    assert len(agents) == 9
+    # O 9º jogador deve estar configurado como agente de IA autônomo
+    player_9 = players[8]
+    assert "9º Agente" in player_9.name
+    assert profile_labels[player_9.player_id] == "Blefador"
+
+
+def test_run_recording_batch_custom_seats() -> None:
+    custom_seats = [
+        "math", "bluffer", "gh_math", "hybrid",
+        "aggressive", "conservative", "balanced", "math", "bluffer"
+    ]
+    res = run_recording_batch(
+        auth_code="TCC2026",
+        num_hands=2,
+        custom_seats=custom_seats,
+        rng_seed=123,
+    )
+    assert res["success"] is True
+    assert res["roster_mode"] == "custom"
+    assert res["hands_completed"] == 2
+    # Leaderboard contém os 9 agentes, incluindo o 9º agente
+    leaderboard_names = [p["name"] for p in res["leaderboard"]]
+    assert len(leaderboard_names) == 9
+    assert any("9º Agente" in n for n in leaderboard_names)

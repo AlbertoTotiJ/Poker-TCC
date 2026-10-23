@@ -872,6 +872,10 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 num_hands = int(data.get("num_hands", 10))
                 num_players = int(data.get("num_players", 6))
                 roster_mode = str(data.get("roster_mode", "")).strip()
+                custom_seats = data.get("custom_seats")
+                if isinstance(custom_seats, list) and custom_seats:
+                    num_players = len(custom_seats)
+                    roster_mode = "custom"
                 result = run_recording_batch(
                     auth_code=auth_code,
                     num_hands=num_hands,
@@ -879,6 +883,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     roster_mode=roster_mode or (
                         "classic_9" if num_players == 9 else "classic_6"
                     ),
+                    custom_seats=custom_seats,
                 )
                 self._send_json(result)
                 return

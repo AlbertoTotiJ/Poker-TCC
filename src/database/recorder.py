@@ -309,6 +309,20 @@ ROSTER_CONFIGS: Dict[str, Dict[str, Any]] = {
         ),
         "num_players": 9,
     },
+    "tcc_experiment_9": {
+        "name": "Experimento TCC 9-Max (4 Mat vs 5 Blef)",
+        "description": (
+            "4 Matemáticos Reais (Alberto) vs 5 Blefadores (9 Jogadores)"
+        ),
+        "num_players": 9,
+    },
+    "custom": {
+        "name": "Personalizada (2 a 9 Jogadores)",
+        "description": (
+            "Configuração personalizada cadeira por cadeira (incluindo 9º agente)"
+        ),
+        "num_players": 9,
+    },
 }
 
 
@@ -317,20 +331,26 @@ def build_research_roster(
     starting_stack: int = 1000,
     roster_mode: str = "classic_6",
     rng: Optional[random.Random] = None,
+    custom_seats: Optional[List[str]] = None,
 ) -> Tuple[List[Player], Dict[str, BaseAgent], Dict[str, str]]:
     """Gera o elenco balanceado de agentes para experimentos e gravação.
 
     Suporta os agentes atuais (Matemático Real, Bots Heurísticos) e os novos agentes
-    táticos de pesquisa (Blefador e Híbrido).
+    táticos de pesquisa (Blefador e Híbrido), além de personalização de 2 a 9 assentos.
     """
     local_rng = rng if rng is not None else random.Random()
 
     # Normalização de roster_mode
-    if roster_mode not in ROSTER_CONFIGS:
+    if custom_seats and isinstance(custom_seats, (list, tuple)):
+        roster_mode = "custom"
+        num_players = max(2, min(9, len(custom_seats)))
+    elif roster_mode not in ROSTER_CONFIGS:
         roster_mode = "classic_9" if num_players == 9 else "classic_6"
 
     expected_players = ROSTER_CONFIGS[roster_mode]["num_players"]
-    if num_players not in (6, 9) or roster_mode not in ("classic_6", "classic_9"):
+    if roster_mode != "custom" and (
+        num_players not in (6, 9) or roster_mode not in ("classic_6", "classic_9")
+    ):
         num_players = expected_players
 
     players: List[Player] = []
@@ -341,6 +361,126 @@ def build_research_roster(
         players.append(Player(player_id=pid, name=name, stack=starting_stack))
         agents[pid] = agent
         profile_labels[pid] = profile
+
+    if roster_mode == "custom" or (custom_seats and len(custom_seats) > 0):
+        seat_list = (
+            list(custom_seats)
+            if custom_seats
+            else ["math", "bluffer"] * 4 + ["math"]
+        )
+        seat_list = seat_list[:max(2, min(9, len(seat_list)))]
+
+        for i, raw_type in enumerate(seat_list):
+            seat_num = i + 1
+            agent_type = (raw_type or "math").strip().lower()
+            is_9th = (seat_num == 9)
+            suffix = " (9º Agente)" if is_9th else ""
+
+            if agent_type == "gh_math":
+                pid = f"gh_mat_{seat_num}"
+                pname = f"GhMath {seat_num}{suffix}"
+                agent = GhMathAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "GhMath (Gustavo)"
+            elif agent_type == "bluffer":
+                pid = f"bot_blf_{seat_num}"
+                pname = f"Blefador {seat_num}{suffix}"
+                agent = BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    bluff_frequency=0.42,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Blefador"
+            elif agent_type == "hybrid":
+                pid = f"bot_hyb_{seat_num}"
+                pname = f"Híbrido {seat_num}{suffix}"
+                agent = HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Híbrido"
+            elif agent_type == "aggressive":
+                pid = f"bot_agr_{seat_num}"
+                pname = f"Agressivo {seat_num}{suffix}"
+                agent = HeuristicAgent(
+                    player_id=pid,
+                    name=pname,
+                    profile=AgentProfile.AGGRESSIVE,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Agressivo"
+            elif agent_type == "conservative":
+                pid = f"bot_con_{seat_num}"
+                pname = f"Conservador {seat_num}{suffix}"
+                agent = HeuristicAgent(
+                    player_id=pid,
+                    name=pname,
+                    profile=AgentProfile.CONSERVATIVE,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Conservador"
+            elif agent_type == "balanced":
+                pid = f"bot_bal_{seat_num}"
+                pname = f"Equilibrado {seat_num}{suffix}"
+                agent = HeuristicAgent(
+                    player_id=pid,
+                    name=pname,
+                    profile=AgentProfile.BALANCED,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Equilibrado"
+            else:  # default 'math'
+                pid = f"bot_mat_{seat_num}"
+                pname = f"Matemático {seat_num}{suffix}"
+                agent = MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Matemático"
+
+            _add_player(pid, pname, agent, profile)
+
+        return players, agents, profile_labels
+
+    if roster_mode == "tcc_experiment_9":
+        for i in range(1, 5):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        for i in range(1, 6):
+            pid = f"bot_blf_{i}"
+            pname = f"Blefador {i} (9º Agente)" if i == 5 else f"Blefador {i}"
+            _add_player(
+                pid,
+                pname,
+                BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    bluff_frequency=0.42,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador",
+            )
+        local_rng.shuffle(players)
+        return players, agents, profile_labels
 
     if roster_mode == "math_vs_bots":
         # 3 Matemáticos Reais vs 3 Bots (Agressivo, Conservador, Equilibrado)
@@ -757,6 +897,7 @@ def run_recording_batch(
     small_blind: int = 10,
     big_blind: int = 20,
     rng_seed: Optional[int] = None,
+    custom_seats: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Executa a simulação e gravação em lote de rodadas autenticadas."""
     if not verify_auth_code(auth_code):
@@ -767,7 +908,11 @@ def run_recording_batch(
 
     num_hands = max(1, min(100, int(num_hands)))
 
-    if roster_mode in ROSTER_CONFIGS:
+    if custom_seats and isinstance(custom_seats, (list, tuple)):
+        num_players = max(2, min(9, len(custom_seats)))
+        roster_mode = "custom"
+        custom_seats = list(custom_seats[:num_players])
+    elif roster_mode in ROSTER_CONFIGS:
         num_players = ROSTER_CONFIGS[roster_mode]["num_players"]
     else:
         num_players = 9 if num_players == 9 else 6
@@ -779,6 +924,7 @@ def run_recording_batch(
         starting_stack=starting_stack,
         roster_mode=roster_mode,
         rng=rng,
+        custom_seats=custom_seats,
     )
 
     hands_recorded: List[Dict[str, Any]] = []
