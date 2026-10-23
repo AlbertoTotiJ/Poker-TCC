@@ -137,18 +137,56 @@ class MathematicalAgent(BaseAgent):
         street: Optional[Street] = None,
     ) -> MathematicalDecision:
         """Calcula equidade, EV e retorna a decisão matemática estruturada."""
+        is_preflop = len(community_cards) == 0 or street == Street.PREFLOP
+        preflop_score = (
+            self._evaluate_preflop_combinatorics(hole_cards)
+            if is_preflop
+            else 0.0
+        )
+
         equity, outs = self.calculate_effective_equity(
             hole_cards=hole_cards,
             community_cards=community_cards,
             num_opponents=num_opponents,
         )
 
-        pot_odds = calculate_pot_odds(to_call=to_call, pot_size=pot_size)
+        fair_share = 1.0 / max(2, num_opponents + 1)
 
-        # Expected Value para ação de pagar (Call): EV = (Equity * TotalPot) - ToCall
-        expected_value = (
-            (equity * (pot_size + to_call)) - to_call if to_call > 0 else 0.0
-        )
+        if is_preflop and to_call > 0:
+            # Implied odds aplicáveis a apostas moderadas (<= 3 * big_blind)
+            if to_call <= 3 * big_blind:
+                if preflop_score >= 0.50:
+                    implied_mult = 2.5
+                elif preflop_score >= 0.35:
+                    implied_mult = 1.5
+                else:
+                    implied_mult = 0.0
+
+                remaining_stack = max(0, player_stack - to_call)
+                implied_pot = min(
+                    remaining_stack,
+                    int(big_blind * num_opponents * implied_mult),
+                )
+                contested_pot = max(
+                    pot_size,
+                    int(big_blind * (num_opponents + 1) * 0.75),
+                )
+                effective_pot = contested_pot + implied_pot
+            else:
+                # Contra aumentos pesados (> 3 BB), odds implícitas são nulas
+                effective_pot = pot_size
+
+            pot_odds = (
+                to_call / (effective_pot + to_call)
+                if (effective_pot + to_call) > 0
+                else 0.0
+            )
+            expected_value = (equity * (effective_pot + to_call)) - to_call
+        else:
+            pot_odds = calculate_pot_odds(to_call=to_call, pot_size=pot_size)
+            expected_value = (
+                (equity * (pot_size + to_call)) - to_call if to_call > 0 else 0.0
+            )
 
         if to_call == 0:
             return self._decide_zero_cost(
@@ -173,6 +211,10 @@ class MathematicalAgent(BaseAgent):
             current_highest_bet=current_highest_bet,
             min_raise=min_raise,
             legal_actions=legal_actions,
+            is_preflop=is_preflop,
+            preflop_score=preflop_score,
+            fair_share=fair_share,
+            big_blind=big_blind,
         )
 
     def calculate_effective_equity(
@@ -263,10 +305,35 @@ class MathematicalAgent(BaseAgent):
         current_highest_bet: int,
         min_raise: int,
         legal_actions: Sequence[ActionType],
+        is_preflop: bool = False,
+        preflop_score: float = 0.0,
+        fair_share: float = 0.5,
+        big_blind: int = 20,
     ) -> MathematicalDecision:
         """Determina se aumenta por valor puro, paga por EV positivo ou desiste."""
-        is_profitable = equity >= (pot_odds - self.call_ev_margin)
-        strong_advantage = equity >= (self.raise_equity_threshold + 0.08)
+        if is_preflop:
+            # No pré-flop:
+            # 1. Custo baixo (<= 1 BB) com mão especulativa é sempre +EV Call
+            if to_call <= big_blind and preflop_score >= 0.35:
+                is_profitable = True
+            # 2. Contra aposta pesada (> 3 BB), exige combinatória forte E equidade
+            elif to_call > 3 * big_blind:
+                is_profitable = (
+                    preflop_score >= 0.70
+                    and equity >= (pot_odds - self.call_ev_margin)
+                )
+            else:
+                is_profitable = equity >= (pot_odds - self.call_ev_margin)
+
+            # Vantagem dominante pré-flop: cartas premium ou edge sobre fair share
+            strong_advantage = (
+                preflop_score >= 0.75
+                or (equity >= max(0.48, fair_share * 1.8))
+                or (equity >= self.raise_equity_threshold + 0.08)
+            )
+        else:
+            is_profitable = equity >= (pot_odds - self.call_ev_margin)
+            strong_advantage = equity >= (self.raise_equity_threshold + 0.08)
 
         # Aumento por valor com vantagem significativa de equidade
         if (
@@ -275,10 +342,19 @@ class MathematicalAgent(BaseAgent):
             and player_stack > to_call
         ):
             min_required = current_highest_bet + min_raise
-            raise_addition = max(
-                min_raise, int(pot_size * equity * self.bet_sizing_factor)
-            )
-            total_target = current_highest_bet + raise_addition
+            if is_preflop:
+                target_addition = max(
+                    min_raise,
+                    int(big_blind * 1.5),
+                    int(pot_size * equity * self.bet_sizing_factor),
+                )
+            else:
+                target_addition = max(
+                    min_raise,
+                    int(pot_size * equity * self.bet_sizing_factor),
+                )
+
+            total_target = current_highest_bet + target_addition
             raise_amount = min(
                 player_current_bet + player_stack, max(min_required, total_target)
             )
@@ -295,9 +371,10 @@ class MathematicalAgent(BaseAgent):
                 )
 
         if ActionType.CALL in legal_actions and is_profitable:
+            call_amount = min(player_stack, to_call)
             return MathematicalDecision(
                 action_type=ActionType.CALL,
-                amount=to_call,
+                amount=call_amount,
                 equity=equity,
                 pot_odds=pot_odds,
                 expected_value=expected_value,
@@ -358,14 +435,20 @@ class MathematicalAgent(BaseAgent):
 
         base_score = ((high_r + (low_r * 0.60)) / 22.4) * 0.70
         if is_suited:
-            base_score += 0.05
+            base_score += 0.06
         if gap == 1:
-            base_score += 0.04
+            base_score += 0.05
         elif gap == 2:
-            base_score += 0.02
+            base_score += 0.03
+
+        # Bônus para conectores do mesmo naipe (suited connectors)
+        if is_suited and gap <= 2:
+            base_score += 0.04
 
         if high_r == Rank.ACE.value:
             base_score += 0.06
+        elif high_r == Rank.KING.value:
+            base_score += 0.03
 
         return min(0.95, max(0.15, base_score))
 
