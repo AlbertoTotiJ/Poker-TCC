@@ -28,7 +28,7 @@ from src.agents.gh_math_agent import (
 )
 from src.engine.deck import Card
 from src.engine.player import Player
-from src.engine.table import Action, ActionType, Table
+from src.engine.table import Action, ActionType, Street, Table
 
 
 class TestGhMathAgent(unittest.TestCase):
@@ -229,6 +229,61 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertEqual(decision.action_type, ActionType.FOLD)
         self.assertEqual(decision.amount, 0)
         self.assertIn("-EV Fold", decision.metrics.tactical_rationale)
+
+    def test_multiway_pot_control_on_river(self) -> None:
+        """Verifica que em mesa multiway (>= 2 oponentes) no River, o agente opta por Check para ver showdown."""
+        agent = GhMathAgent("gh_ctrl", rng=random.Random(12))
+        decision = agent.evaluate_state(
+            hole_cards=(Card.from_str("Kd"), Card.from_str("Tc")),
+            community_cards=[
+                Card.from_str("Ks"),
+                Card.from_str("8h"),
+                Card.from_str("4c"),
+                Card.from_str("3d"),
+                Card.from_str("2s"),
+            ],
+            pot_size=300,
+            to_call=0,
+            player_stack=800,
+            player_current_bet=0,
+            current_highest_bet=0,
+            min_raise=20,
+            big_blind=20,
+            num_opponents=2,
+            legal_actions=[ActionType.CHECK, ActionType.BET],
+            position=GhPosition.MIDDLE,
+            street=Street.RIVER,
+        )
+
+        self.assertEqual(decision.action_type, ActionType.CHECK)
+        self.assertIn("multiway", decision.metrics.tactical_rationale.lower())
+
+    def test_bluff_catch_on_river_with_pair(self) -> None:
+        """Verifica tenacidade de showdown: paga aposta moderada no River com par formado."""
+        agent = GhMathAgent("gh_catch", rng=random.Random(19))
+        decision = agent.evaluate_state(
+            hole_cards=(Card.from_str("As"), Card.from_str("9d")),
+            community_cards=[
+                Card.from_str("Ah"),
+                Card.from_str("Jc"),
+                Card.from_str("7s"),
+                Card.from_str("4d"),
+                Card.from_str("2c"),
+            ],
+            pot_size=200,
+            to_call=40,
+            player_stack=700,
+            player_current_bet=0,
+            current_highest_bet=40,
+            min_raise=40,
+            big_blind=20,
+            num_opponents=1,
+            legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+            position=GhPosition.LATE,
+            street=Street.RIVER,
+        )
+
+        self.assertIn(decision.action_type, (ActionType.CALL, ActionType.RAISE))
 
 
 if __name__ == "__main__":

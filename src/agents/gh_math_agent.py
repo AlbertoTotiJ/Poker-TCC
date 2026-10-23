@@ -27,6 +27,7 @@ from src.engine.equity import (  # noqa: E402
     has_overcards,
     has_straight_draw,
 )
+from src.engine.hand_eval import evaluate_hand  # noqa: E402
 from src.engine.table import Action, ActionType, Street, Table  # noqa: E402
 
 
@@ -253,6 +254,11 @@ class GhMathAgent(BaseAgent):
             to_call=max(to_call, big_blind),
         )
 
+        all_cards = list(hole_cards) + list(community_cards)
+        score = evaluate_hand(all_cards) if len(all_cards) >= 5 else None
+        hand_rank_val = score.hand_rank.value if score else 1
+        comb_desc = score.description if score else ""
+
         # Tomada de Decisão em Custo Zero (Check disponível)
         if to_call == 0:
             return self._decide_zero_cost(
@@ -270,6 +276,9 @@ class GhMathAgent(BaseAgent):
                 min_raise=min_raise,
                 position=position,
                 legal_actions=legal_actions,
+                street=street,
+                num_opponents=num_opponents,
+                hand_rank_val=hand_rank_val,
             )
 
         # Tomada de Decisão Enfrentando Aposta
@@ -290,6 +299,10 @@ class GhMathAgent(BaseAgent):
             min_raise=min_raise,
             position=position,
             legal_actions=legal_actions,
+            street=street,
+            num_opponents=num_opponents,
+            hand_rank_val=hand_rank_val,
+            comb_desc=comb_desc,
         )
 
     def _decide_zero_cost(
@@ -308,8 +321,35 @@ class GhMathAgent(BaseAgent):
         min_raise: int,
         position: GhPosition,
         legal_actions: Sequence[ActionType],
+        street: Optional[Street] = None,
+        num_opponents: int = 1,
+        hand_rank_val: int = 1,
     ) -> GhMathDecision:
-        """Determina se aposta por valor ou dá check gratuito."""
+        """Determina se aposta por valor ou dá check gratuito com controle de pote multiway."""
+        # Controle de Pote Multiway no River / Pós-Flop com mãos fracas
+        if (
+            num_opponents >= 2
+            and (
+                street == Street.RIVER
+                or (street in (Street.FLOP, Street.TURN) and hand_rank_val < 3)
+            )
+            and adjusted_equity < (self.base_threshold + 0.10)
+        ):
+            metrics = GhCognitiveMetrics(
+                raw_equity=raw_equity,
+                adjusted_equity=adjusted_equity,
+                direct_pot_odds=direct_pot_odds,
+                implied_odds=implied_odds,
+                expected_value_call=ev_call,
+                expected_value_raise=ev_raise,
+                kelly_fraction=kelly_fraction,
+                outs_count=outs,
+                position_name=position.value,
+                tactical_rationale="Controle de pote multiway para ver showdown sem inflar o pote",
+                formula_reference="Multiway Pot Control: Check behind to minimize variance and see showdown",
+            )
+            return GhMathDecision(ActionType.CHECK, amount=0, metrics=metrics)
+
         has_bet_advantage = adjusted_equity >= self.base_threshold
 
         if ActionType.BET in legal_actions and has_bet_advantage:
@@ -371,8 +411,12 @@ class GhMathAgent(BaseAgent):
         min_raise: int,
         position: GhPosition,
         legal_actions: Sequence[ActionType],
+        street: Optional[Street] = None,
+        num_opponents: int = 1,
+        hand_rank_val: int = 1,
+        comb_desc: str = "",
     ) -> GhMathDecision:
-        """Determina se aumenta com vantagem, paga por odds ou desiste por -EV."""
+        """Determina se aumenta com vantagem, paga por odds ou desiste por -EV com tenacidade de showdown."""
         can_raise = ActionType.RAISE in legal_actions
         can_call = ActionType.CALL in legal_actions
 
@@ -407,16 +451,31 @@ class GhMathAgent(BaseAgent):
                 ActionType.RAISE, amount=raise_amount, metrics=metrics
             )
 
-        # Call Lucrativo (Direct Pot Odds OU Implied Odds favoráveis)
-        direct_call_ok = adjusted_equity >= direct_pot_odds
+        # Call Lucrativo, Implied Odds e Tenacidade de Showdown (Bluff Catching)
+        has_pair = hand_rank_val >= 2
+        is_mod_bet = to_call <= max(20 * 4, int(pot_size * 0.50))
+        is_bluff_catch = (
+            has_pair
+            and is_mod_bet
+            and (street in (Street.TURN, Street.RIVER))
+            and num_opponents <= 2
+        )
+
+        bluff_margin = 0.08 if is_bluff_catch else 0.0
+        direct_call_ok = adjusted_equity >= (direct_pot_odds - bluff_margin)
         implied_call_ok = (outs >= 8) and (adjusted_equity >= implied_odds)
 
         if can_call and (direct_call_ok or implied_call_ok):
-            call_reason = (
-                f"+EV Direct Call: Equidade {adjusted_equity:.1%} >= Pot Odds {direct_pot_odds:.1%}"
-                if direct_call_ok
-                else f"+EV Implied Call: {outs} outs com Implied Odds favoráveis ({implied_odds:.1%})"
-            )
+            if is_bluff_catch and not (adjusted_equity >= direct_pot_odds):
+                call_reason = (
+                    f"+EV Bluff Catch: Par formado ({comb_desc or 'Feito'}) com tenacidade "
+                    f"de showdown contra aposta moderada ({to_call} fichas)"
+                )
+            elif direct_call_ok:
+                call_reason = f"+EV Direct Call: Equidade {adjusted_equity:.1%} >= Pot Odds {direct_pot_odds:.1%}"
+            else:
+                call_reason = f"+EV Implied Call: {outs} outs com Implied Odds favoráveis ({implied_odds:.1%})"
+
             metrics = GhCognitiveMetrics(
                 raw_equity=raw_equity,
                 adjusted_equity=adjusted_equity,
