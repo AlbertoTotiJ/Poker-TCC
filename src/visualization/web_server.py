@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
+from src.agents.gh_math_agent import GhMathAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
 from src.agents.hybrid_agent import HybridAgent
 from src.agents.mathematical_agent import MathematicalAgent
@@ -59,7 +60,7 @@ class WebPokerSession:
         small_blind: int = 10,
         big_blind: int = 20,
         human_name: str = "Você (Humano)",
-        agent_mode: str = "bots",
+        agent_mode: str = "gh_math",
         custom_agents: Optional[List[str]] = None,
         rng: Optional[random.Random] = None,
     ) -> None:
@@ -82,7 +83,9 @@ class WebPokerSession:
         for i in range(num_players - 1):
             bot_id = f"p_bot_{i + 1}"
             agent_type = "bot"
-            if agent_mode == "math":
+            if agent_mode == "gh_math":
+                agent_type = "gh_math"
+            elif agent_mode == "math":
                 agent_type = "math"
             elif agent_mode == "mixed":
                 agent_type = "math" if (i % 2 == 0) else "bot"
@@ -92,7 +95,17 @@ class WebPokerSession:
             elif agent_mode == "custom" and custom_agents and i < len(custom_agents):
                 agent_type = custom_agents[i]
 
-            if agent_type == "math":
+            if agent_type == "gh_math":
+                bot_name = f"GhMath {i + 1} (GH)"
+                bot = GhMathAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    base_threshold=0.58,
+                    kelly_fraction_limit=0.25,
+                    num_simulations=120,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            elif agent_type == "math":
                 bot_name = f"Agente Matemático {i + 1}"
                 bot: BaseAgent = MathematicalAgent(
                     player_id=bot_id,
@@ -355,6 +368,8 @@ class WebPokerSession:
             )
             if is_human:
                 agent_label = "Você (Humano)"
+            elif agent_type == "gh_math":
+                agent_label = "🧠 GhMathAgent (Gustavo)"
             elif agent_type == "math":
                 agent_label = "📐 Agente Matemático"
             elif agent_type == "bluffer":

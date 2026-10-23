@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
+from src.agents.gh_math_agent import GhMathAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
 from src.agents.hybrid_agent import HybridAgent
 from src.agents.mathematical_agent import MathematicalAgent
@@ -293,6 +294,14 @@ ROSTER_CONFIGS: Dict[str, Dict[str, Any]] = {
         "description": "6 Agentes Matemáticos Reais com calibrações variadas",
         "num_players": 6,
     },
+    "gh_math_showdown": {
+        "name": "Duelo GH vs Alberto (XAI Quartz)",
+        "description": (
+            "2 GhMath (Gustavo com XAI), 2 Matemáticos (Alberto), "
+            "1 Agressivo, 1 Equilibrado"
+        ),
+        "num_players": 6,
+    },
     "all_models_9": {
         "name": "Grande Torneio Multimodelo 9-Max",
         "description": (
@@ -503,6 +512,57 @@ def build_research_roster(
                 ),
                 "Matemático",
             )
+
+    elif roster_mode == "gh_math_showdown":
+        for i in range(1, 3):
+            pid = f"gh_mat_{i}"
+            pname = f"GhMath {i} (GH)"
+            _add_player(
+                pid,
+                pname,
+                GhMathAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "GhMath (Gustavo)",
+            )
+        for i in range(1, 3):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i} (Alberto)"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático (Alberto)",
+            )
+        _add_player(
+            "bot_agr_1",
+            "Agressivo 1",
+            HeuristicAgent(
+                "bot_agr_1",
+                "Agressivo 1",
+                profile=AgentProfile.AGGRESSIVE,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Agressivo",
+        )
+        _add_player(
+            "bot_bal_1",
+            "Equilibrado 1",
+            HeuristicAgent(
+                "bot_bal_1",
+                "Equilibrado 1",
+                profile=AgentProfile.BALANCED,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Equilibrado",
+        )
 
     elif roster_mode == "math_tournament":
         # 6 Matemáticos com limiares variados
@@ -766,7 +826,7 @@ def run_recording_batch(
             action = bot.decide_action(table)
 
             pot_before = table.pot_manager.total_pot
-            actions_log.append({
+            action_data: Dict[str, Any] = {
                 "street": table.street.name,
                 "player_id": actor.player_id,
                 "player_name": actor.name,
@@ -774,7 +834,33 @@ def run_recording_batch(
                 "action_type": action.action_type.value,
                 "amount": action.amount,
                 "pot_before": pot_before,
-            })
+            }
+            if hasattr(bot, "last_decision") and bot.last_decision is not None:
+                dec = bot.last_decision
+                if hasattr(dec, "metrics"):
+                    m = dec.metrics
+                    action_data["cognitive_metrics"] = {
+                        "raw_equity": round(m.raw_equity, 4),
+                        "adjusted_equity": round(m.adjusted_equity, 4),
+                        "direct_pot_odds": round(m.direct_pot_odds, 4),
+                        "implied_odds": round(m.implied_odds, 4),
+                        "expected_value_call": round(m.expected_value_call, 2),
+                        "expected_value_raise": round(m.expected_value_raise, 2),
+                        "kelly_fraction": round(m.kelly_fraction, 4),
+                        "outs_count": m.outs_count,
+                        "position_name": m.position_name,
+                        "tactical_rationale": m.tactical_rationale,
+                        "formula_reference": m.formula_reference,
+                    }
+                elif hasattr(dec, "equity"):
+                    action_data["cognitive_metrics"] = {
+                        "raw_equity": round(dec.equity, 4),
+                        "pot_odds": round(dec.pot_odds, 4),
+                        "expected_value": round(dec.expected_value, 2),
+                        "outs_count": dec.outs,
+                        "tactical_rationale": dec.reason,
+                    }
+            actions_log.append(action_data)
 
             table.apply_action(action)
 

@@ -1518,8 +1518,18 @@
       </div>
 
       <div class="agents-options-list">
+        <!-- Opção GhMath: GhMathAgent (Gustavo) -->
+        <div class="agent-option-card selected" id="cardModeGh_math" onclick="selectAgentMode('gh_math')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🧠 GhMathAgent (Gustavo - GH)</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676;">Novo • Kelly & Implied Odds</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente matemático de segunda geração desenvolvido por Gustavo (GH). Elimina folds irracionais no pré-flop via combinatória e ranges de posição, dimensiona apostas pelo Critério de Kelly Fracionário e gera métricas cognitivas completas (XAI) para a Rede Neural.
+          </div>
+        </div>
         <!-- Opção 1: Usar Bot (Padrões Anteriores) -->
-        <div class="agent-option-card selected" id="cardModeBots" onclick="selectAgentMode('bots')">
+        <div class="agent-option-card" id="cardModeBots" onclick="selectAgentMode('bots')">
           <div class="agent-option-top">
             <span class="agent-option-title">🤖 Usar Bot (Padrões Anteriores)</span>
             <span class="agent-badge-tag badge-bot">Bots Tradicionais</span>
@@ -1629,6 +1639,7 @@
         <label for="recordTableFormat">Composição e Modelos de Agentes de IA:</label>
         <select id="recordTableFormat" onchange="updateRosterDescriptionNotice()">
           <optgroup label="🤖 Torneios de IA & Pesquisa Científica (TCC)">
+            <option value="gh_math_showdown" data-players="6" selected>🧠 Duelo GH vs Alberto: 2 GhMath (Gustavo), 2 Matemáticos (Alberto), 2 Bots (6 Jogadores)</option>
             <option value="math_vs_bots" data-players="6" selected>📐 Duelo: 3 Matemáticos Reais vs 3 Bots Heurísticos (6 Jogadores)</option>
             <option value="full_ai_tournament" data-players="6">🏆 Torneio Completo de IAs: 2 Matemáticos, 2 Blefadores, 2 Híbridos (6 Jogadores)</option>
             <option value="bluff_challenge" data-players="6">🃏 Desafio de Blefe: 2 Blefadores, 2 Matemáticos, 2 Conservadores (6 Jogadores)</option>
@@ -1664,7 +1675,7 @@
     let gameState = null;
     let botTimer = null;
     let botSpeed = 700; // ms
-    let selectedAgentMode = 'bots';
+    let selectedAgentMode = 'gh_math';
     let customAgentsConfig = [];
     const speedModes = [
       { label: "Normal (700ms)", delay: 700 },
@@ -1831,8 +1842,9 @@
     }
 
     function syncAgentModeUI(mode) {
-      ['bots', 'math', 'mixed', 'custom'].forEach(m => {
-        const card = document.getElementById('cardMode' + m.charAt(0).toUpperCase() + m.slice(1));
+      ['bots', 'gh_math', 'math', 'mixed', 'custom'].forEach(m => {
+        const cardId = m === 'gh_math' ? 'cardModeGh_math' : ('cardMode' + m.charAt(0).toUpperCase() + m.slice(1));
+        const card = document.getElementById(cardId);
         if (card) {
           if (m === mode) {
             card.classList.add('selected');
@@ -1862,12 +1874,13 @@
 
       let html = '';
       for (let i = 0; i < botSeatsCount; i++) {
-        const defaultVal = customAgentsConfig[i] || (i % 2 === 0 ? 'math' : 'balanced');
+        const defaultVal = customAgentsConfig[i] || (i === 0 ? 'gh_math' : (i % 2 === 0 ? 'math' : 'balanced'));
         html += `
           <div class="custom-seat-row">
             <label for="customSeatSelect_${i}">Cadeira ${i + 1} (Bot):</label>
             <select id="customSeatSelect_${i}" onchange="customAgentsConfig[${i}] = this.value">
-              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (EV)</option>
+              <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
+              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
               <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>🤖 Bot Agressivo</option>
               <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🤖 Bot Conservador</option>
               <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>🤖 Bot Equilibrado</option>
@@ -2181,12 +2194,15 @@
         seatDiv.style.top = `${seatConfig.y}%`;
 
         const stackChips = renderChipsVisual(p.stack, 2);
+        const isGhMath = p.agent_type === 'gh_math';
         const isMath = p.agent_type === 'math';
         const agentPillHTML = isHuman
           ? '<span class="agent-pill pill-human">👤 Você</span>'
-          : (isMath
-              ? '<span class="agent-pill pill-math" title="Agente Feito - EV & Probabilidade">📐 Matemático</span>'
-              : '<span class="agent-pill pill-bot" title="Bot Padrão Heurístico">🤖 Bot</span>');
+          : (isGhMath
+              ? '<span class="agent-pill" style="background:rgba(0,230,118,0.22);color:#00e676;border:1px solid #00e676;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="GhMathAgent (Gustavo) - Kelly & Implied Odds">🧠 GhMath (GH)</span>'
+              : (isMath
+                  ? '<span class="agent-pill pill-math" title="Agente Feito - EV & Probabilidade">📐 Matemático</span>'
+                  : '<span class="agent-pill pill-bot" title="Bot Padrão Heurístico">🤖 Bot</span>'));
 
         seatDiv.innerHTML = `
           <div class="seat-badge">
@@ -2361,6 +2377,7 @@
       if (!notice) return;
 
       const descMap = {
+        'gh_math_showdown': '🧠 <strong>Duelo GH vs Alberto (XAI Quartz):</strong> 2 GhMathAgent (Gustavo com telemetria cognitiva para Rede Neural) vs 2 Agentes Matemáticos (Alberto) e 2 Bots Heurísticos.',
         'math_vs_bots': '📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).',
         'full_ai_tournament': '🏆 <strong>Torneio Completo de IAs:</strong> Batalha multimodelo entre os 3 agentes do projeto: 2 Matemáticos (probabilísticos), 2 Blefadores (fold equity) e 2 Híbridos (estratégia integrada).',
         'bluff_challenge': '🃏 <strong>Desafio de Blefe:</strong> Avalia como os Agentes Blefadores exploram oponentes conservadores e se conseguem dobrar o cálculo frio dos Agentes Matemáticos.',

@@ -59,6 +59,14 @@ def main() -> None:
         help="Porta TCP desejada para o servidor (seleciona porta livre se omitido).",
     )
     parser.add_argument(
+        "--mode",
+        "-m",
+        type=str,
+        default="gh_math",
+        choices=["gh_math", "math", "bots", "mixed", "custom"],
+        help="Tipo de inteligência dos oponentes (padrão: gh_math - Gustavo GH).",
+    )
+    parser.add_argument(
         "--no-browser",
         action="store_true",
         help="Não abre automaticamente a janela do navegador.",
@@ -70,6 +78,7 @@ def main() -> None:
         port=args.port,
         num_players=args.players,
         starting_stack=args.stack,
+        agent_mode=args.mode,
     )
 
     local_url = f"http://localhost:{port}"
