@@ -1491,9 +1491,12 @@
       <div class="form-group">
         <label for="configAgentModeSelect">Tipo de Oponentes / Agentes:</label>
         <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
-          <option value="bots" selected>🤖 Usar Bot (Padrões Anteriores)</option>
-          <option value="math">📐 Agente Matemático (Agente Feito - EV)</option>
+          <option value="gh_math" selected>🧠 GhMathAgent (Gustavo - Implied Odds & Kelly)</option>
+          <option value="math">📐 Agente Matemático (Alberto - EV)</option>
+          <option value="bluffer">🃏 Agente Blefador (Alberto - Bluff Engine)</option>
           <option value="mixed">⚔️ Mesa Mista (Agente Matemático vs Bots Padrão)</option>
+          <option value="all_ai">🏆 Torneio Completo de IAs (Matemáticos, Blefadores, Híbridos)</option>
+          <option value="bots">🤖 Usar Bot (Padrões Anteriores)</option>
           <option value="custom">⚙️ Personalizado por Cadeira</option>
         </select>
       </div>
@@ -1550,6 +1553,28 @@
           </div>
         </div>
 
+        <!-- Opção: Agente Blefador (Bluff Engine) -->
+        <div class="agent-option-card" id="cardModeBluffer" onclick="selectAgentMode('bluffer')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🃏 Agente Blefador (Bluff Engine)</span>
+            <span class="agent-badge-tag badge-ready">IA Concluída & Treinada</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente tático autônomo baseado em Fold Equity dinâmica, textura de bordo (dry boards, scare cards), roubo de potes órfãos (C-Bet Steals), semi-blefes e re-aumentos desbalanceados.
+          </div>
+        </div>
+
+        <!-- Opção: Torneio Completo de IAs -->
+        <div class="agent-option-card" id="cardModeAll_ai" onclick="selectAgentMode('all_ai')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🏆 Torneio Multimodelo de IAs</span>
+            <span class="agent-badge-tag badge-ready">Todas as IAs</span>
+          </div>
+          <div class="agent-option-desc">
+            Distribui as cadeiras da mesa alternando entre os Agentes Matemáticos, Blefadores e Híbridos para enfrentar você em partida de alto nível.
+          </div>
+        </div>
+
         <!-- Opção 3: Mesa Mista -->
         <div class="agent-option-card" id="cardModeMixed" onclick="selectAgentMode('mixed')">
           <div class="agent-option-top">
@@ -1577,15 +1602,6 @@
 
         <!-- Em Desenvolvimento (Próximos Agentes) -->
         <div class="preview-section-title" style="margin-top:6px;">🚀 Próximos Agentes (Backlog de IA):</div>
-        <div class="agent-option-card card-disabled">
-          <div class="agent-option-top">
-            <span class="agent-option-title">🃏 Agente Blefador (Sprint 2)</span>
-            <span class="agent-badge-tag badge-wip">Em Treinamento</span>
-          </div>
-          <div class="agent-option-desc">
-            Explora fraquezas dos oponentes, aplicando raise com mãos fracas sob condições de bordo e dinâmica de apostas favoráveis.
-          </div>
-        </div>
         <div class="agent-option-card card-disabled">
           <div class="agent-option-top">
             <span class="agent-option-title">🧠 Agente Híbrido / Aprendizado por Reforço (Sprint 3)</span>
@@ -1842,7 +1858,7 @@
     }
 
     function syncAgentModeUI(mode) {
-      ['bots', 'gh_math', 'math', 'mixed', 'custom'].forEach(m => {
+      ['bots', 'gh_math', 'math', 'bluffer', 'mixed', 'all_ai', 'custom'].forEach(m => {
         const cardId = m === 'gh_math' ? 'cardModeGh_math' : ('cardMode' + m.charAt(0).toUpperCase() + m.slice(1));
         const card = document.getElementById(cardId);
         if (card) {
@@ -1881,6 +1897,8 @@
             <select id="customSeatSelect_${i}" onchange="customAgentsConfig[${i}] = this.value">
               <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
               <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
+              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>
+              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>🧠 Agente Híbrido</option>
               <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>🤖 Bot Agressivo</option>
               <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🤖 Bot Conservador</option>
               <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>🤖 Bot Equilibrado</option>

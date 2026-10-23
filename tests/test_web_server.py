@@ -90,6 +90,17 @@ def test_web_poker_session_agent_modes() -> None:
     assert bots_custom[1]["agent_type"] == "aggressive"
     assert bots_custom[2]["agent_type"] == "conservative"
 
+    # 4. Modo bluffer: assentos com BlufferAgent
+    session_bluffer = WebPokerSession(num_players=3, agent_mode="bluffer")
+    state_bluffer = session_bluffer.get_serialized_state()
+    assert state_bluffer["agent_mode"] == "bluffer"
+    bots_bluffer = [
+        p for p in state_bluffer["players"] if p["id"] != session_bluffer.human_id
+    ]
+    for b in bots_bluffer:
+        assert b["agent_type"] == "bluffer"
+        assert "Blefador" in b["agent_label"]
+
 
 def test_find_free_port_and_start_server() -> None:
     import threading

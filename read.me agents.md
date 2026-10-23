@@ -35,10 +35,14 @@ Agente projetado com base estrita na teoria das probabilidades e análise combin
 
 ### 2. Agente Blefador (`bluffer_agent.py`)
 
-Agente focado em exploração de mesa, variações de apostas e dinâmicas de pressão psicológica.
+Agente focado no Módulo de Estratégia de Blefe (Bluff Engine), exploração de fraquezas adversárias, fold equity dinâmica e semi-blefes calculados.
 
-* **Status Atual:** **Planejado / Próxima Fase**.  
-* **Observação:** As diretrizes técnicas, arquitetura de rede/algoritmo e parâmetros comportamentais serão definidos em atualizações futuras do projeto. O arquivo atual atua como interface/stub para garantir compatibilidade estrutural.
+* **Status Atual:** **Implementado, Calibrado e Testado**.  
+* **Mecânica de Decisão:**  
+  * Avalia textura do bordo distinguindo mesas secas (*dry boards*) e cartas intimidatórias (*scare cards* no Turn/River).  
+  * Modela a *Fold Equity* com base no número de oponentes ativos, textura e custos de aposta.  
+  * Executa roubos de potes abandonados (*C-Bet Steals*), re-aumentos desbalanceados (*Bluff Raises*) e semi-blefes baseados em outs de evolução (Flush e Straight draws).  
+* **Treinamento e Calibração:** Hiperparâmetros configuráveis com exportação/importação via JSON e pipeline de simulação em `scripts/train_bluffer_agent.py`.
 
 ### 3. Agente Híbrido (`hybrid_agent.py`)
 

@@ -128,3 +128,107 @@ def test_mathematical_agent_isolated_decision() -> None:
     assert decision.equity > 0.90
     assert decision.amount >= 20
     assert "Value bet" in decision.reason
+
+
+def test_mathematical_agent_preflop_calls_suited_connectors_and_pairs() -> None:
+    """Verifica que o agente não dá fold pré-flop pagando 1 BB com mãos jogáveis."""
+    agent = MathematicalAgent(player_id="math_spec", name="MathSpec")
+
+    # 9s 8s (conectores de mesmo naipe) contra 3 oponentes
+    dec_sc = agent.evaluate_state(
+        hole_cards=(Card.from_str("9s"), Card.from_str("8s")),
+        community_cards=(),
+        pot_size=30,
+        to_call=20,
+        player_stack=1000,
+        player_current_bet=0,
+        current_highest_bet=20,
+        min_raise=20,
+        big_blind=20,
+        num_opponents=3,
+        legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+    )
+    assert dec_sc.action_type in (ActionType.CALL, ActionType.RAISE)
+    assert dec_sc.action_type != ActionType.FOLD
+
+    # 5s 5d (par baixo) em mesa multiway de 6 jogadores (5 oponentes)
+    dec_pair = agent.evaluate_state(
+        hole_cards=(Card.from_str("5s"), Card.from_str("5d")),
+        community_cards=(),
+        pot_size=30,
+        to_call=20,
+        player_stack=1000,
+        player_current_bet=0,
+        current_highest_bet=20,
+        min_raise=20,
+        big_blind=20,
+        num_opponents=5,
+        legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+    )
+    assert dec_pair.action_type in (ActionType.CALL, ActionType.RAISE)
+    assert dec_pair.action_type != ActionType.FOLD
+
+
+def test_mathematical_agent_preflop_raises_premium_hands() -> None:
+    """Verifica que o agente aumenta por valor pré-flop com mãos premium (AA/KK)."""
+    agent = MathematicalAgent(player_id="math_prem", name="MathPrem")
+
+    dec_aa = agent.evaluate_state(
+        hole_cards=(Card.from_str("As"), Card.from_str("Ah")),
+        community_cards=(),
+        pot_size=30,
+        to_call=20,
+        player_stack=1000,
+        player_current_bet=0,
+        current_highest_bet=20,
+        min_raise=20,
+        big_blind=20,
+        num_opponents=3,
+        legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+    )
+    assert dec_aa.action_type == ActionType.RAISE
+    assert dec_aa.amount >= 40
+    assert "Raise por valor" in dec_aa.reason
+
+
+def test_mathematical_agent_preflop_folds_trash_facing_bet() -> None:
+    """Verifica que cartas lixo (7d 2c) desistem pré-flop diante de custo."""
+    agent = MathematicalAgent(player_id="math_trash", name="MathTrash")
+
+    dec_trash = agent.evaluate_state(
+        hole_cards=(Card.from_str("7d"), Card.from_str("2c")),
+        community_cards=(),
+        pot_size=30,
+        to_call=20,
+        player_stack=1000,
+        player_current_bet=0,
+        current_highest_bet=20,
+        min_raise=20,
+        big_blind=20,
+        num_opponents=3,
+        legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+    )
+    assert dec_trash.action_type == ActionType.FOLD
+    assert "-EV Fold" in dec_trash.reason
+
+
+def test_mathematical_agent_preflop_rejects_huge_bet_with_speculative_hands() -> None:
+    """Verifica que mãos especulativas desistem de apostas desproporcionais."""
+    agent = MathematicalAgent(player_id="math_safe", name="MathSafe")
+
+    # 9s 8s contra aposta massiva de 14x BB (to_call = 280)
+    dec_huge = agent.evaluate_state(
+        hole_cards=(Card.from_str("9s"), Card.from_str("8s")),
+        community_cards=(),
+        pot_size=310,
+        to_call=280,
+        player_stack=1000,
+        player_current_bet=0,
+        current_highest_bet=280,
+        min_raise=20,
+        big_blind=20,
+        num_opponents=1,
+        legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+    )
+    assert dec_huge.action_type == ActionType.FOLD
+    assert "-EV Fold" in dec_huge.reason

@@ -87,6 +87,10 @@ class WebPokerSession:
                 agent_type = "gh_math"
             elif agent_mode == "math":
                 agent_type = "math"
+            elif agent_mode == "bluffer":
+                agent_type = "bluffer"
+            elif agent_mode == "hybrid":
+                agent_type = "hybrid"
             elif agent_mode == "mixed":
                 agent_type = "math" if (i % 2 == 0) else "bot"
             elif agent_mode == "all_ai":
@@ -120,6 +124,8 @@ class WebPokerSession:
                     player_id=bot_id,
                     name=bot_name,
                     bluff_frequency=0.45,
+                    semi_bluff_frequency=0.75,
+                    aggression_multiplier=1.05,
                     rng=random.Random(self.rng.randint(1, 1000000)),
                 )
             elif agent_type == "hybrid":
