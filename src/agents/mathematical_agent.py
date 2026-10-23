@@ -29,6 +29,7 @@ from src.engine.equity import (  # noqa: E402
     has_overcards,
     has_straight_draw,
 )
+from src.engine.hand_eval import evaluate_hand  # noqa: E402
 from src.engine.table import Action, ActionType, Street, Table  # noqa: E402
 
 
@@ -188,6 +189,10 @@ class MathematicalAgent(BaseAgent):
                 (equity * (pot_size + to_call)) - to_call if to_call > 0 else 0.0
             )
 
+        all_cards = list(hole_cards) + list(community_cards)
+        score = evaluate_hand(all_cards) if len(all_cards) >= 5 else None
+        hand_rank_val = score.hand_rank.value if score else 1
+
         if to_call == 0:
             return self._decide_zero_cost(
                 equity=equity,
@@ -197,6 +202,9 @@ class MathematicalAgent(BaseAgent):
                 big_blind=big_blind,
                 min_raise=min_raise,
                 legal_actions=legal_actions,
+                street=street,
+                num_opponents=num_opponents,
+                hand_rank_val=hand_rank_val,
             )
 
         return self._decide_facing_cost(
@@ -215,6 +223,9 @@ class MathematicalAgent(BaseAgent):
             preflop_score=preflop_score,
             fair_share=fair_share,
             big_blind=big_blind,
+            street=street,
+            num_opponents=num_opponents,
+            hand_rank_val=hand_rank_val,
         )
 
     def calculate_effective_equity(
@@ -265,12 +276,48 @@ class MathematicalAgent(BaseAgent):
         big_blind: int,
         min_raise: int,
         legal_actions: Sequence[ActionType],
+        street: Optional[Street] = None,
+        num_opponents: int = 1,
+        hand_rank_val: int = 1,
     ) -> MathematicalDecision:
         """Determina se abre aposta por valor ou passa a vez gratuitamente."""
+        # Se estiver no River em pote multiway (>= 2 oponentes):
+        # Check de pot control para ver showdown
+        if street == Street.RIVER and num_opponents >= 2:
+            return MathematicalDecision(
+                action_type=ActionType.CHECK,
+                amount=0,
+                equity=equity,
+                pot_odds=0.0,
+                expected_value=0.0,
+                outs=outs,
+                reason="Check por controle de pote multiway no River para showdown",
+            )
+
+        # Em multiway no Flop/Turn: só aposta com 2 pares ou melhor
+        if (
+            num_opponents >= 2
+            and street in (Street.FLOP, Street.TURN)
+            and hand_rank_val < 3
+        ):
+            return MathematicalDecision(
+                action_type=ActionType.CHECK,
+                amount=0,
+                equity=equity,
+                pot_odds=0.0,
+                expected_value=0.0,
+                outs=outs,
+                reason="Check por controle de pote multiway no pós-flop",
+            )
+
         if ActionType.BET in legal_actions and player_stack > 0:
-            if equity >= self.raise_equity_threshold:
-                target_fraction = min(1.0, equity) * self.bet_sizing_factor
-                desired_bet = max(big_blind, min_raise, int(pot_size * target_fraction))
+            if equity >= self.raise_equity_threshold or hand_rank_val >= 3:
+                target_fraction = min(
+                    0.60, max(0.30, equity * self.bet_sizing_factor)
+                )
+                desired_bet = max(
+                    big_blind, min_raise, int(pot_size * target_fraction)
+                )
                 bet_amount = min(player_stack, max(min_raise, desired_bet))
                 return MathematicalDecision(
                     action_type=ActionType.BET,
@@ -309,15 +356,21 @@ class MathematicalAgent(BaseAgent):
         preflop_score: float = 0.0,
         fair_share: float = 0.5,
         big_blind: int = 20,
+        street: Optional[Street] = None,
+        num_opponents: int = 1,
+        hand_rank_val: int = 1,
     ) -> MathematicalDecision:
         """Determina se aumenta por valor puro, paga por EV positivo ou desiste."""
         if is_preflop:
             # No pré-flop:
-            # 1. Custo baixo (<= 1 BB) com mão especulativa é sempre +EV Call
-            if to_call <= big_blind and preflop_score >= 0.35:
+            # 1. Com lixo puro (score < 0.30) diante de custo, é sempre -EV Fold
+            if preflop_score < 0.30:
+                is_profitable = False
+            # 1b. Custo baixo (<= 1 BB) com mão jogável é sempre +EV Call
+            elif to_call <= big_blind and preflop_score >= 0.30:
                 is_profitable = True
-            # 1b. Custo moderado (<= 2.5 BBs) com cartas boas/especulativas
-            elif to_call <= int(big_blind * 2.5) and preflop_score >= 0.45:
+            # 1c. Custo moderado (<= 2.5 BBs) com cartas boas/especulativas
+            elif to_call <= int(big_blind * 2.5) and preflop_score >= 0.40:
                 is_profitable = True
             # 2. Contra aposta pesada (> 3 BB), exige combinatória forte E equidade
             elif to_call > 3 * big_blind:
@@ -335,11 +388,24 @@ class MathematicalAgent(BaseAgent):
                 or (equity >= self.raise_equity_threshold + 0.08)
             )
         else:
-            # Bluff Catcher no Turn e River: margem adaptativa para caçar blefes
-            bluff_catch_bonus = 0.04 if outs == 0 else 0.0
-            effective_margin = self.call_ev_margin + bluff_catch_bonus
-            is_profitable = equity >= (pot_odds - effective_margin)
-            strong_advantage = equity >= (self.raise_equity_threshold + 0.08)
+            # Bluff Catcher e Tenacidade de Showdown no Pós-Flop
+            has_pair = hand_rank_val >= 2
+            is_mod_bet = to_call <= max(big_blind * 3, int(pot_size * 0.45))
+
+            if has_pair and to_call <= max(big_blind * 5, int(pot_size * 0.65)):
+                is_profitable = True
+            elif is_mod_bet and (outs >= 4 or street == Street.RIVER):
+                is_profitable = True
+            else:
+                bluff_catch_bonus = 0.12 if is_mod_bet else 0.05
+                effective_margin = self.call_ev_margin + bluff_catch_bonus
+                is_profitable = equity >= (pot_odds - effective_margin)
+
+            strong_advantage = (
+                equity >= (self.raise_equity_threshold + 0.15)
+                and has_pair
+                and num_opponents == 1
+            )
 
         # Aumento por valor com vantagem significativa de equidade
         if (
