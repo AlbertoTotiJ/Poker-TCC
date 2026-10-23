@@ -282,3 +282,61 @@ def test_bluffer_agent_table_integration_and_telemetry() -> None:
 
     assert agent.vpip_actions >= 0
     assert agent.bets_and_raises >= 0
+
+
+def test_bluffer_never_folds_preflop_for_standard_big_blind() -> None:
+    """Garante que o blefador nunca dá fold pré-flop para cobrir um Big Blind."""
+    agent = BlufferAgent(player_id="bluff_pre", rng=random.Random(42))
+    # Mesmo com a pior mão possível do poker (7-2 offsuit)
+    hole = (Card.from_str("7d"), Card.from_str("2c"))
+
+    decision = agent.evaluate_state(
+        hole_cards=hole,
+        community_cards=[],
+        pot_size=30,
+        to_call=10,  # Apenas completando ou cobrindo o BB
+        player_stack=1000,
+        player_current_bet=10,
+        current_highest_bet=20,
+        min_raise=20,
+        big_blind=20,
+        num_opponents=3,
+        legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+        street=Street.PREFLOP,
+    )
+
+    assert decision.action_type in (ActionType.CALL, ActionType.RAISE)
+    assert decision.action_type != ActionType.FOLD
+    assert decision.tactic in (
+        BluffTactic.PREFLOP_DEFEND.value,
+        BluffTactic.PREFLOP_STEAL.value,
+    )
+
+
+def test_bluffer_preflop_speculative_defend_or_3bet() -> None:
+    """Verifica que com mão especulativa enfrenta aumento padrão pré-flop."""
+    agent = BlufferAgent(player_id="bluff_pre", rng=random.Random(42))
+    # Suited connector (9s 8s) enfrentando raise de 2.5x BB (50 fichas)
+    hole = (Card.from_str("9s"), Card.from_str("8s"))
+
+    decision = agent.evaluate_state(
+        hole_cards=hole,
+        community_cards=[],
+        pot_size=80,
+        to_call=50,
+        player_stack=950,
+        player_current_bet=0,
+        current_highest_bet=50,
+        min_raise=50,
+        big_blind=20,
+        num_opponents=2,
+        legal_actions=[ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+        street=Street.PREFLOP,
+    )
+
+    assert decision.action_type in (ActionType.CALL, ActionType.RAISE)
+    assert decision.action_type != ActionType.FOLD
+    assert decision.tactic in (
+        BluffTactic.PREFLOP_DEFEND.value,
+        BluffTactic.PREFLOP_3BET.value,
+    )

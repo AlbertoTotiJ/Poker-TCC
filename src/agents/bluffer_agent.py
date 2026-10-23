@@ -42,6 +42,9 @@ class BluffTactic(str, Enum):
     SCARE_CARD_BARREL = "Scare Card Barrel"
     RIVER_BLUFF = "River Pure Bluff"
     FLOAT_CALL = "Float Call"
+    PREFLOP_STEAL = "Pre-Flop Steal"
+    PREFLOP_DEFEND = "Pre-Flop Defend"
+    PREFLOP_3BET = "Pre-Flop 3-Bet Bluff"
     VALUE_PLAY = "Value Play"
     FREE_CHECK = "Free Check"
     PRUDENT_FOLD = "Prudent Fold"
@@ -92,11 +95,12 @@ class BlufferAgent(BaseAgent):
 
     Opera de forma desacoplada com base em:
     1. Fold Equity estimada dinâmica (número de adversários, streets e custos).
-    2. Análise de textura do bordo (dry boards, scare cards, flush draws).
-    3. Semi-blefes com equidade oculta de evolução (outs no Flop e Turn).
-    4. Blefes de continuação (C-Bet Steals) em potes abandonados.
-    5. Re-aumentos desbalanceados (Bluff Raises) contra apostas de sondagem.
-    6. Suporte completo a salvamento, carregamento e calibração de hiperparâmetros.
+    2. Estratégia ativa de Pré-Flop para ver o Flop e roubar blinds.
+    3. Análise de textura do bordo (dry boards, scare cards, flush draws).
+    4. Semi-blefes com equidade oculta de evolução (outs no Flop e Turn).
+    5. Blefes de continuação (C-Bet Steals) em potes abandonados.
+    6. Re-aumentos desbalanceados (Bluff Raises) contra apostas de sondagem.
+    7. Suporte completo a salvamento, carregamento e calibração de hiperparâmetros.
     """
 
     def __init__(
@@ -191,7 +195,7 @@ class BlufferAgent(BaseAgent):
         """Carrega hiperparâmetros pré-treinados a partir de arquivo JSON."""
         target = Path(filepath)
         if not target.exists():
-            raise FileNotFoundError(f"Arquivo de parâmetros não encontrado: {target}")
+            raise FileNotFoundError(f"Arquivo não encontrado: {target}")
         with open(target, "r", encoding="utf-8") as f:
             data = json.load(f)
         self.load_parameters(data)
@@ -238,6 +242,157 @@ class BlufferAgent(BaseAgent):
             amount=decision.amount,
         )
 
+    def _evaluate_preflop(
+        self,
+        hole_cards: Sequence[Card],
+        pot_size: int,
+        to_call: int,
+        player_stack: int,
+        player_current_bet: int,
+        current_highest_bet: int,
+        min_raise: int,
+        big_blind: int,
+        num_opponents: int,
+        legal_actions: Sequence[ActionType],
+    ) -> BluffDecision:
+        """Avalia e decide a ação tática no Pré-Flop para o Agente Blefador.
+
+        Garante que o blefador nunca desista de mãos jogáveis com custo baixo
+        para ver o Flop e possa roubar blinds ou aplicar 3-bets pré-flop.
+        """
+        c1, c2 = hole_cards[0], hole_cards[1]
+        is_pair = c1.rank.value == c2.rank.value
+        is_suited = c1.suit == c2.suit
+        high_rank = max(c1.rank.value, c2.rank.value)
+        low_rank = min(c1.rank.value, c2.rank.value)
+        gap = high_rank - low_rank
+
+        # 1. Mãos Premium (TT+, AJ+, KQ) -> Valor legítimo pré-flop
+        is_premium = (
+            (is_pair and high_rank >= 10)
+            or (high_rank == Rank.ACE.value and low_rank >= 11)
+            or (high_rank == Rank.KING.value and low_rank == Rank.QUEEN.value)
+        )
+
+        if is_premium:
+            return self._decide_value_play(
+                pot_size=pot_size,
+                to_call=to_call,
+                player_stack=player_stack,
+                player_current_bet=player_current_bet,
+                current_highest_bet=current_highest_bet,
+                min_raise=min_raise,
+                big_blind=big_blind,
+                legal_actions=legal_actions,
+                hand_desc=f"{c1.rank.symbol}{c2.rank.symbol}",
+            )
+
+        # 2. Mãos Especulativas com alto potencial de blefe pós-flop
+        # (Pares 22-99, cartas naipadas, conectores, broadways)
+        is_speculative = (
+            is_pair
+            or is_suited
+            or (gap <= 2 and low_rank >= 4)
+            or (high_rank >= 10 and low_rank >= 8)
+        )
+
+        roll = self.rng.random()
+        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
+
+        # Cenário A: Custo Zero ou Limp / Cobrir o Big Blind (to_call <= big_blind)
+        # O blefador NUNCA dá fold para ver o flop por um BB!
+        if to_call <= big_blind:
+            # Chance de aplicar Roubo de Blinds (Pre-Flop Steal Raise)
+            wants_steal = roll < (self.params.cbet_frequency * 0.75)
+            if can_raise and wants_steal:
+                raise_amt = current_highest_bet + max(min_raise, big_blind * 2)
+                max_pos = player_current_bet + player_stack
+                raise_amt = min(max_pos, raise_amt)
+                if raise_amt > current_highest_bet:
+                    return BluffDecision(
+                        action_type=ActionType.RAISE,
+                        amount=raise_amt,
+                        is_bluff=True,
+                        tactic=BluffTactic.PREFLOP_STEAL.value,
+                        fold_equity=0.55,
+                        reason="Roubo de blinds pré-flop explorando mesa barata",
+                    )
+
+            if to_call == 0 and ActionType.CHECK in legal_actions:
+                return BluffDecision(
+                    action_type=ActionType.CHECK,
+                    amount=0,
+                    is_bluff=False,
+                    tactic=BluffTactic.FREE_CHECK.value,
+                    fold_equity=0.40,
+                    reason="Check gratuito no Big Blind para ver o Flop",
+                )
+
+            if ActionType.CALL in legal_actions:
+                return BluffDecision(
+                    action_type=ActionType.CALL,
+                    amount=0,
+                    is_bluff=False,
+                    tactic=BluffTactic.PREFLOP_DEFEND.value,
+                    fold_equity=0.45,
+                    reason="Pagamento do Big Blind para disputar o Flop em posição",
+                )
+
+        # Cenário B: Enfrentando aumento padrão pré-flop (to_call entre 1 e 3.5 BBs)
+        is_standard_raise = to_call <= big_blind * 3.5
+        if is_standard_raise:
+            # Possibilidade de 3-Bet Bluff para pressionar o agressor
+            wants_3bet = roll < (self.params.bluff_raise_frequency * 0.65)
+            if can_raise and wants_3bet and (is_speculative or roll < 0.20):
+                raise_amt = current_highest_bet + max(min_raise, int(to_call * 2.4))
+                max_pos = player_current_bet + player_stack
+                raise_amt = min(max_pos, raise_amt)
+                if raise_amt > current_highest_bet:
+                    return BluffDecision(
+                        action_type=ActionType.RAISE,
+                        amount=raise_amt,
+                        is_bluff=True,
+                        tactic=BluffTactic.PREFLOP_3BET.value,
+                        fold_equity=0.60,
+                        reason=(
+                            "Re-aumento 3-Bet de blefe pré-flop pressionando oponente"
+                        ),
+                    )
+
+            # Com mão especulativa ou sorteio favorável, paga para ver o Flop
+            wants_call = is_speculative or (roll < 0.70)
+            if wants_call and ActionType.CALL in legal_actions:
+                return BluffDecision(
+                    action_type=ActionType.CALL,
+                    amount=0,
+                    is_bluff=False,
+                    tactic=BluffTactic.PREFLOP_DEFEND.value,
+                    fold_equity=0.40,
+                    reason="Defesa pré-flop com mão especulativa para blefar pós-flop",
+                )
+
+        # Cenário C: Aumento pesado / 4-Bet / All-In (to_call > 3.5 BBs)
+        # Desiste prudentemente se não tiver mão premium
+        if ActionType.FOLD in legal_actions:
+            return BluffDecision(
+                action_type=ActionType.FOLD,
+                amount=0,
+                is_bluff=False,
+                tactic=BluffTactic.PRUDENT_FOLD.value,
+                fold_equity=0.20,
+                reason="Desistência prudente pré-flop contra aposta massiva",
+            )
+
+        fallback = legal_actions[0] if legal_actions else ActionType.FOLD
+        return BluffDecision(
+            action_type=fallback,
+            amount=0,
+            is_bluff=False,
+            tactic=BluffTactic.CONTINGENCY.value,
+            fold_equity=0.20,
+            reason="Ação de contingência pré-flop",
+        )
+
     def evaluate_state(
         self,
         hole_cards: Sequence[Card],
@@ -258,6 +413,21 @@ class BlufferAgent(BaseAgent):
         Retorna a decisão ótima fundamentada no Bluff Engine, sem depender
         de infraestrutura ou conexões externas.
         """
+        # Estratégia dedicada e ativa para o Pré-Flop (nunca dá fold por um BB)
+        if street == Street.PREFLOP or len(community_cards) == 0:
+            return self._evaluate_preflop(
+                hole_cards=hole_cards,
+                pot_size=pot_size,
+                to_call=to_call,
+                player_stack=player_stack,
+                player_current_bet=player_current_bet,
+                current_highest_bet=current_highest_bet,
+                min_raise=min_raise,
+                big_blind=big_blind,
+                num_opponents=num_opponents,
+                legal_actions=legal_actions,
+            )
+
         all_cards = list(hole_cards) + list(community_cards)
         is_strong, hand_desc = self._classify_hand_strength(hole_cards, all_cards)
 
@@ -670,9 +840,15 @@ class BlufferAgent(BaseAgent):
             self.bluffs_attempted += 1
             if decision.tactic == BluffTactic.SEMI_BLUFF.value:
                 self.semi_bluffs += 1
-            elif decision.tactic == BluffTactic.CBET_STEAL.value:
+            elif decision.tactic in (
+                BluffTactic.CBET_STEAL.value,
+                BluffTactic.PREFLOP_STEAL.value,
+            ):
                 self.cbet_steals += 1
-            elif decision.tactic == BluffTactic.BLUFF_RAISE.value:
+            elif decision.tactic in (
+                BluffTactic.BLUFF_RAISE.value,
+                BluffTactic.PREFLOP_3BET.value,
+            ):
                 self.bluff_raises += 1
             else:
                 self.pure_bluffs += 1
@@ -703,6 +879,17 @@ def run_isolated_demo() -> None:
     print("=" * 75)
 
     scenarios = [
+        (
+            "Cenário 0: Pré-Flop Defesa do Big Blind com Mão Especulativa (9s 8s)",
+            (Card.from_str("9s"), Card.from_str("8s")),
+            [],
+            30,
+            10,
+            1000,
+            3,
+            [ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
+            Street.PREFLOP,
+        ),
         (
             "Cenário 1: C-Bet Steal no Flop em Mesa Seca (7d 2c em Ah 8s 3c)",
             (Card.from_str("7d"), Card.from_str("2c")),
@@ -777,7 +964,7 @@ def run_isolated_demo() -> None:
     ]
 
     for title, hole, board, pot, to_call, stack, opps, legals, street in scenarios:
-        board_str = " ".join(str(c) for c in board)
+        board_str = " ".join(str(c) for c in board) if board else "(Pré-Flop)"
         print(f"\n> {title}")
         print(
             f"  Mão: {hole[0]} {hole[1]} | Bordo: [{board_str}] | "
