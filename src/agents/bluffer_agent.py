@@ -76,7 +76,7 @@ class BlufferParameters:
     aggression_multiplier: float = 1.0
     scare_card_weight: float = 0.15
     dry_board_bonus: float = 0.10
-    bet_sizing_factor: float = 0.70
+    bet_sizing_factor: float = 0.40
 
     def to_dict(self) -> Dict[str, float]:
         """Converte hiperparâmetros em dicionário serializável."""
@@ -115,7 +115,7 @@ class BlufferAgent(BaseAgent):
         aggression_multiplier: float = 1.0,
         scare_card_weight: float = 0.15,
         dry_board_bonus: float = 0.10,
-        bet_sizing_factor: float = 0.70,
+        bet_sizing_factor: float = 0.40,
         rng: Optional[random.Random] = None,
     ) -> None:
         super().__init__(player_id=player_id, name=name)
@@ -128,7 +128,7 @@ class BlufferAgent(BaseAgent):
             aggression_multiplier=max(0.50, min(2.50, aggression_multiplier)),
             scare_card_weight=max(0.00, min(0.40, scare_card_weight)),
             dry_board_bonus=max(0.00, min(0.30, dry_board_bonus)),
-            bet_sizing_factor=max(0.35, min(1.20, bet_sizing_factor)),
+            bet_sizing_factor=max(0.25, min(1.20, bet_sizing_factor)),
         )
         self.rng: random.Random = rng if rng is not None else random.Random()
 
@@ -302,8 +302,8 @@ class BlufferAgent(BaseAgent):
         # Cenário A: Custo Zero ou Limp / Cobrir o Big Blind (to_call <= big_blind)
         # O blefador NUNCA dá fold para ver o flop por um BB!
         if to_call <= big_blind:
-            # Chance de aplicar Roubo de Blinds (Pre-Flop Steal Raise)
-            wants_steal = roll < (self.params.cbet_frequency * 0.75)
+            # Chance de aplicar Roubo de Blinds (Pre-Flop Steal calibrado para ~20%)
+            wants_steal = roll < (self.params.cbet_frequency * 0.30)
             if can_raise and wants_steal:
                 raise_amt = current_highest_bet + max(min_raise, big_blind * 2)
                 max_pos = player_current_bet + player_stack
@@ -341,9 +341,9 @@ class BlufferAgent(BaseAgent):
         # Cenário B: Enfrentando aumento padrão pré-flop (to_call entre 1 e 3.5 BBs)
         is_standard_raise = to_call <= big_blind * 3.5
         if is_standard_raise:
-            # Possibilidade de 3-Bet Bluff para pressionar o agressor
-            wants_3bet = roll < (self.params.bluff_raise_frequency * 0.65)
-            if can_raise and wants_3bet and (is_speculative or roll < 0.20):
+            # Possibilidade moderada de 3-Bet Bluff para pressionar o agressor
+            wants_3bet = roll < (self.params.bluff_raise_frequency * 0.30)
+            if can_raise and wants_3bet and (is_speculative or roll < 0.15):
                 raise_amt = current_highest_bet + max(min_raise, int(to_call * 2.4))
                 max_pos = player_current_bet + player_stack
                 raise_amt = min(max_pos, raise_amt)
@@ -780,7 +780,7 @@ class BlufferAgent(BaseAgent):
         """Executa aposta legítima por valor ao deter mão forte."""
         if ActionType.RAISE in legal_actions and player_stack > to_call:
             raise_val = current_highest_bet + max(
-                min_raise, int(pot_size * 0.75 * self.params.aggression_multiplier)
+                min_raise, int(pot_size * 0.50 * self.params.aggression_multiplier)
             )
             max_pos = player_current_bet + player_stack
             raise_val = min(max_pos, raise_val)
@@ -794,7 +794,7 @@ class BlufferAgent(BaseAgent):
             )
 
         if ActionType.BET in legal_actions:
-            bet_val = max(big_blind, int(pot_size * 0.70))
+            bet_val = max(big_blind, int(pot_size * 0.45))
             bet_val = min(player_stack, bet_val)
             return BluffDecision(
                 action_type=ActionType.BET,

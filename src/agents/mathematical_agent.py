@@ -57,9 +57,9 @@ class MathematicalAgent(BaseAgent):
         player_id: str,
         name: str = "Agente Matemático",
         raise_equity_threshold: float = 0.65,
-        call_ev_margin: float = 0.0,
+        call_ev_margin: float = 0.04,
         draw_weight: float = 1.0,
-        bet_sizing_factor: float = 0.75,
+        bet_sizing_factor: float = 0.50,
         num_simulations: int = 200,
         rng: Optional[random.Random] = None,
     ) -> None:
@@ -316,6 +316,9 @@ class MathematicalAgent(BaseAgent):
             # 1. Custo baixo (<= 1 BB) com mão especulativa é sempre +EV Call
             if to_call <= big_blind and preflop_score >= 0.35:
                 is_profitable = True
+            # 1b. Custo moderado (<= 2.5 BBs) com cartas boas/especulativas
+            elif to_call <= int(big_blind * 2.5) and preflop_score >= 0.45:
+                is_profitable = True
             # 2. Contra aposta pesada (> 3 BB), exige combinatória forte E equidade
             elif to_call > 3 * big_blind:
                 is_profitable = (
@@ -332,7 +335,10 @@ class MathematicalAgent(BaseAgent):
                 or (equity >= self.raise_equity_threshold + 0.08)
             )
         else:
-            is_profitable = equity >= (pot_odds - self.call_ev_margin)
+            # Bluff Catcher no Turn e River: margem adaptativa para caçar blefes
+            bluff_catch_bonus = 0.04 if outs == 0 else 0.0
+            effective_margin = self.call_ev_margin + bluff_catch_bonus
+            is_profitable = equity >= (pot_odds - effective_margin)
             strong_advantage = equity >= (self.raise_equity_threshold + 0.08)
 
         # Aumento por valor com vantagem significativa de equidade
