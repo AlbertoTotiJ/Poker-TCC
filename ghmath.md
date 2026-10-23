@@ -3,12 +3,12 @@
 > **Projeto:** TCC Poker Texas Hold'em - Simulação e Detecção de Blefes  
 > **Autor do Agente:** Gustavo (GH)  
 > **Arquivo Alvo:** `src/agents/gh_math_agent.py`  
-> **Diretriz de Segurança:** 100% testado e validado localmente antes de qualquer push ao GitHub.
+> **Status:** 100% Implementado, Testado, Integrado e Enviado ao GitHub (`origin/main`).
 
 ---
 
 ## 🎯 Objetivo Central
-Construir um agente matemático de segunda geração para poker, eliminando a covardia de folds excessivos no pré-flop através de **Implied Odds**, **Ranges Dinâmicos de Posição** e **Critério de Kelly Fracionário**, gerando métricas completas de explicabilidade cognitiva (XAI) para a futura visão de rede neural no Quartz.
+Construir um agente matemático de segunda geração para poker, eliminando a covardia de folds excessivos no pré-flop através de **Implied Odds**, **Ranges Dinâmicos de Posição**, **Critério de Kelly Fracionário**, **Tenacidade de Showdown (Bluff Catching)** e **Controle Multiway de Pote**, gerando métricas completas de explicabilidade cognitiva (XAI) para a futura visão de rede neural no Quartz.
 
 ---
 
@@ -52,8 +52,10 @@ Construir um agente matemático de segunda geração para poker, eliminando a co
   - Validado que o agente nunca folda quando o custo para ver cartas for zero.
 - [x] **3.5 Teste do Payload Cognitivo:**
   - Validado preenchimento de todos os 11 campos de `GhCognitiveMetrics` para o Quartz.
-- [x] **3.6 Regressão Geral do Projeto:**
-  - Todos os 80 testes unitários do repositório (`pytest tests/`) executados e aprovados com 100% de sucesso.
+- [x] **3.6 Tenacidade de Showdown & Controle Multiway:**
+  - Validado teste de *Bluff Catching* no River com par formado e *Pot Control* com 2+ oponentes.
+- [x] **3.7 Regressão Geral do Projeto:**
+  - Todos os 98 testes unitários do repositório (`pytest tests/`) executados e aprovados com 100% de sucesso.
 
 ---
 
@@ -78,9 +80,12 @@ Construir um agente matemático de segunda geração para poker, eliminando a co
 
 ---
 
-### ETAPA 6: Homologação e Push Oficial
-- [ ] **6.1 Apresentação dos Resultados ao Gustavo:**
-  - Aguardando revisão e aprovação final de Gustavo.
-- [ ] **6.2 Commit & Push:**
-  - Commit semântico: `feat(agents): implementar GhMathAgent com implied odds, kelly criterion e telemetria XAI`.
-  - Execução de `git push origin main`.
+### ETAPA 6: Homologação, Merge e Push Oficial
+- [x] **6.1 Commit Inicial do GhMathAgent:**
+  - Commit semântico: `feat(agents): implementar GhMathAgent com implied odds, kelly criterion e telemetria XAI` (`8321fdd`).
+- [x] **6.2 Sincronização e Merge com Alberto:**
+  - Puxadas e mescladas as atualizações de Alberto (`bluffer_agent`, `all_ai`, tenacidade e controle multiway) com resolução limpa de conflitos em `web/index.html` e `public/index.html`.
+- [x] **6.3 Alinhamento de Tenacidade e Bluff Catching:**
+  - Incorporado no `GhMathAgent` o módulo de avaliação real de mãos (`evaluate_hand`) com *Showdown Tenacity* e *Multiway Pot Control*.
+- [x] **6.4 Push Oficial ao GitHub:**
+  - `git push origin main` executado com sucesso nos commits `c09d28c`, `e65feab` e `07d3343`.
