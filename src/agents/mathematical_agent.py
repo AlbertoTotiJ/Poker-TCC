@@ -235,13 +235,16 @@ class MathematicalAgent(BaseAgent):
         num_opponents: int = 1,
     ) -> Tuple[float, int]:
         """Calcula a equidade ajustada incluindo Monte Carlo e outs de draws."""
+        capped_opponents = min(3, max(1, num_opponents))
+        sims = min(50, self.num_simulations)
+
         if not community_cards:
             preflop_score = self._evaluate_preflop_combinatorics(hole_cards)
             eq_res = estimate_hand_equity(
                 hole_cards=hole_cards,
                 community_cards=(),
-                num_opponents=num_opponents,
-                num_simulations=self.num_simulations,
+                num_opponents=capped_opponents,
+                num_simulations=sims,
                 rng=self.rng,
             )
             blended_equity = (preflop_score * 0.40) + (eq_res.equity * 0.60)
@@ -250,8 +253,8 @@ class MathematicalAgent(BaseAgent):
         eq_res = estimate_hand_equity(
             hole_cards=hole_cards,
             community_cards=community_cards,
-            num_opponents=num_opponents,
-            num_simulations=self.num_simulations,
+            num_opponents=capped_opponents,
+            num_simulations=sims,
             rng=self.rng,
         )
 

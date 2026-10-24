@@ -1648,7 +1648,7 @@
       <div class="form-group">
         <label for="recordNumHands">Quantidade de Rodadas:</label>
         <input type="number" id="recordNumHands" value="10" min="1" max="100">
-        <small style="color:#888;">Teste padrão recomendado: 10 partidas.</small>
+        <small style="color:#888;">Recomendado na Vercel: lotes de 5 a 20 partidas para resposta rápida.</small>
       </div>
 
       <div class="form-group">
@@ -2770,11 +2770,28 @@
       } catch (err) {
         spinner.style.display = 'none';
         resultBox.style.display = 'block';
-        resultBox.innerHTML = `
-          <div style="color: #ff5252; font-weight: bold;">
-            ❌ Erro de comunicação com o servidor: ${err.message}
-          </div>
-        `;
+        const isTimeout = err.message && (
+          err.message.includes('FUNCTION_INVOCATION_TIMEOUT') ||
+          err.message.includes('504') ||
+          err.message.toLowerCase().includes('timeout')
+        );
+        if (isTimeout) {
+          resultBox.innerHTML = `
+            <div style="color: #ff5252; font-weight: bold; margin-bottom: 6px;">
+              ⏱️ Tempo Limite da Função Serverless Excedido (Timeout na Vercel)
+            </div>
+            <div style="font-size: 0.8rem; color: #ddd; line-height: 1.4;">
+              A simulação de muitas rodadas em mesa cheia atingiu o tempo limite da Vercel.<br>
+              <strong>Solução:</strong> Rode em lotes de <strong>5 a 10 partidas</strong> por vez para resposta instantânea.
+            </div>
+          `;
+        } else {
+          resultBox.innerHTML = `
+            <div style="color: #ff5252; font-weight: bold;">
+              ❌ Erro de comunicação com o servidor: ${err.message}
+            </div>
+          `;
+        }
         btnStart.disabled = false;
       }
     }

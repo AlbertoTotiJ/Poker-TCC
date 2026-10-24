@@ -20,15 +20,14 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from src.agents.gh_math_agent import (
+from src.agents.gh_math_agent import (  # noqa: E402
     GhCognitiveMetrics,
     GhMathAgent,
-    GhMathDecision,
     GhPosition,
 )
-from src.engine.deck import Card
-from src.engine.player import Player
-from src.engine.table import Action, ActionType, Street, Table
+from src.engine.deck import Card  # noqa: E402
+from src.engine.player import Player  # noqa: E402
+from src.engine.table import Action, ActionType, Street, Table  # noqa: E402
 
 
 class TestGhMathAgent(unittest.TestCase):
@@ -72,7 +71,7 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertNotEqual(action.action_type, ActionType.FOLD)
 
     def test_preflop_speculative_hand_defends_in_late_position(self) -> None:
-        """Verifica que conectores de mesmo naipe em Late Position não tomam fold passivo contra aposta padrão."""
+        """Verifica que conectores em Late Position não tomam fold passivo."""
         p1 = Player("p1", "Raiser", 1000)
         p2 = Player("gh_btn", "GhButton", 1000)
         table = Table([p1, p2], small_blind=10, big_blind=20, rng=random.Random(21))
@@ -93,7 +92,7 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertGreater(agent.last_decision.metrics.adjusted_equity, 0.25)
 
     def test_preflop_pocket_pair_set_mining(self) -> None:
-        """Verifica que pocket pairs pequenos pagam para buscar trinca (set mining) em pots com profundidade."""
+        """Verifica que pocket pairs pagam para buscar trinca (set mining)."""
         agent = GhMathAgent("gh_pair", rng=random.Random(7))
         decision = agent.evaluate_state(
             hole_cards=(Card.from_str("4h"), Card.from_str("4d")),
@@ -116,7 +115,7 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertGreater(decision.metrics.adjusted_equity, 0.35)
 
     def test_implied_odds_call_with_flush_draw(self) -> None:
-        """Valida que o cálculo de Implied Odds viabiliza o Call no flop com Flush Draw se houver fichas para extrair."""
+        """Valida que Implied Odds viabilizam o Call no flop com Flush Draw."""
         agent = GhMathAgent("gh_draw", rng=random.Random(33))
         # Flush draw no flop (4 cartas de copas: 2 na mão, 2 na mesa)
         decision = agent.evaluate_state(
@@ -144,7 +143,7 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertLess(decision.metrics.implied_odds, decision.metrics.direct_pot_odds)
 
     def test_kelly_fractional_bet_sizing(self) -> None:
-        """Verifica que o Critério de Kelly gera dimensionamento proporcional à vantagem com limite seguro."""
+        """Verifica dimensionamento do Critério de Kelly com limite seguro."""
         agent = GhMathAgent(
             "gh_kelly", kelly_fraction_limit=0.25, rng=random.Random(15)
         )
@@ -179,14 +178,14 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertLessEqual(decision.metrics.kelly_fraction, 0.25)
 
     def test_cognitive_metrics_payload_integrity(self) -> None:
-        """Garante que GhCognitiveMetrics é preenchido com todos os campos válidos para o Quartz."""
+        """Garante preenchimento de GhCognitiveMetrics para o Quartz."""
         p1 = Player("p1", "Player1", 1000)
         p2 = Player("gh_xai", "GhXai", 1000)
         table = Table([p1, p2], small_blind=10, big_blind=20, rng=random.Random(88))
         table.start_new_hand()
 
         agent = GhMathAgent("gh_xai", rng=random.Random(88))
-        action = agent.decide_action(table)
+        agent.decide_action(table)
 
         self.assertIsNotNone(agent.last_decision)
         metrics = agent.last_decision.metrics
@@ -204,7 +203,7 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertTrue(len(metrics.formula_reference) > 5)
 
     def test_disciplined_fold_facing_huge_overbet_with_weak_hand(self) -> None:
-        """Garante que contra overbet insana sem equidade ou odds, o agente não sangra fichas (fold disciplinado)."""
+        """Garante fold disciplinado contra overbet sem equidade ou odds."""
         agent = GhMathAgent("gh_fold", rng=random.Random(4))
         decision = agent.evaluate_state(
             hole_cards=(Card.from_str("7d"), Card.from_str("2c")),
@@ -231,7 +230,7 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertIn("-EV Fold", decision.metrics.tactical_rationale)
 
     def test_multiway_pot_control_on_river(self) -> None:
-        """Verifica que em mesa multiway (>= 2 oponentes) no River, o agente opta por Check para ver showdown."""
+        """Verifica que em mesa multiway no River o agente dá Check."""
         agent = GhMathAgent("gh_ctrl", rng=random.Random(12))
         decision = agent.evaluate_state(
             hole_cards=(Card.from_str("Kd"), Card.from_str("Tc")),
@@ -259,7 +258,7 @@ class TestGhMathAgent(unittest.TestCase):
         self.assertIn("multiway", decision.metrics.tactical_rationale.lower())
 
     def test_bluff_catch_on_river_with_pair(self) -> None:
-        """Verifica tenacidade de showdown: paga aposta moderada no River com par formado."""
+        """Verifica tenacidade de showdown com par formado."""
         agent = GhMathAgent("gh_catch", rng=random.Random(19))
         decision = agent.evaluate_state(
             hole_cards=(Card.from_str("As"), Card.from_str("9d")),

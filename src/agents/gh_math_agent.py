@@ -11,7 +11,7 @@ from enum import Enum
 from pathlib import Path
 import random
 import sys
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 # Garante resolução dos módulos a partir da raiz do repositório
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -325,7 +325,7 @@ class GhMathAgent(BaseAgent):
         num_opponents: int = 1,
         hand_rank_val: int = 1,
     ) -> GhMathDecision:
-        """Determina se aposta por valor ou dá check gratuito com controle de pote multiway."""
+        """Determina aposta por valor ou check gratuito com controle multiway."""
         # Controle de Pote Multiway no River / Pós-Flop com mãos fracas
         if (
             num_opponents >= 2
@@ -345,8 +345,12 @@ class GhMathAgent(BaseAgent):
                 kelly_fraction=kelly_fraction,
                 outs_count=outs,
                 position_name=position.value,
-                tactical_rationale="Controle de pote multiway para ver showdown sem inflar o pote",
-                formula_reference="Multiway Pot Control: Check behind to minimize variance and see showdown",
+                tactical_rationale=(
+                    "Controle de pote multiway para ver showdown sem inflar o pote"
+                ),
+                formula_reference=(
+                    "Multiway Pot Control: Check behind to minimize variance"
+                ),
             )
             return GhMathDecision(ActionType.CHECK, amount=0, metrics=metrics)
 
@@ -370,7 +374,10 @@ class GhMathAgent(BaseAgent):
                 kelly_fraction=kelly_fraction,
                 outs_count=outs,
                 position_name=position.value,
-                tactical_rationale=f"Value Bet Kelly ({sizing_ratio:.0%} pot) com equidade de {adjusted_equity:.1%}",
+                tactical_rationale=(
+                    f"Value Bet Kelly ({sizing_ratio:.0%} pot) "
+                    f"com equidade de {adjusted_equity:.1%}"
+                ),
                 formula_reference="Kelly Criterion Sizing: f* = (p(b+1)-1)/b * lambda",
             )
             return GhMathDecision(
@@ -389,7 +396,9 @@ class GhMathAgent(BaseAgent):
             outs_count=outs,
             position_name=position.value,
             tactical_rationale="Check gratuito para ver a próxima carta sem custo",
-            formula_reference="Zero-Cost Rule: Check whenever to_call == 0 and advantage is below threshold",
+            formula_reference=(
+                "Zero-Cost Rule: Check when to_call == 0 and below threshold"
+            ),
         )
         return GhMathDecision(ActionType.CHECK, amount=0, metrics=metrics)
 
@@ -416,7 +425,7 @@ class GhMathAgent(BaseAgent):
         hand_rank_val: int = 1,
         comb_desc: str = "",
     ) -> GhMathDecision:
-        """Determina se aumenta com vantagem, paga por odds ou desiste por -EV com tenacidade de showdown."""
+        """Decide aumento com vantagem, call por odds ou fold disciplinado."""
         can_raise = ActionType.RAISE in legal_actions
         can_call = ActionType.CALL in legal_actions
 
@@ -444,8 +453,12 @@ class GhMathAgent(BaseAgent):
                 kelly_fraction=kelly_fraction,
                 outs_count=outs,
                 position_name=position.value,
-                tactical_rationale=f"+EV Raise: Equidade {adjusted_equity:.1%} supera limiar de agressão",
-                formula_reference="Value Raise: adjusted_equity >= base_threshold + margin",
+                tactical_rationale=(
+                    f"+EV Raise: Equidade {adjusted_equity:.1%} supera limiar"
+                ),
+                formula_reference=(
+                    "Value Raise: adjusted_equity >= base_threshold + margin"
+                ),
             )
             return GhMathDecision(
                 ActionType.RAISE, amount=raise_amount, metrics=metrics
@@ -468,13 +481,19 @@ class GhMathAgent(BaseAgent):
         if can_call and (direct_call_ok or implied_call_ok):
             if is_bluff_catch and not (adjusted_equity >= direct_pot_odds):
                 call_reason = (
-                    f"+EV Bluff Catch: Par formado ({comb_desc or 'Feito'}) com tenacidade "
-                    f"de showdown contra aposta moderada ({to_call} fichas)"
+                    f"+EV Bluff Catch: Par ({comb_desc or 'Feito'}) com tenacidade "
+                    f"de showdown contra aposta ({to_call} fichas)"
                 )
             elif direct_call_ok:
-                call_reason = f"+EV Direct Call: Equidade {adjusted_equity:.1%} >= Pot Odds {direct_pot_odds:.1%}"
+                call_reason = (
+                    f"+EV Direct Call: Equidade {adjusted_equity:.1%} "
+                    f">= Pot Odds {direct_pot_odds:.1%}"
+                )
             else:
-                call_reason = f"+EV Implied Call: {outs} outs com Implied Odds favoráveis ({implied_odds:.1%})"
+                call_reason = (
+                    f"+EV Implied Call: {outs} outs com Implied Odds "
+                    f"favoráveis ({implied_odds:.1%})"
+                )
 
             metrics = GhCognitiveMetrics(
                 raw_equity=raw_equity,
@@ -487,7 +506,9 @@ class GhMathAgent(BaseAgent):
                 outs_count=outs,
                 position_name=position.value,
                 tactical_rationale=call_reason,
-                formula_reference="Call Condition: adjusted_equity >= min(direct_pot_odds, implied_odds)",
+                formula_reference=(
+                    "Call Condition: adjusted_equity >= min(direct, implied)"
+                ),
             )
             return GhMathDecision(ActionType.CALL, amount=to_call, metrics=metrics)
 
@@ -519,8 +540,13 @@ class GhMathAgent(BaseAgent):
             kelly_fraction=kelly_fraction,
             outs_count=outs,
             position_name=position.value,
-            tactical_rationale=f"-EV Fold: Equidade {adjusted_equity:.1%} < Pot Odds {direct_pot_odds:.1%}",
-            formula_reference="Disciplined Fold: expected_value < 0 and no implied odds support",
+            tactical_rationale=(
+                f"-EV Fold: Equidade {adjusted_equity:.1%} < "
+                f"Pot Odds {direct_pot_odds:.1%}"
+            ),
+            formula_reference=(
+                "Disciplined Fold: expected_value < 0 and no implied odds"
+            ),
         )
         return GhMathDecision(ActionType.FOLD, amount=0, metrics=metrics)
 

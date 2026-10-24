@@ -102,7 +102,7 @@ def _connect_via_pg8000(db_url: str) -> Any:
         port=port,
         database=database,
         ssl_context=ssl_context,
-        timeout=8,
+        timeout=3,
     )
 
 
@@ -130,7 +130,7 @@ def get_neon_connection_with_diag(
     try:
         import psycopg2
 
-        conn = psycopg2.connect(db_url, connect_timeout=8)
+        conn = psycopg2.connect(db_url, connect_timeout=3)
         return (conn, None)
     except ImportError as ie:
         psycopg2_err = f"psycopg2 indisponível: {str(ie)}"
@@ -214,7 +214,10 @@ def save_hand_to_neon(
         INSERT INTO hands (
             hand_index, pot_total, community_cards, winners,
             bluffs_detected, hand_details
-        ) VALUES (%s, %s, CAST(%s AS jsonb), CAST(%s AS jsonb), %s, CAST(%s AS jsonb));
+        ) VALUES (
+                        %s, %s, CAST(%s AS jsonb), CAST(%s AS jsonb),
+                        %s, CAST(%s AS jsonb)
+                    );
         """
         cur.execute(
             insert_sql,
@@ -906,7 +909,11 @@ def run_recording_batch(
             "error": "Código de autenticação inválido. Acesso negado à gravação.",
         }
 
-    num_hands = max(1, min(100, int(num_hands)))
+    is_serverless = bool(
+        os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+    )
+    max_hands = 25 if is_serverless else 100
+    num_hands = max(1, min(max_hands, int(num_hands)))
 
     if custom_seats and isinstance(custom_seats, (list, tuple)):
         num_players = max(2, min(9, len(custom_seats)))
@@ -1121,8 +1128,6 @@ def run_recording_batch(
 
         if save_hand_to_file(hand_record):
             file_saved_count += 1
-        if save_hand_to_neon(hand_record):
-            neon_saved_count += 1
 
         top_comb = (
             f"{winning_comb_desc} (Empate)"
@@ -1138,6 +1143,51 @@ def run_recording_batch(
             "bluffs": len(bluffs),
             "board": " ".join(str(c) for c in table.community_cards),
         })
+
+    # Salva no Neon em lote unico com uma so conexao rapida
+    if full_hand_records:
+        try:
+            conn = get_neon_connection()
+            if conn:
+                try:
+                    ensure_neon_schema(conn)
+                    cur = conn.cursor()
+                    insert_sql = """
+                    INSERT INTO hands (
+                        hand_index, pot_total, community_cards, winners,
+                        bluffs_detected, hand_details
+                    ) VALUES (
+                        %s, %s, CAST(%s AS jsonb),
+                        CAST(%s AS jsonb), %s, CAST(%s AS jsonb)
+                    );
+                    """
+                    for hr in full_hand_records:
+                        cur.execute(
+                            insert_sql,
+                            (
+                                hr.get("hand_index", 1),
+                                hr.get("pot_total", 0),
+                                json.dumps(hr.get("community_cards", [])),
+                                json.dumps(hr.get("winners", [])),
+                                hr.get("bluffs_count", 0),
+                                json.dumps(hr, ensure_ascii=False),
+                            ),
+                        )
+                    conn.commit()
+                    neon_saved_count = len(full_hand_records)
+                    cur.close()
+                except Exception:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                finally:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
     leaderboard = [
         {
@@ -1423,7 +1473,10 @@ def save_dataset_to_neon(
         INSERT INTO hands (
             hand_index, pot_total, community_cards,
             winners, bluffs_detected, hand_details
-        ) VALUES (%s, %s, CAST(%s AS jsonb), CAST(%s AS jsonb), %s, CAST(%s AS jsonb));
+                    ) VALUES (
+                        %s, %s, CAST(%s AS jsonb),
+                        CAST(%s AS jsonb), %s, CAST(%s AS jsonb)
+                    );
         """
         for hand_data in hands_to_save:
             cur.execute(
