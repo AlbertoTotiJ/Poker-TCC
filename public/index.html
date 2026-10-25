@@ -1325,6 +1325,76 @@
     button, input, select {
       touch-action: manipulation;
     }
+  
+    /* Estilos do Agente Treinador & Laboratório de Treino */
+    .btn-training {
+      background: linear-gradient(135deg, #1565c0, #0d47a1);
+      border: 1px solid #42a5f5;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(13, 71, 161, 0.4);
+    }
+    .btn-training:hover {
+      background: linear-gradient(135deg, #1976d2, #1565c0);
+      box-shadow: 0 4px 12px rgba(13, 71, 161, 0.6);
+      color: #fff;
+    }
+    .coach-card {
+      background: linear-gradient(135deg, rgba(21, 101, 192, 0.15), rgba(13, 71, 161, 0.25));
+      border: 1px solid rgba(66, 165, 245, 0.4);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .coach-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #0d47a1;
+      border: 2px solid #64b5f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .coach-diag-box {
+      font-size: 0.76rem;
+      color: #e3f2fd;
+      background: rgba(0, 0, 0, 0.35);
+      border-left: 3px solid #42a5f5;
+      padding: 8px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .metric-radar-box {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .metric-mini-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.72rem;
+    }
+    .metric-mini-card strong {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--gold-light);
+    }
+    .tier-badge-s { background: #ffd700; color: #000; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+    .tier-badge-a { background: #4caf50; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+    .tier-badge-b { background: #2196f3; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+    .tier-badge-c { background: #ff9800; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+    .tier-badge-d { background: #f44336; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
   </style>
 </head>
 <body>
@@ -1620,6 +1690,113 @@
         <button class="btn-header" onclick="closeAgentsModal()" style="padding:12px 18px;">
           Cancelar
         </button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal de Treinamento e Mentor de IAs -->
+  <div class="modal-overlay" id="trainingModal">
+    <div class="modal-card record-card" style="max-width: 680px;">
+      <button class="modal-close-btn" onclick="closeTrainingModal()">×</button>
+      <div class="modal-header">🎯 Laboratório de Treinamento de IA (Agente Mentor)</div>
+
+      <!-- Card do Agente Treinador -->
+      <div class="coach-card">
+        <div class="coach-avatar">🎓</div>
+        <div style="flex:1;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#64b5f6; font-size:0.95rem;">Agente Treinador (Mentor de IA)</strong>
+            <span style="font-size:0.7rem; background:#1565c0; color:#fff; padding:2px 8px; border-radius:12px; font-weight:700;">Meta-Agent Ativo</span>
+          </div>
+          <div style="font-size:0.78rem; color:#bbb; margin-top:2px;">
+            Supervisiona a evolução de agentes, diagnostica deficiências e salva novos agentes especializados sem alterar a base original.
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagnóstico do Mentor em Tempo Real -->
+      <div id="coachDiagnosticBox" class="coach-diag-box">
+        ⏳ Analisando agente selecionado...
+      </div>
+
+      <div class="form-group">
+        <label for="trainBaseAgentSelect">Agente Base para Treinar:</label>
+        <select id="trainBaseAgentSelect" onchange="updateCoachDiagnostic()">
+          <option value="bluffer" selected>🃏 Agente Blefador (Bluff Engine - Tático)</option>
+          <option value="math">📐 Agente Matemático (Alberto - Monte Carlo & EV)</option>
+          <option value="gh_math">🧠 GhMathAgent (Gustavo - Kelly Fracionário & XAI)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="trainMetricSelect">Métrica de Foco / Qualificação Individual:</label>
+        <select id="trainMetricSelect">
+          <option value="balanced" selected>⚖️ Equilibrado (Fitness Multi-Métrica)</option>
+          <option value="bluff_success_rate">🃏 Taxa de Sucesso de Blefe (% sem Showdown)</option>
+          <option value="fold_equity_realized">🛡️ Fold Equity Realizada (% Folds Forçados)</option>
+          <option value="bb_per_100">📈 Rentabilidade Máxima (BB/100)</option>
+          <option value="win_rate">🏆 Taxa de Vitória (% Mãos Ganhas)</option>
+          <option value="aggression_factor">⚡ Fator de Agressão Equilibrado (AF ~ 2.8)</option>
+          <option value="pfr">🚀 Agressão Pré-Flop (PFR %)</option>
+          <option value="vpip">🎯 Seletividade de Mão (VPIP %)</option>
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="trainGenerations">Gerações:</label>
+          <input type="number" id="trainGenerations" value="3" min="1" max="10">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="trainPopulation">População:</label>
+          <input type="number" id="trainPopulation" value="4" min="2" max="8">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="trainHands">Mãos/Avaliação:</label>
+          <input type="number" id="trainHands" value="20" min="5" max="50">
+        </div>
+      </div>
+
+      <!-- Preservação do Agente Original e Nome do Novo Agente -->
+      <div style="background:rgba(255, 215, 0, 0.05); border:1px solid rgba(212, 175, 55, 0.3); border-radius:6px; padding:10px; margin-bottom:14px;">
+        <div class="form-group" style="margin-bottom:6px;">
+          <label for="newAgentNameInput" style="color:var(--gold-light); font-weight:700;">Nome do Novo Agente Produzido:</label>
+          <input type="text" id="newAgentNameInput" placeholder="Ex: Agente Blefador Treinado v1" style="font-weight:700;">
+        </div>
+        <div style="font-size:0.72rem; color:#a5d6a7; display:flex; align-items:center; gap:6px;">
+          <span>🛡️</span>
+          <strong>Preservação Garantida:</strong> O agente original permanecerá 100% intacto e disponível. Este treino criará um novo agente independente adicionado ao seu elenco.
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.8rem; color:#ccc;">
+          <input type="checkbox" id="trainRecordHandsCheckbox" checked style="width:auto;">
+          Gravar todas as partidas do treino para enriquecer o dataset (.jsonl)
+        </label>
+      </div>
+
+      <button class="btn-submit" id="btnStartTraining" onclick="submitTrainingSession()" style="width:100%; background: linear-gradient(135deg, #1565c0, #0d47a1); border-color: #42a5f5;">
+        🚀 Iniciar Treinamento com o Agente Mentor
+      </button>
+
+      <!-- Feedback de Progresso e Resultados -->
+      <div id="trainingStatusArea" style="display:none; margin-top:14px;">
+        <div id="trainingSpinner" style="text-align:center; padding:12px; color:#64b5f6; font-weight:700;">
+          ⏳ Agente Treinador executando ciclo evolutivo e simulando mesas... Aguarde!
+        </div>
+        <div id="trainingResultBox" style="display:none;" class="record-result-box"></div>
+      </div>
+
+      <!-- Catálogo de Agentes Já Treinados -->
+      <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
+        <div class="preview-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>⭐ Seus Agentes Treinados Salvos</span>
+          <span id="savedAgentsCountBadge" style="font-size:0.7rem; color:#aaa; font-weight:normal;">0 agentes</span>
+        </div>
+        <div id="savedAgentsContainer" style="max-height:160px; overflow-y:auto; padding-right:4px;">
+          <div style="font-size:0.78rem; color:#777; text-align:center; padding:10px;">Nenhum agente customizado salvo ainda. Execute um treino acima!</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2917,7 +3094,335 @@
     window.addEventListener('orientationchange', () => setTimeout(autoScaleTable, 200));
 
     // Initial fetch e auto-scale responsivo
+    
+    /* ==========================================================================
+       GESTÃO VISUAL DO AGENTE TREINADOR & LABORATÓRIO DE IA
+       ========================================================================== */
+    let availableTrainedAgents = [];
+
+    const coachDiagnosticsPresets = {
+      'bluffer': {
+        name: 'Agente Blefador (Bluff Engine)',
+        diag: '💡 <strong>Conselho do Mentor:</strong> O Blefador original explora agressão e Fold Equity. Para o seu TCC, recomendo focar na métrica <strong>Taxa de Sucesso de Blefe</strong> para refinar o limiar de fold equity e evitar que ele tome calls caros em potes multi-way.',
+        suggestedName: 'Agente Blefador Otimizado v1'
+      },
+      'math': {
+        name: 'Agente Matemático (Alberto - EV)',
+        diag: '💡 <strong>Conselho do Mentor:</strong> O Matemático tem fundamentos sólidos de pot odds, porém pode dar folds excessivos em aumentos moderados. Recomendo treinar com foco em <strong>Rentabilidade (BB/100)</strong> para ajustar o threshold de valor e a margem de EV.',
+        suggestedName: 'Agente Matemático Otimizado v1'
+      },
+      'gh_math': {
+        name: 'GhMathAgent (Gustavo - Kelly)',
+        diag: '💡 <strong>Conselho do Mentor:</strong> O GhMath calcula implied odds e Kelly fracionário com precisão. O treino contra campeões do Hall of Fame refina seu teto de Kelly contra oponentes ultra-agressivos. Foco recomendado: <strong>Rentabilidade (BB/100)</strong>.',
+        suggestedName: 'GhMath Treinado v1'
+      }
+    };
+
+    function openTrainingModal() {
+      document.getElementById('trainingModal').classList.add('active');
+      document.getElementById('trainingStatusArea').style.display = 'none';
+      document.getElementById('trainingResultBox').style.display = 'none';
+      document.getElementById('btnStartTraining').disabled = false;
+      updateCoachDiagnostic();
+      loadAvailableCustomAgents();
+    }
+
+    function closeTrainingModal() {
+      document.getElementById('trainingModal').classList.remove('active');
+    }
+
+    function updateCoachDiagnostic() {
+      const select = document.getElementById('trainBaseAgentSelect');
+      const box = document.getElementById('coachDiagnosticBox');
+      const nameInput = document.getElementById('newAgentNameInput');
+      if (!select || !box) return;
+
+      const agentKey = select.value;
+      const preset = coachDiagnosticsPresets[agentKey] || coachDiagnosticsPresets['bluffer'];
+      box.innerHTML = preset.diag;
+      if (nameInput && (!nameInput.value || nameInput.value.includes('Otimizado') || nameInput.value.includes('Treinado'))) {
+        nameInput.value = preset.suggestedName;
+      }
+    }
+
+    async function submitTrainingSession() {
+      const agentType = document.getElementById('trainBaseAgentSelect').value;
+      const metric = document.getElementById('trainMetricSelect').value;
+      const generations = parseInt(document.getElementById('trainGenerations').value) || 3;
+      const population = parseInt(document.getElementById('trainPopulation').value) || 4;
+      const hands = parseInt(document.getElementById('trainHands').value) || 20;
+      const newName = (document.getElementById('newAgentNameInput').value || '').trim() || `${agentType.toUpperCase()} Treinado`;
+      const recordHands = document.getElementById('trainRecordHandsCheckbox').checked;
+
+      const statusArea = document.getElementById('trainingStatusArea');
+      const spinner = document.getElementById('trainingSpinner');
+      const resultBox = document.getElementById('trainingResultBox');
+      const startBtn = document.getElementById('btnStartTraining');
+
+      statusArea.style.display = 'block';
+      spinner.style.display = 'block';
+      resultBox.style.display = 'none';
+      startBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/training/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agent_type: agentType,
+            target_metric: metric,
+            generations: generations,
+            population: population,
+            hands: hands,
+            new_agent_name: newName,
+            record_hands: recordHands
+          })
+        });
+        const data = await res.json();
+        spinner.style.display = 'none';
+        startBtn.disabled = false;
+
+        if (data.success) {
+          renderTrainingResult(data);
+          loadAvailableCustomAgents();
+        } else {
+          resultBox.style.display = 'block';
+          resultBox.innerHTML = `
+            <div style="color: #ff5252; padding: 12px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px;">
+              ❌ <strong>Falha no Treinamento:</strong> ${data.error || 'Erro inesperado'}
+            </div>
+          `;
+        }
+      } catch (err) {
+        spinner.style.display = 'none';
+        startBtn.disabled = false;
+        resultBox.style.display = 'block';
+        resultBox.innerHTML = `
+          <div style="color: #ff5252; padding: 12px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px;">
+            ❌ <strong>Erro de Conexão:</strong> ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderTrainingResult(data) {
+      const box = document.getElementById('trainingResultBox');
+      if (!box) return;
+
+      const card = data.qualification || {};
+      const newAgent = data.new_agent || {};
+      const params = data.best_parameters || {};
+      const baseParams = data.baseline_parameters || {};
+      const dset = data.dataset_summary || {};
+
+      const tierClass = {
+        'S (Elite)': 'tier-badge-s',
+        'A (Mestre)': 'tier-badge-a',
+        'B (Competitivo)': 'tier-badge-b',
+        'C (Intermediário)': 'tier-badge-c',
+        'D (Iniciante)': 'tier-badge-d'
+      }[card.overall_tier] || 'tier-badge-b';
+
+      let scoresHtml = '';
+      if (card.individual_scores) {
+        for (const [key, item] of Object.entries(card.individual_scores)) {
+          scoresHtml += `
+            <div class="metric-mini-card">
+              <span style="color:#aaa;">${key}</span>
+              <strong>${item.raw_value}</strong>
+              <div style="margin-top:2px;">Nota: <span style="color:#64b5f6;">${item.score.toFixed(1)}</span> (${item.tier.split(' ')[0]})</div>
+            </div>
+          `;
+        }
+      }
+
+      let paramsHtml = '';
+      for (const [pname, bval] of Object.entries(baseParams)) {
+        const nval = params[pname] !== undefined ? params[pname] : bval;
+        const diff = (typeof nval === 'number' && typeof bval === 'number') ? (nval - bval) : 0;
+        const diffStr = diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2);
+        paramsHtml += `
+          <tr>
+            <td><code>${pname}</code></td>
+            <td style="color:#aaa;">${bval}</td>
+            <td style="color:#ffd54f; font-weight:700;">${nval}</td>
+            <td style="color:${diff >= 0 ? '#81c784' : '#e57373'};">${diffStr}</td>
+          </tr>
+        `;
+      }
+
+      box.style.display = 'block';
+      box.innerHTML = `
+        <div style="background: rgba(76, 175, 80, 0.12); border: 1px solid #4caf50; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#81c784; font-size:1.05rem;">🎉 Novo Agente Produzido com Sucesso!</strong>
+            <span class="${tierClass}">${card.overall_tier}</span>
+          </div>
+          <div style="margin-top:6px; font-size:0.85rem; color:#fff;">
+            <strong>Nome:</strong> <span style="color:var(--gold-light); font-weight:800;">${newAgent.name || 'Agente Treinado'}</span>
+            <span style="color:#aaa; font-size:0.75rem; margin-left:8px;">(Base: ${data.base_type})</span>
+          </div>
+          <div style="font-size:0.75rem; color:#c8e6c9; margin-top:4px;">
+            🛡️ <strong>Agente Original Preservado:</strong> O agente de base permanece intacto e acessível.
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+          <div class="stat-badge" style="flex:1;">
+            <span style="color:#aaa; font-size:0.72rem;">Fitness Geral</span>
+            <strong style="color:#64b5f6;">${card.overall_fitness.toFixed(1)} / 100</strong>
+          </div>
+          <div class="stat-badge" style="flex:1;">
+            <span style="color:#aaa; font-size:0.72rem;">Partidas Gravadas</span>
+            <strong>${dset.hands_recorded || 0} mãos</strong>
+          </div>
+          <div class="stat-badge" style="flex:1;">
+            <span style="color:#aaa; font-size:0.72rem;">Blefes Rotulados</span>
+            <strong>${dset.bluffs_recorded || 0}</strong>
+          </div>
+        </div>
+
+        <div class="preview-section-title">📊 Boletim de Métricas Qualificadas:</div>
+        <div class="metric-radar-box">${scoresHtml}</div>
+
+        <div class="preview-section-title" style="margin-top:12px;">⚙️ Hiperparâmetros (Antes vs Depois):</div>
+        <table class="record-preview-table" style="margin-top:6px;">
+          <thead>
+            <tr>
+              <th>Parâmetro</th>
+              <th>Original</th>
+              <th>Novo Treinado</th>
+              <th>Variação</th>
+            </tr>
+          </thead>
+          <tbody>${paramsHtml}</tbody>
+        </table>
+
+        <div style="display:flex; gap:8px; margin-top:14px;">
+          <button class="btn-submit" onclick="selectTrainedAgentForGame('${newAgent.agent_id}')" style="flex:1; padding:8px 12px; font-size:0.82rem;">
+            🎮 Jogar com Este Novo Agente
+          </button>
+          <button class="btn-header" onclick="closeTrainingModal()" style="padding:8px 14px;">
+            Fechar
+          </button>
+        </div>
+      `;
+    }
+
+    async function loadAvailableCustomAgents() {
+      try {
+        const res = await fetch('/api/training/agents');
+        const data = await res.json();
+        if (data.success && data.agents) {
+          availableTrainedAgents = data.agents;
+          renderSavedAgentsList();
+          updateSeatDropdownsWithTrainedAgents();
+        }
+      } catch (e) {
+        // Fallback silencioso
+      }
+    }
+
+    function renderSavedAgentsList() {
+      const container = document.getElementById('savedAgentsContainer');
+      const badge = document.getElementById('savedAgentsCountBadge');
+      if (!container) return;
+
+      const customList = availableTrainedAgents.filter(a => a.is_custom);
+      if (badge) badge.innerText = `${customList.length} agente(s)`;
+
+      if (customList.length === 0) {
+        container.innerHTML = `<div style="font-size:0.78rem; color:#777; text-align:center; padding:10px;">Nenhum agente customizado salvo ainda. Execute um treino acima!</div>`;
+        return;
+      }
+
+      let html = '';
+      for (const a of customList) {
+        const tier = (a.qualification && a.qualification.overall_tier) || 'Treinado';
+        const fit = (a.qualification && a.qualification.overall_fitness) ? a.qualification.overall_fitness.toFixed(1) : '--';
+        html += `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:6px 10px; border-radius:6px; margin-bottom:6px;">
+            <div>
+              <div style="font-size:0.82rem; font-weight:700; color:var(--gold-light);">${a.name}</div>
+              <div style="font-size:0.7rem; color:#888;">Base: ${a.base_type} | Fitness: ${fit} pts</div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-header" onclick="selectTrainedAgentForGame('${a.agent_id}')" style="font-size:0.72rem; padding:3px 8px; background:rgba(76,175,80,0.2); border-color:#4caf50;">Jogar</button>
+              <button class="btn-header" onclick="deleteTrainedAgent('${a.agent_id}')" style="font-size:0.72rem; padding:3px 8px; color:#ff7043; border-color:#e64a19;" title="Excluir este agente customizado">🗑️</button>
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    async function deleteTrainedAgent(agentId) {
+      if (!confirm('Deseja realmente excluir este agente customizado?')) return;
+      try {
+        await fetch('/api/training/delete_agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent_id: agentId })
+        });
+        loadAvailableCustomAgents();
+      } catch (e) {
+        alert('Erro ao excluir: ' + e.message);
+      }
+    }
+
+    function selectTrainedAgentForGame(agentId) {
+      closeTrainingModal();
+      // Configura a mesa com o agente customizado
+      startGameWithCustomAgent(agentId);
+    }
+
+    async function startGameWithCustomAgent(agentId) {
+      try {
+        const payload = {
+          num_players: 4,
+          starting_stack: 1000,
+          agent_mode: 'custom',
+          custom_agents: [agentId, 'math', 'aggressive']
+        };
+        const res = await fetch('/api/start_game', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.session_id) {
+          sessionId = data.session_id;
+          localStorage.setItem('poker_session_id', sessionId);
+          fetchState();
+        }
+      } catch (e) {
+        console.error('Erro ao iniciar jogo com agente customizado:', e);
+      }
+    }
+
+    function updateSeatDropdownsWithTrainedAgents() {
+      const customList = availableTrainedAgents.filter(a => a.is_custom);
+      if (customList.length === 0) return;
+
+      // Atualiza dropdowns nas telas de assentos se existirem
+      for (let i = 0; i < 9; i++) {
+        const sel = document.getElementById(`recCustomSeatSelect_${i}`);
+        if (sel) {
+          // Procura ou adiciona optgroup
+          let grp = sel.querySelector('optgroup[data-trained="true"]');
+          if (!grp) {
+            grp = document.createElement('optgroup');
+            grp.label = '⭐ Novos Agentes Treinados';
+            grp.setAttribute('data-trained', 'true');
+            sel.insertBefore(grp, sel.firstChild);
+          }
+          grp.innerHTML = customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name}</option>`).join('');
+        }
+      }
+    }
+
     window.addEventListener('load', () => {
+      loadAvailableCustomAgents();
       autoScaleTable();
       fetchState();
     });

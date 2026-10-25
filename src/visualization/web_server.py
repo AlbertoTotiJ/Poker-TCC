@@ -17,6 +17,7 @@ from src.agents.mathematical_agent import MathematicalAgent
 from src.engine.deck import Card, Suit
 from src.engine.player import Player
 from src.engine.table import Action, ActionType, Street, Table
+from src.training.agent_registry import global_registry
 from src.visualization.backend_view import (
     format_hand_combination,
     get_position_label,
@@ -99,7 +100,14 @@ class WebPokerSession:
             elif agent_mode == "custom" and custom_agents and i < len(custom_agents):
                 agent_type = custom_agents[i]
 
-            if agent_type == "gh_math":
+            if agent_type in global_registry.custom_agents or agent_type == "trainer":
+                bot = global_registry.instantiate_agent_by_id(
+                    agent_id=agent_type,
+                    player_id=bot_id,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+                bot_name = f"{bot.name} {i + 1}"
+            elif agent_type == "gh_math":
                 bot_name = f"GhMath {i + 1} (GH)"
                 bot = GhMathAgent(
                     player_id=bot_id,
@@ -831,6 +839,36 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 self.wfile.write(content)
                 return
 
+            if (
+                clean_path.endswith("/training/agents")
+                or clean_path == "/training/agents"
+                or clean_path.endswith("/api/training/agents")
+                or clean_path == "/api/training/agents"
+            ):
+                self._send_json({
+                    "success": True,
+                    "agents": global_registry.list_available_agents(),
+                })
+                return
+
+            if (
+                clean_path.endswith("/training/diagnose")
+                or clean_path == "/training/diagnose"
+                or clean_path.endswith("/api/training/diagnose")
+                or clean_path == "/api/training/diagnose"
+            ):
+                from src.agents.trainer_agent import TrainerAgent
+                agent_type = "bluffer"
+                if parsed.query:
+                    q_params = dict(
+                        qc.split("=", 1) for qc in parsed.query.split("&") if "=" in qc
+                    )
+                    agent_type = q_params.get("agent_type", "bluffer")
+                coach = TrainerAgent()
+                diag = coach.diagnose_agent(agent_type)
+                self._send_json({"success": True, "diagnostic": diag.to_dict()})
+                return
+
             self.send_error(404, f"Rota GET não encontrada: {clean_path}")
         except Exception as ex:
             self._send_json(
@@ -915,6 +953,57 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     hands=hands,
                 )
                 self._send_json(result)
+                return
+
+            if (
+                clean_path.endswith("/training/run")
+                or clean_path == "/training/run"
+                or clean_path.endswith("/api/training/run")
+                or clean_path == "/api/training/run"
+            ):
+                import os
+                from src.agents.trainer_agent import TrainerAgent
+                agent_type = str(data.get("agent_type", "bluffer")).strip().lower()
+                target_metric = data.get("target_metric")
+                generations = int(data.get("generations", 3))
+                population = int(data.get("population", 4))
+                hands = int(data.get("hands", 20))
+                record_hands = bool(data.get("record_hands", True))
+                save_to_neon = bool(data.get("save_to_neon", False))
+                new_agent_name = str(data.get("new_agent_name", "")).strip()
+
+                is_serverless = bool(
+                    os.environ.get("VERCEL")
+                    or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+                )
+                if is_serverless:
+                    generations = min(generations, 3)
+                    population = min(population, 4)
+                    hands = min(hands, 10)
+
+                coach = TrainerAgent()
+                result = coach.train_and_produce_agent(
+                    base_agent_type=agent_type,
+                    new_agent_name=new_agent_name,
+                    target_metric=target_metric,
+                    generations=generations,
+                    population_size=population,
+                    hands_per_eval=hands,
+                    record_hands=record_hands,
+                    save_to_neon=save_to_neon,
+                )
+                self._send_json(result)
+                return
+
+            if (
+                clean_path.endswith("/training/delete_agent")
+                or clean_path == "/training/delete_agent"
+                or clean_path.endswith("/api/training/delete_agent")
+                or clean_path == "/api/training/delete_agent"
+            ):
+                agent_id = str(data.get("agent_id", "")).strip()
+                deleted = global_registry.delete_custom_agent(agent_id)
+                self._send_json({"success": deleted})
                 return
 
             if clean_path.endswith("/start_game") or clean_path == "/start_game":

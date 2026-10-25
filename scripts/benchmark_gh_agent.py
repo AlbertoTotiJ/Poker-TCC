@@ -1,7 +1,8 @@
 """Benchmark Comparativo: GhMathAgent (Gustavo) vs MathematicalAgent (Alberto).
 
 Executa simulação de alta precisão com ambos os agentes sentados na mesma mesa,
-enfrentando as mesmas mãos e oponentes heurísticos (Agressivo, Equilibrado, Conservador).
+enfrentando as mesmas mãos e oponentes heurísticos
+(Agressivo, Equilibrado, Conservador).
 
 Métricas analisadas:
 - Lucro Líquido (Net Chips) e Taxa de Vitórias (Win Rate %)
@@ -16,7 +17,7 @@ from pathlib import Path
 import random
 import sys
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -225,7 +226,8 @@ class GhBenchmarkRunner:
             if hand_num % 50 == 0 or hand_num == self.total_hands:
                 elapsed = time.perf_counter() - start_time
                 print(
-                    f"Progresso: {hand_num}/{self.total_hands} mãos simuladas ({elapsed:.1f}s)...",
+                    f"Progresso: {hand_num}/{self.total_hands} mãos "
+                    f"simuladas ({elapsed:.1f}s)...",
                     flush=True,
                 )
 
@@ -274,7 +276,9 @@ def print_duel_report(
     report.append("=======================================================\n")
 
     report.append(
-        f"{'Agente':<24} | {'Autor':<12} | {'Net Chips':<10} | {'BB/100':<8} | {'Win %':<7} | {'PF-Fold %':<10} | {'VPIP %':<7} | {'PFR %':<7}"
+        f"{'Agente':<24} | {'Autor':<12} | {'Net Chips':<10} | "
+        f"{'BB/100':<8} | {'Win %':<7} | {'PF-Fold %':<10} | "
+        f"{'VPIP %':<7} | {'PFR %':<7}"
     )
     report.append("-" * 105)
 
@@ -285,7 +289,9 @@ def print_duel_report(
         vpip = (st.vpip_hands / total_hands) * 100.0
         pfr = (st.pfr_hands / total_hands) * 100.0
         report.append(
-            f"{st.name:<24} | {st.author:<12} | {st.net_chips:>+10} | {st.bb_per_100:>+7.2f} | {wr:>6.1f}% | {pf_f:>9.1f}% | {vpip:>6.1f}% | {pfr:>6.1f}%"
+            f"{st.name:<24} | {st.author:<12} | {st.net_chips:>+10} | "
+            f"{st.bb_per_100:>+7.2f} | {wr:>6.1f}% | {pf_f:>9.1f}% | "
+            f"{vpip:>6.1f}% | {pfr:>6.1f}%"
         )
 
     report.append("-" * 105)
@@ -294,16 +300,20 @@ def print_duel_report(
         f"  1. Redução de Folds no Pré-Flop: {fold_reduction_pct:+.1f}% de melhoria"
     )
     report.append(
-        f"     -> GhMath: {gh.preflop_folds} folds ({gh_preflop_fold_pct:.1f}%) | MathAgent: {alb.preflop_folds} folds ({alb_preflop_fold_pct:.1f}%)"
+        f"     -> GhMath: {gh.preflop_folds} folds ({gh_preflop_fold_pct:.1f}%) | "
+        f"MathAgent: {alb.preflop_folds} folds ({alb_preflop_fold_pct:.1f}%)"
     )
     report.append(
-        f"  2. Diferencial de Lucratividade (BB/100): {gh.bb_per_100 - alb.bb_per_100:+.2f} BB/100 a favor de Gustavo"
+        f"  2. Diferencial de Lucratividade (BB/100): "
+        f"{gh.bb_per_100 - alb.bb_per_100:+.2f} BB/100 a favor de Gustavo"
     )
     report.append(
-        f"  3. Taxa de Vitória (Win Rate): {gh_win_rate:.1f}% (GH) vs {alb_win_rate:.1f}% (Alberto)"
+        f"  3. Taxa de Vitória (Win Rate): "
+        f"{gh_win_rate:.1f}% (GH) vs {alb_win_rate:.1f}% (Alberto)"
     )
     report.append(
-        f"  4. Agressividade Pré-Flop (VPIP/PFR): {gh_vpip:.1f}%/{gh_pfr:.1f}% (GH) vs {alb_vpip:.1f}%/{alb_pfr:.1f}% (Alberto)"
+        f"  4. Agressividade Pré-Flop (VPIP/PFR): "
+        f"{gh_vpip:.1f}%/{gh_pfr:.1f}% (GH) vs {alb_vpip:.1f}%/{alb_pfr:.1f}% (Alberto)"
     )
     report.append("=======================================================\n")
 
@@ -334,7 +344,8 @@ def main() -> None:
     stats = runner.run_duel()
     report_text = print_duel_report(stats, args.hands)
 
-    report_path = Path(__file__).resolve().parent.parent / "BENCHMARK_GH_AGENT_REPORT.md"
+    root_dir = Path(__file__).resolve().parent.parent
+    report_path = root_dir / "BENCHMARK_GH_AGENT_REPORT.md"
     report_path.write_text(report_text, encoding="utf-8")
     print(f"Relatório salvo em: {report_path}", flush=True)
 

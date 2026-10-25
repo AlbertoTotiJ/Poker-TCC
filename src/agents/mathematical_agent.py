@@ -6,11 +6,12 @@ equidade da mão, probabilidades de draws (out rules), pot odds e
 valor esperado (Expected Value - EV) sem vieses psicológicos.
 """
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import json
 from pathlib import Path
 import random
 import sys
-from typing import Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 # Garante resolucao de 'src' ao executar o script diretamente
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -46,6 +47,31 @@ class MathematicalDecision:
     reason: str
 
 
+@dataclass
+class MathematicalParameters:
+    """Hiperparâmetros calibráveis que regem as decisões probabilísticas."""
+
+    raise_equity_threshold: float = 0.65
+    call_ev_margin: float = 0.04
+    draw_weight: float = 1.0
+    bet_sizing_factor: float = 0.50
+    num_simulations: int = 200
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Converte hiperparâmetros em dicionário serializável."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MathematicalParameters":
+        """Instancia hiperparâmetros a partir de dicionário."""
+        valid_keys = {f for f in cls.__dataclass_fields__}
+        filtered: Dict[str, Any] = {}
+        for k, v in data.items():
+            if k in valid_keys:
+                filtered[k] = int(v) if k == "num_simulations" else float(v)
+        return cls(**filtered)
+
+
 class MathematicalAgent(BaseAgent):
     """Agente autônomo estritamente probabilístico e analítico para Texas Hold'em.
 
@@ -65,11 +91,13 @@ class MathematicalAgent(BaseAgent):
         rng: Optional[random.Random] = None,
     ) -> None:
         super().__init__(player_id=player_id, name=name)
-        self.raise_equity_threshold: float = raise_equity_threshold
-        self.call_ev_margin: float = call_ev_margin
-        self.draw_weight: float = draw_weight
-        self.bet_sizing_factor: float = bet_sizing_factor
-        self.num_simulations: int = num_simulations
+        self.params = MathematicalParameters(
+            raise_equity_threshold=max(0.40, min(0.90, raise_equity_threshold)),
+            call_ev_margin=max(-0.10, min(0.20, call_ev_margin)),
+            draw_weight=max(0.0, min(2.5, draw_weight)),
+            bet_sizing_factor=max(0.20, min(1.5, bet_sizing_factor)),
+            num_simulations=max(20, min(1000, num_simulations)),
+        )
         self.rng: random.Random = rng if rng is not None else random.Random()
 
         # Telemetria acumulada de partidas
@@ -79,6 +107,70 @@ class MathematicalAgent(BaseAgent):
         self.bets_and_raises: int = 0
         self.calls: int = 0
         self.folds: int = 0
+
+    @property
+    def raise_equity_threshold(self) -> float:
+        return self.params.raise_equity_threshold
+
+    @raise_equity_threshold.setter
+    def raise_equity_threshold(self, value: float) -> None:
+        self.params.raise_equity_threshold = max(0.40, min(0.90, float(value)))
+
+    @property
+    def call_ev_margin(self) -> float:
+        return self.params.call_ev_margin
+
+    @call_ev_margin.setter
+    def call_ev_margin(self, value: float) -> None:
+        self.params.call_ev_margin = max(-0.10, min(0.20, float(value)))
+
+    @property
+    def draw_weight(self) -> float:
+        return self.params.draw_weight
+
+    @draw_weight.setter
+    def draw_weight(self, value: float) -> None:
+        self.params.draw_weight = max(0.0, min(2.5, float(value)))
+
+    @property
+    def bet_sizing_factor(self) -> float:
+        return self.params.bet_sizing_factor
+
+    @bet_sizing_factor.setter
+    def bet_sizing_factor(self, value: float) -> None:
+        self.params.bet_sizing_factor = max(0.20, min(1.5, float(value)))
+
+    @property
+    def num_simulations(self) -> int:
+        return self.params.num_simulations
+
+    @num_simulations.setter
+    def num_simulations(self, value: int) -> None:
+        self.params.num_simulations = max(20, min(1000, int(value)))
+
+    def export_parameters(self) -> Dict[str, Any]:
+        """Exporta os hiperparâmetros atuais para calibração/treino."""
+        return self.params.to_dict()
+
+    def load_parameters(self, params: Dict[str, Any]) -> None:
+        """Aplica novos hiperparâmetros resultantes de rotinas de treino."""
+        self.params = MathematicalParameters.from_dict(params)
+
+    def save_parameters(self, filepath: str | Path) -> None:
+        """Persiste os hiperparâmetros em arquivo JSON."""
+        target = Path(filepath)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with open(target, "w", encoding="utf-8") as f:
+            json.dump(self.export_parameters(), f, indent=2)
+
+    def load_parameters_file(self, filepath: str | Path) -> None:
+        """Carrega hiperparâmetros pré-treinados de arquivo JSON."""
+        target = Path(filepath)
+        if not target.exists():
+            raise FileNotFoundError(f"Arquivo não encontrado: {target}")
+        with open(target, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.load_parameters(data)
 
     def decide_action(self, table: Table) -> Action:
         """Determina a ação ótima na mesa com base em probabilidade e EV."""

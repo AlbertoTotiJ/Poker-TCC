@@ -6,12 +6,13 @@ otimizado via Critério de Kelly Fracionário e ranges de posição (RFI) para
 eliminar a passividade e o excesso de folds pré-flop.
 """
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import json
 from enum import Enum
 from pathlib import Path
 import random
 import sys
-from typing import Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 # Garante resolução dos módulos a partir da raiz do repositório
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -66,6 +67,29 @@ class GhMathDecision:
     metrics: GhCognitiveMetrics
 
 
+@dataclass
+class GhMathParameters:
+    """Hiperparâmetros calibráveis que regem as decisões analíticas do GhMath."""
+
+    base_threshold: float = 0.58
+    kelly_fraction_limit: float = 0.25
+    num_simulations: int = 250
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Converte hiperparâmetros em dicionário serializável."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "GhMathParameters":
+        """Instancia hiperparâmetros a partir de dicionário."""
+        valid_keys = {f for f in cls.__dataclass_fields__}
+        filtered: Dict[str, Any] = {}
+        for k, v in data.items():
+            if k in valid_keys:
+                filtered[k] = int(v) if k == "num_simulations" else float(v)
+        return cls(**filtered)
+
+
 class GhMathAgent(BaseAgent):
     """Agente Matemático de alta precisão com Implied Odds e Critério de Kelly."""
 
@@ -79,11 +103,11 @@ class GhMathAgent(BaseAgent):
         rng: Optional[random.Random] = None,
     ) -> None:
         super().__init__(player_id=player_id, name=name)
-        self.base_threshold: float = max(0.50, min(0.80, base_threshold))
-        self.kelly_fraction_limit: float = max(
-            0.10, min(0.50, kelly_fraction_limit)
+        self.params = GhMathParameters(
+            base_threshold=max(0.50, min(0.80, base_threshold)),
+            kelly_fraction_limit=max(0.10, min(0.50, kelly_fraction_limit)),
+            num_simulations=max(100, min(1000, num_simulations)),
         )
-        self.num_simulations: int = max(100, min(1000, num_simulations))
         self.rng: random.Random = rng if rng is not None else random.Random()
 
         # Telemetria acumulada de partidas
@@ -94,6 +118,54 @@ class GhMathAgent(BaseAgent):
         self.calls: int = 0
         self.folds: int = 0
         self.last_decision: Optional[GhMathDecision] = None
+
+    @property
+    def base_threshold(self) -> float:
+        return self.params.base_threshold
+
+    @base_threshold.setter
+    def base_threshold(self, value: float) -> None:
+        self.params.base_threshold = max(0.50, min(0.80, float(value)))
+
+    @property
+    def kelly_fraction_limit(self) -> float:
+        return self.params.kelly_fraction_limit
+
+    @kelly_fraction_limit.setter
+    def kelly_fraction_limit(self, value: float) -> None:
+        self.params.kelly_fraction_limit = max(0.10, min(0.50, float(value)))
+
+    @property
+    def num_simulations(self) -> int:
+        return self.params.num_simulations
+
+    @num_simulations.setter
+    def num_simulations(self, value: int) -> None:
+        self.params.num_simulations = max(100, min(1000, int(value)))
+
+    def export_parameters(self) -> Dict[str, Any]:
+        """Exporta os hiperparâmetros atuais para calibração/treino."""
+        return self.params.to_dict()
+
+    def load_parameters(self, params: Dict[str, Any]) -> None:
+        """Aplica novos hiperparâmetros resultantes de rotinas de treino."""
+        self.params = GhMathParameters.from_dict(params)
+
+    def save_parameters(self, filepath: str | Path) -> None:
+        """Persiste os hiperparâmetros em arquivo JSON."""
+        target = Path(filepath)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with open(target, "w", encoding="utf-8") as f:
+            json.dump(self.export_parameters(), f, indent=2)
+
+    def load_parameters_file(self, filepath: str | Path) -> None:
+        """Carrega hiperparâmetros pré-treinados de arquivo JSON."""
+        target = Path(filepath)
+        if not target.exists():
+            raise FileNotFoundError(f"Arquivo não encontrado: {target}")
+        with open(target, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.load_parameters(data)
 
     def decide_action(self, table: Table) -> Action:
         """Determina a ação ótima na mesa considerando posição e odds implícitas."""

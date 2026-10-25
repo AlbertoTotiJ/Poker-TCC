@@ -379,7 +379,18 @@ def build_research_roster(
             is_9th = (seat_num == 9)
             suffix = " (9º Agente)" if is_9th else ""
 
-            if agent_type == "gh_math":
+            from src.training.agent_registry import global_registry
+
+            if agent_type in global_registry.custom_agents or agent_type == "trainer":
+                pid = f"bot_cst_{seat_num}"
+                agent = global_registry.instantiate_agent_by_id(
+                    agent_id=agent_type,
+                    player_id=pid,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                pname = f"{agent.name}{suffix}"
+                profile = f"Treinado ({agent.name})"
+            elif agent_type == "gh_math":
                 pid = f"gh_mat_{seat_num}"
                 pname = f"GhMath {seat_num}{suffix}"
                 agent = GhMathAgent(
