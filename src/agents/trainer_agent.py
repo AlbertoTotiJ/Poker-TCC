@@ -39,8 +39,27 @@ class AgentDiagnostic:
     recommended_focus_rationale: str
     suggested_curriculum: Dict[str, Any]
 
+    @property
+    def agent_type(self) -> str:
+        """Alias de conveniência para target_agent."""
+        return self.target_agent
+
+    @property
+    def recommended_focus(self) -> str:
+        """Alias de conveniência para recommended_metric."""
+        return self.recommended_metric
+
+    @property
+    def prescription(self) -> str:
+        """Alias de conveniência para recommended_focus_rationale."""
+        return self.recommended_focus_rationale
+
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        d["agent_type"] = self.target_agent
+        d["recommended_focus"] = self.recommended_metric
+        d["prescription"] = self.recommended_focus_rationale
+        return d
 
 
 class TrainerAgent(BaseAgent):
