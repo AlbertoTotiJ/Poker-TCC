@@ -98,10 +98,21 @@ class AdaptiveTrainer:
         self.rng: random.Random = random.Random(rng_seed)
 
         project_root = Path(__file__).resolve().parent.parent.parent
-        self.models_dir: Path = (
-            models_dir if models_dir is not None else project_root / "models"
-        )
-        self.models_dir.mkdir(parents=True, exist_ok=True)
+        default_models = project_root / "models"
+        target_dir = models_dir if models_dir is not None else default_models
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            test_file = target_dir / ".write_test"
+            test_file.touch()
+            test_file.unlink(missing_ok=True)
+            self.models_dir = target_dir
+        except Exception:
+            fallback_dir = Path("/tmp/models")
+            try:
+                fallback_dir.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            self.models_dir = fallback_dir
 
         # Configuração de métricas individuais
         if target_metric is not None:
@@ -521,8 +532,18 @@ class AdaptiveTrainer:
             "metrics": overall_best_metrics.to_dict(),
             "qualification": overall_best_card.to_dict(),
         }
-        with open(model_path, "w", encoding="utf-8") as f:
-            json.dump(model_payload, f, indent=2, ensure_ascii=False)
+        try:
+            with open(model_path, "w", encoding="utf-8") as f:
+                json.dump(model_payload, f, indent=2, ensure_ascii=False)
+        except OSError:
+            try:
+                fallback_path = Path("/tmp/models") / model_filename
+                fallback_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(fallback_path, "w", encoding="utf-8") as f:
+                    json.dump(model_payload, f, indent=2, ensure_ascii=False)
+                model_path = fallback_path
+            except Exception:
+                pass
 
         # Gera relatório em Markdown
         report_md = self._generate_markdown_report(

@@ -39,8 +39,20 @@ class TrainingRecorderBridge:
         self.save_to_neon_db: bool = save_to_neon_db
 
         project_root = Path(__file__).resolve().parent.parent.parent
-        self.training_dir: Path = project_root / "data" / "training_sessions"
-        self.training_dir.mkdir(parents=True, exist_ok=True)
+        default_dir = project_root / "data" / "training_sessions"
+        try:
+            default_dir.mkdir(parents=True, exist_ok=True)
+            test_file = default_dir / ".write_test"
+            test_file.touch()
+            test_file.unlink(missing_ok=True)
+            self.training_dir = default_dir
+        except Exception:
+            fallback_dir = Path("/tmp/data/training_sessions")
+            try:
+                fallback_dir.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            self.training_dir = fallback_dir
 
         if output_file is not None:
             self.session_file: Path = Path(output_file)
@@ -139,8 +151,21 @@ class TrainingRecorderBridge:
         }
 
         # 1. Salva no arquivo dedicado da sessão
-        with open(self.session_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(hand_record, ensure_ascii=False) + "\n")
+        try:
+            with open(self.session_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(hand_record, ensure_ascii=False) + "\n")
+        except OSError:
+            try:
+                fallback_file = (
+                    Path("/tmp/data/training_sessions")
+                    / f"{self.session_id}.jsonl"
+                )
+                fallback_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(fallback_file, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(hand_record, ensure_ascii=False) + "\n")
+                self.session_file = fallback_file
+            except Exception:
+                pass
 
         # 2. Opcionalmente adiciona ao dataset principal de partidas
         if self.append_to_main_dataset:

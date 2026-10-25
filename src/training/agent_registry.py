@@ -121,11 +121,22 @@ class AgentRegistry:
 
     def __init__(self, catalog_file: Optional[Path] = None) -> None:
         project_root = Path(__file__).resolve().parent.parent.parent
-        self.catalog_file: Path = (
-            catalog_file
-            if catalog_file is not None
-            else project_root / "models" / "custom_trained_agents.json"
-        )
+        default_catalog = project_root / "models" / "custom_trained_agents.json"
+        target_file = catalog_file if catalog_file is not None else default_catalog
+        try:
+            target_file.parent.mkdir(parents=True, exist_ok=True)
+            test_file = target_file.parent / ".write_test"
+            test_file.touch()
+            test_file.unlink(missing_ok=True)
+            self.catalog_file = target_file
+        except Exception:
+            fallback_file = Path("/tmp/models/custom_trained_agents.json")
+            try:
+                fallback_file.parent.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            self.catalog_file = fallback_file
+
         self.custom_agents: Dict[str, CustomAgentMetadata] = {}
         self.load()
 
@@ -308,11 +319,21 @@ class AgentRegistry:
             )
 
     def save(self) -> None:
-        """Persiste os agentes customizados em JSON."""
-        self.catalog_file.parent.mkdir(parents=True, exist_ok=True)
+        """Persiste os agentes customizados em JSON com fallback seguro."""
         data = {aid: meta.to_dict() for aid, meta in self.custom_agents.items()}
-        with open(self.catalog_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        try:
+            self.catalog_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.catalog_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except OSError:
+            try:
+                fallback_file = Path("/tmp/models/custom_trained_agents.json")
+                fallback_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(fallback_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                self.catalog_file = fallback_file
+            except Exception:
+                pass
 
     def load(self) -> None:
         """Carrega agentes customizados pré-salvos."""

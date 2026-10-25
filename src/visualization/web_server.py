@@ -6,7 +6,7 @@ from pathlib import Path
 import random
 import socket
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
@@ -628,31 +628,35 @@ class PokerApiHandler(BaseHTTPRequestHandler):
         self, parsed, data: Optional[Dict[str, Any]] = None
     ) -> str:
         """Determina a rota inspecionando URL, query, proxy e payload."""
+        resolved: Optional[str] = None
+
         if data and isinstance(data, dict):
             ep = data.get("endpoint") or data.get("action")
             if ep and isinstance(ep, str):
-                return f"/{ep.lstrip('/')}".rstrip("/")
+                resolved = f"/{ep.lstrip('/')}".rstrip("/")
 
-        for hdr in (
-            "x-forwarded-uri",
-            "x-matched-path",
-            "x-invoke-path",
-            "x-original-uri",
-            "x-now-route-matches",
-        ):
-            val = self.headers.get(hdr)
-            if val:
-                if hdr == "x-now-route-matches" and "=" in val:
-                    val = val.split("=")[-1]
-                uri_path = urlparse(val).path.rstrip("/")
-                if (
-                    uri_path
-                    and not uri_path.endswith("/index.py")
-                    and not uri_path.endswith("/index")
-                ):
-                    return uri_path
+        if resolved is None:
+            for hdr in (
+                "x-forwarded-uri",
+                "x-matched-path",
+                "x-invoke-path",
+                "x-original-uri",
+                "x-now-route-matches",
+            ):
+                val = self.headers.get(hdr)
+                if val:
+                    if hdr == "x-now-route-matches" and "=" in val:
+                        val = val.split("=")[-1]
+                    uri_path = urlparse(val).path.rstrip("/")
+                    if (
+                        uri_path
+                        and not uri_path.endswith("/index.py")
+                        and not uri_path.endswith("/index")
+                    ):
+                        resolved = uri_path
+                        break
 
-        if parsed.query:
+        if resolved is None and parsed.query:
             params = dict(
                 qc.split("=", 1) for qc in parsed.query.split("&") if "=" in qc
             )
@@ -660,18 +664,24 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 if qk in params and params[qk]:
                     r_val = params[qk].lstrip("/")
                     if not r_val.endswith(".py"):
-                        return f"/{r_val}".rstrip("/")
+                        resolved = f"/{r_val}".rstrip("/")
+                        break
 
-        raw_path = parsed.path.rstrip("/")
-        if raw_path.endswith(".py"):
-            raw_path = raw_path[:-3]
-        return raw_path
+        if resolved is None:
+            raw_path = parsed.path.rstrip("/")
+            if raw_path.endswith(".py"):
+                raw_path = raw_path[:-3]
+            resolved = raw_path
+
+        # Decodifica URL-encoding (ex: /training%2Frun -> /training/run)
+        resolved = unquote(resolved)
+        return resolved
 
     def do_GET(self) -> None:
         """Serve a interface gráfica HTML e retorna estado atual da API."""
         try:
             parsed = urlparse(self.path)
-            clean_path = self._resolve_clean_path(parsed)
+            clean_path = unquote(self._resolve_clean_path(parsed))
 
             if clean_path in ("", "/", "/index.html", "/index"):
                 index_path = get_html_path()
@@ -841,7 +851,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
 
             if (
                 clean_path.endswith("/training/agents")
-                or clean_path == "/training/agents"
+                or clean_path in ("/training/agents", "/api/training/agents")
+                or clean_path.endswith("training%2Fagents")
                 or clean_path.endswith("/api/training/agents")
                 or clean_path == "/api/training/agents"
             ):
@@ -853,7 +864,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
 
             if (
                 clean_path.endswith("/training/diagnose")
-                or clean_path == "/training/diagnose"
+                or clean_path in ("/training/diagnose", "/api/training/diagnose")
+                or clean_path.endswith("training%2Fdiagnose")
                 or clean_path.endswith("/api/training/diagnose")
                 or clean_path == "/api/training/diagnose"
             ):
@@ -893,7 +905,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
             except Exception:
                 data = {}
 
-            clean_path = self._resolve_clean_path(parsed, data=data)
+            clean_path = unquote(self._resolve_clean_path(parsed, data=data))
 
             sid = (
                 data.get("session_id")
@@ -957,7 +969,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
 
             if (
                 clean_path.endswith("/training/run")
-                or clean_path == "/training/run"
+                or clean_path in ("/training/run", "/api/training/run")
+                or clean_path.endswith("training%2Frun")
                 or clean_path.endswith("/api/training/run")
                 or clean_path == "/api/training/run"
             ):
@@ -997,7 +1010,11 @@ class PokerApiHandler(BaseHTTPRequestHandler):
 
             if (
                 clean_path.endswith("/training/delete_agent")
-                or clean_path == "/training/delete_agent"
+                or clean_path in (
+                    "/training/delete_agent",
+                    "/api/training/delete_agent",
+                )
+                or clean_path.endswith("training%2Fdelete_agent")
                 or clean_path.endswith("/api/training/delete_agent")
                 or clean_path == "/api/training/delete_agent"
             ):

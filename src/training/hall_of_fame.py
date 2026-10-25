@@ -44,11 +44,22 @@ class HallOfFame:
 
     def __init__(self, storage_file: Optional[Path] = None) -> None:
         project_root = Path(__file__).resolve().parent.parent.parent
-        self.default_file: Path = (
-            storage_file
-            if storage_file is not None
-            else project_root / "models" / "hall_of_fame.json"
-        )
+        default_storage = project_root / "models" / "hall_of_fame.json"
+        target_file = storage_file if storage_file is not None else default_storage
+        try:
+            target_file.parent.mkdir(parents=True, exist_ok=True)
+            test_file = target_file.parent / ".write_test"
+            test_file.touch()
+            test_file.unlink(missing_ok=True)
+            self.default_file = target_file
+        except Exception:
+            fallback_file = Path("/tmp/models/hall_of_fame.json")
+            try:
+                fallback_file.parent.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            self.default_file = fallback_file
+
         self.champions: List[ChampionEntry] = []
         self.load()
 
@@ -150,12 +161,22 @@ class HallOfFame:
         return opponents
 
     def save(self, filepath: Optional[Path] = None) -> None:
-        """Persiste a lista de campeões em JSON."""
+        """Persiste a lista de campeões em JSON com fallback seguro."""
         target = filepath if filepath is not None else self.default_file
-        target.parent.mkdir(parents=True, exist_ok=True)
         data = [c.to_dict() for c in self.champions]
-        with open(target, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with open(target, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except OSError:
+            try:
+                fallback_file = Path("/tmp/models/hall_of_fame.json")
+                fallback_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(fallback_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                self.default_file = fallback_file
+            except Exception:
+                pass
 
     def load(self, filepath: Optional[Path] = None) -> None:
         """Carrega a lista de campeões do arquivo se existir."""

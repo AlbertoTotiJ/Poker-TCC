@@ -3193,6 +3193,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            endpoint: 'training/run',
             agent_type: agentType,
             target_metric: metric,
             generations: generations,
@@ -3386,7 +3387,7 @@
         await fetch('/api/training/delete_agent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ agent_id: agentId })
+          body: JSON.stringify({ endpoint: 'training/delete_agent', agent_id: agentId })
         });
         loadAvailableCustomAgents();
       } catch (e) {
