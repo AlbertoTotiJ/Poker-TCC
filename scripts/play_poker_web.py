@@ -62,9 +62,9 @@ def main() -> None:
         "--mode",
         "-m",
         type=str,
-        default="gh_math",
-        choices=["gh_math", "math", "bots", "mixed", "custom"],
-        help="Tipo de inteligência dos oponentes (padrão: gh_math - Gustavo GH).",
+        default="gh_bluffer",
+        choices=["gh_bluffer", "gh_math", "math", "bluffer", "bots", "mixed", "custom"],
+        help="Tipo de inteligência dos oponentes (padrão: gh_bluffer - Gustavo GH).",
     )
     parser.add_argument(
         "--no-browser",

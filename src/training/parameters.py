@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
+from src.agents.gh_bluffer_agent import GhBlufferAgent
 from src.agents.gh_math_agent import GhMathAgent
 from src.agents.mathematical_agent import MathematicalAgent
 
@@ -157,10 +158,43 @@ GH_MATH_SPECS: List[ParamSpec] = [
     ),
 ]
 
+GH_BLUFFER_SPECS: List[ParamSpec] = [
+    ParamSpec(
+        name="bluff_aggression",
+        min_val=0.50,
+        max_val=2.50,
+        default_val=1.10,
+        description="Multiplicador sobre a razão GTO de blefe ótimo",
+    ),
+    ParamSpec(
+        name="gto_balance_factor",
+        min_val=0.50,
+        max_val=1.80,
+        default_val=1.00,
+        description="Fator de calibração do equilíbrio de Nash B/(P+2B)",
+    ),
+    ParamSpec(
+        name="min_blocker_threshold",
+        min_val=0.10,
+        max_val=0.60,
+        default_val=0.30,
+        description="Pontuação mínima de bloqueador necessária para blefe puro",
+    ),
+    ParamSpec(
+        name="num_simulations",
+        min_val=50.0,
+        max_val=250.0,
+        default_val=100.0,
+        is_int=True,
+        description="Simulações de Monte Carlo para equidade e semi-blefes",
+    ),
+]
+
 AGENT_PARAM_SPECS: Dict[str, List[ParamSpec]] = {
     "bluffer": BLUFFER_SPECS,
     "mathematical": MATHEMATICAL_SPECS,
     "gh_math": GH_MATH_SPECS,
+    "gh_bluffer": GH_BLUFFER_SPECS,
 }
 
 
@@ -310,6 +344,13 @@ def instantiate_agent(
         )
     elif normalized == "mathematical":
         return MathematicalAgent(
+            player_id=player_id,
+            name=name,
+            rng=rng,
+            **clean_kwargs,
+        )
+    elif normalized == "gh_bluffer":
+        return GhBlufferAgent(
             player_id=player_id,
             name=name,
             rng=rng,

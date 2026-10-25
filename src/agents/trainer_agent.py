@@ -133,6 +133,29 @@ class TrainerAgent(BaseAgent):
                 },
             )
 
+        elif norm_type == "gh_bluffer":
+            return AgentDiagnostic(
+                target_agent="GhBlufferAgent (Gustavo - Nash/Blockers)",
+                strengths=[
+                    "Blefes matematicamente calibrados via Teoria dos Jogos (GTO B/(P+2B)).",
+                    "Detecção avançada de cartas de bloqueio (Blockers) dos nuts dos oponentes.",
+                    "Folds disciplinados e semi-blefes táticos com draws agressivos.",
+                ],
+                vulnerabilities=[
+                    "Agressividade e limiar de blockers podem requerer sintonia contra calling stations.",
+                ],
+                recommended_metric=EvaluationMetric.BLUFF_SUCCESS_RATE.value,
+                recommended_focus_rationale=(
+                    "Otimizar a Taxa de Sucesso de Blefe refinando o equilíbrio GTO e limiar de blockers."
+                ),
+                suggested_curriculum={
+                    "generations": 4,
+                    "population": 6,
+                    "hands_per_eval": 25,
+                    "target_metric": "bluff_success_rate",
+                },
+            )
+
         elif norm_type == "gh_math":
             return AgentDiagnostic(
                 target_agent="GhMathAgent (Gustavo)",

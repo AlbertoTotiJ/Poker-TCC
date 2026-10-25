@@ -2,6 +2,12 @@
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BluffDecision, BlufferAgent
+from src.agents.gh_bluffer_agent import (
+    GhBluffDecision,
+    GhBlufferAgent,
+    GhBluffMetrics,
+    GhBluffTactic,
+)
 from src.agents.gh_math_agent import (
     GhCognitiveMetrics,
     GhMathAgent,
@@ -26,4 +32,8 @@ __all__ = [
     "GhCognitiveMetrics",
     "GhMathDecision",
     "GhMathAgent",
+    "GhBluffTactic",
+    "GhBluffMetrics",
+    "GhBluffDecision",
+    "GhBlufferAgent",
 ]

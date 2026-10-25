@@ -1562,7 +1562,8 @@
       <div class="form-group">
         <label for="configAgentModeSelect">Tipo de Oponentes / Agentes:</label>
         <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
-          <option value="gh_math" selected>🧠 GhMathAgent (Gustavo - Implied Odds & Kelly)</option>
+          <option value="gh_bluffer" selected>🎭 GhBlufferAgent (Gustavo - GTO Blockers & Nash)</option>
+          <option value="gh_math">🧠 GhMathAgent (Gustavo - Implied Odds & Kelly)</option>
           <option value="math">📐 Agente Matemático (Alberto - EV)</option>
           <option value="bluffer">🃏 Agente Blefador (Alberto - Bluff Engine)</option>
           <option value="mixed">⚔️ Mesa Mista (Agente Matemático vs Bots Padrão)</option>
@@ -1604,14 +1605,35 @@
       </div>
 
       <div class="agents-options-list">
+        <!-- Opção GhBluffer: GhBlufferAgent (Gustavo) -->
+        <div class="agent-option-card selected" id="cardModeGh_bluffer" onclick="selectAgentMode('gh_bluffer')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🎭 GhBlufferAgent (Gustavo - GH)</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(186, 104, 200, 0.2); color: #ba68c8; border: 1px solid #ba68c8;">Novo • Nash & Nut Blockers</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente blefador inexplorável baseado em Teoria dos Jogos (Libratus e Pluribus). Opera com a Razão Áurea de Indiferença de Nash (B / (P + 2B)), motor de remoção de cartas (Nut Flush e Straight Blockers), semi-blefes agressivos no flop/turn e eliminação total do calling station passivo.
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('gh_bluffer', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #ab47bc, #7b1fa2); border:none; color:#fff; font-weight:700; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar contra GhBluffer Agora
+            </button>
+          </div>
+        </div>
+
         <!-- Opção GhMath: GhMathAgent (Gustavo) -->
-        <div class="agent-option-card selected" id="cardModeGh_math" onclick="selectAgentMode('gh_math')">
+        <div class="agent-option-card" id="cardModeGh_math" onclick="selectAgentMode('gh_math')">
           <div class="agent-option-top">
             <span class="agent-option-title">🧠 GhMathAgent (Gustavo - GH)</span>
             <span class="agent-badge-tag badge-ready" style="background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676;">Novo • Kelly & Implied Odds</span>
           </div>
           <div class="agent-option-desc">
             Agente matemático de segunda geração desenvolvido por Gustavo (GH). Elimina folds irracionais no pré-flop via combinatória e ranges de posição, dimensiona apostas pelo Critério de Kelly Fracionário e gera métricas cognitivas completas (XAI) para a Rede Neural.
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('gh_math', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #00e676, #00a854); border:none; color:#000; font-weight:700; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar contra GhMath Agora
+            </button>
           </div>
         </div>
         <!-- Opção 1: Usar Bot (Padrões Anteriores) -->
@@ -1849,7 +1871,8 @@
           </optgroup>
           <optgroup label="🤖 Torneios de IA & Pesquisa Científica (TCC)">
             <option value="tcc_experiment_9" data-players="9">🎓 Experimento TCC 9-Max: 4 Matemáticos + 5 Blefadores (9 Jogadores)</option>
-            <option value="gh_math_showdown" data-players="6" selected>🧠 Duelo GH vs Alberto: 2 GhMath (Gustavo), 2 Matemáticos (Alberto), 2 Bots (6 Jogadores)</option>
+            <option value="gh_bluffer_showdown" data-players="6" selected>🎭 Duelo de Blefes: 2 GhBluffer (Gustavo), 2 Blefadores (Alberto), 2 Bots (6 Jogadores)</option>
+            <option value="gh_math_showdown" data-players="6">🧠 Duelo GH vs Alberto: 2 GhMath (Gustavo), 2 Matemáticos (Alberto), 2 Bots (6 Jogadores)</option>
             <option value="math_vs_bots" data-players="6">📐 Duelo: 3 Matemáticos Reais vs 3 Bots Heurísticos (6 Jogadores)</option>
             <option value="full_ai_tournament" data-players="6">🏆 Torneio Completo de IAs: 2 Matemáticos, 2 Blefadores, 2 Híbridos (6 Jogadores)</option>
             <option value="bluff_challenge" data-players="6">🃏 Desafio de Blefe: 2 Blefadores, 2 Matemáticos, 2 Conservadores (6 Jogadores)</option>
@@ -1912,7 +1935,7 @@
     let gameState = null;
     let botTimer = null;
     let botSpeed = 700; // ms
-    let selectedAgentMode = 'gh_math';
+    let selectedAgentMode = 'gh_bluffer';
     let customAgentsConfig = [];
     let recordCustomAgentsConfig = [];
     const speedModes = [
@@ -2079,9 +2102,18 @@
       syncAgentModeUI(mode);
     }
 
+    function selectAndApplyAgentMode(mode, event) {
+      if (event) event.stopPropagation();
+      selectedAgentMode = mode;
+      syncAgentModeUI(mode);
+      applySelectedAgents();
+    }
+
     function syncAgentModeUI(mode) {
-      ['bots', 'gh_math', 'math', 'bluffer', 'mixed', 'all_ai', 'custom'].forEach(m => {
-        const cardId = m === 'gh_math' ? 'cardModeGh_math' : ('cardMode' + m.charAt(0).toUpperCase() + m.slice(1));
+      ['bots', 'gh_bluffer', 'gh_math', 'math', 'bluffer', 'mixed', 'all_ai', 'custom'].forEach(m => {
+        let cardId = 'cardMode' + m.charAt(0).toUpperCase() + m.slice(1);
+        if (m === 'gh_bluffer') cardId = 'cardModeGh_bluffer';
+        else if (m === 'gh_math') cardId = 'cardModeGh_math';
         const card = document.getElementById(cardId);
         if (card) {
           if (m === mode) {
@@ -2127,6 +2159,7 @@
             <select id="customSeatSelect_${i}" onchange="customAgentsConfig[${i}] = this.value">
               ${trainedGroupHtml}
               <optgroup label="Modelos Padrão e IAs">
+                <option value="gh_bluffer" ${defaultVal === 'gh_bluffer' ? 'selected' : ''}>🎭 GhBlufferAgent (Gustavo - Nash/Blockers)</option>
               <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
               <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
               <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>
@@ -2445,6 +2478,7 @@
         seatDiv.style.top = `${seatConfig.y}%`;
 
         const stackChips = renderChipsVisual(p.stack, 2);
+        const isGhBluffer = p.agent_type === 'gh_bluffer';
         const isGhMath = p.agent_type === 'gh_math';
         const isMath = p.agent_type === 'math';
         const isBluffer = p.agent_type === 'bluffer';
@@ -2456,6 +2490,8 @@
         let agentPillHTML = '';
         if (isHuman) {
           agentPillHTML = '<span class="agent-pill pill-human">👤 Você</span>';
+        } else if (isGhBluffer) {
+          agentPillHTML = '<span class="agent-pill" style="background:rgba(186,104,200,0.22);color:#ba68c8;border:1px solid #ba68c8;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="GhBlufferAgent (Gustavo) - Nash & Nut Blockers">🎭 GhBluffer (GH)</span>';
         } else if (isGhMath) {
           agentPillHTML = '<span class="agent-pill" style="background:rgba(0,230,118,0.22);color:#00e676;border:1px solid #00e676;padding:2px 7px;border-radius:10px;font-size:0.75rem;font-weight:700;" title="GhMathAgent (Gustavo) - Kelly & Implied Odds">🧠 GhMath (GH)</span>';
         } else if (isMath) {
@@ -2649,6 +2685,7 @@
       const descMap = {
         'custom': '⚙️ <strong>Mesa Personalizada:</strong> Configuração individual cadeira por cadeira (2 a 9 jogadores). Na mesa cheia (9 jogadores), o 9º assento é preenchido pelo agente selecionado no lugar do jogador humano.',
         'tcc_experiment_9': '🎓 <strong>Experimento TCC 9-Max:</strong> 4 Agentes Matemáticos Reais (Alberto) vs 5 Agentes Blefadores (9 Jogadores autônomos, com o 9º agente ocupando a 9ª cadeira no lugar do jogador humano).',
+        'gh_bluffer_showdown': '🎭 <strong>Duelo de Blefes (GH vs Alberto):</strong> 2 GhBlufferAgent (Gustavo - Razão de Nash e Nut Blockers) vs 2 Agentes Blefadores (Alberto) e 2 Bots Heurísticos.',
         'gh_math_showdown': '🧠 <strong>Duelo GH vs Alberto (XAI Quartz):</strong> 2 GhMathAgent (Gustavo com telemetria cognitiva para Rede Neural) vs 2 Agentes Matemáticos (Alberto) e 2 Bots Heurísticos.',
         'math_vs_bots': '📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).',
         'full_ai_tournament': '🏆 <strong>Torneio Completo de IAs:</strong> Batalha multimodelo entre os 3 agentes do projeto: 2 Matemáticos (probabilísticos), 2 Blefadores (fold equity) e 2 Híbridos (estratégia integrada).',
@@ -2703,6 +2740,7 @@
           <div class="custom-seat-row" ${highlightStyle}>
             <label for="recCustomSeatSelect_${i}">${labelText}</label>
             <select id="recCustomSeatSelect_${i}" onchange="recordCustomAgentsConfig[${i}] = this.value">
+              <option value="gh_bluffer" ${defaultVal === 'gh_bluffer' ? 'selected' : ''}>🎭 GhBlufferAgent (Gustavo - Nash/Blockers)</option>
               <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
               <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
               <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>

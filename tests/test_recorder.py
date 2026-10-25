@@ -123,6 +123,17 @@ def test_build_research_roster_tcc_experiment_9() -> None:
     assert any("9º Agente" in n for n in names)
 
 
+def test_build_research_roster_gh_bluffer_showdown() -> None:
+    players, agents, profile_labels = build_research_roster(
+        roster_mode="gh_bluffer_showdown"
+    )
+    assert len(players) == 6
+    assert len(agents) == 6
+    profiles = list(profile_labels.values())
+    assert profiles.count("GhBluffer (Gustavo)") == 2
+    assert profiles.count("Blefador (Alberto)") == 2
+
+
 def test_build_research_roster_custom_seats_9_max() -> None:
     custom_seats = [
         "gh_math", "math", "bluffer", "hybrid",

@@ -101,6 +101,17 @@ def test_web_poker_session_agent_modes() -> None:
         assert b["agent_type"] == "bluffer"
         assert "Blefador" in b["agent_label"]
 
+    # 5. Modo gh_bluffer: assentos com GhBlufferAgent (Gustavo)
+    session_gh_bluffer = WebPokerSession(num_players=3, agent_mode="gh_bluffer")
+    state_gh_bluffer = session_gh_bluffer.get_serialized_state()
+    assert state_gh_bluffer["agent_mode"] == "gh_bluffer"
+    bots_gh_bluffer = [
+        p for p in state_gh_bluffer["players"] if p["id"] != session_gh_bluffer.human_id
+    ]
+    for b in bots_gh_bluffer:
+        assert b["agent_type"] == "gh_bluffer"
+        assert "GhBluffer" in b["agent_label"]
+
 
 def test_find_free_port_and_start_server() -> None:
     import threading

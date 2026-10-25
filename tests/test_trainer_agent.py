@@ -5,6 +5,7 @@ import random
 import unittest
 
 from src.agents.bluffer_agent import BlufferAgent
+from src.agents.gh_bluffer_agent import GhBlufferAgent
 from src.agents.trainer_agent import AgentDiagnostic, TrainerAgent
 from src.training.agent_registry import AgentRegistry
 
@@ -36,6 +37,28 @@ class TestTrainerAgent(unittest.TestCase):
         diag: AgentDiagnostic = self.trainer.diagnose_agent("mathematical")
         self.assertEqual(diag.target_agent, "Agente Matemático (Alberto)")
         self.assertEqual(diag.recommended_metric, "bb_per_100")
+
+    def test_diagnose_gh_bluffer_agent(self) -> None:
+        diag: AgentDiagnostic = self.trainer.diagnose_agent("gh_bluffer")
+        self.assertEqual(diag.target_agent, "GhBlufferAgent (Gustavo - Nash/Blockers)")
+        self.assertEqual(diag.recommended_metric, "bluff_success_rate")
+        self.assertGreater(len(diag.strengths), 0)
+
+    def test_instantiate_custom_gh_bluffer(self) -> None:
+        saved = self.registry.save_custom_agent(
+            name="GhBluffer Alpha",
+            base_type="gh_bluffer",
+            parameters={"bluff_aggression": 1.45, "gto_balance_factor": 1.15, "min_blocker_threshold": 0.35},
+            qualification={"overall_fitness": 94.2, "overall_tier": "S (Elite)"},
+        )
+        inst = self.registry.instantiate_agent_by_id(
+            agent_id=saved.agent_id, player_id="gh_seat", rng=random.Random(42)
+        )
+        self.assertIsInstance(inst, GhBlufferAgent)
+        self.assertEqual(inst.name, "GhBluffer Alpha")
+        self.assertAlmostEqual(inst.bluff_aggression, 1.45)
+        self.assertAlmostEqual(inst.gto_balance_factor, 1.15)
+        self.assertAlmostEqual(inst.min_blocker_threshold, 0.35)
 
     def test_train_and_produce_agent_preserves_original(self) -> None:
         # Verifica parâmetros originais do agente blefador

@@ -10,6 +10,7 @@ from urllib.parse import unquote, urlparse
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
+from src.agents.gh_bluffer_agent import GhBlufferAgent
 from src.agents.gh_math_agent import GhMathAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
 from src.agents.hybrid_agent import HybridAgent
@@ -61,7 +62,7 @@ class WebPokerSession:
         small_blind: int = 10,
         big_blind: int = 20,
         human_name: str = "Você (Humano)",
-        agent_mode: str = "gh_math",
+        agent_mode: str = "gh_bluffer",
         custom_agents: Optional[List[str]] = None,
         rng: Optional[random.Random] = None,
     ) -> None:
@@ -84,7 +85,9 @@ class WebPokerSession:
         for i in range(num_players - 1):
             bot_id = f"p_bot_{i + 1}"
             agent_type = "bot"
-            if agent_mode == "gh_math":
+            if agent_mode == "gh_bluffer":
+                agent_type = "gh_bluffer"
+            elif agent_mode == "gh_math":
                 agent_type = "gh_math"
             elif agent_mode == "math":
                 agent_type = "math"
@@ -95,12 +98,23 @@ class WebPokerSession:
             elif agent_mode == "mixed":
                 agent_type = "math" if (i % 2 == 0) else "bot"
             elif agent_mode == "all_ai":
-                ai_cycle = ["math", "bluffer", "hybrid"]
+                ai_cycle = ["gh_bluffer", "gh_math", "math", "bluffer", "hybrid"]
                 agent_type = ai_cycle[i % len(ai_cycle)]
             elif agent_mode == "custom" and custom_agents and i < len(custom_agents):
                 agent_type = custom_agents[i]
 
-            if agent_type in global_registry.custom_agents or agent_type == "trainer":
+            if agent_type == "gh_bluffer":
+                bot_name = f"GhBluffer {i + 1} (GH)"
+                bot = GhBlufferAgent(
+                    player_id=bot_id,
+                    name=bot_name,
+                    bluff_aggression=1.1,
+                    gto_balance_factor=1.0,
+                    min_blocker_threshold=0.30,
+                    num_simulations=100,
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+            elif agent_type in global_registry.custom_agents or agent_type == "trainer":
                 bot = global_registry.instantiate_agent_by_id(
                     agent_id=agent_type,
                     player_id=bot_id,
@@ -382,6 +396,8 @@ class WebPokerSession:
             )
             if is_human:
                 agent_label = "Você (Humano)"
+            elif agent_type == "gh_bluffer":
+                agent_label = "🎭 GhBlufferAgent (Gustavo)"
             elif agent_type == "gh_math":
                 agent_label = "🧠 GhMathAgent (Gustavo)"
             elif agent_type == "math":
@@ -1106,7 +1122,7 @@ def start_poker_web_server(
     port: Optional[int] = None,
     num_players: int = 4,
     starting_stack: int = 1000,
-    agent_mode: str = "bots",
+    agent_mode: str = "gh_bluffer",
 ) -> Tuple[ThreadingHTTPServer, int]:
     """Inicializa e vincula o servidor web na porta disponível configurada."""
     chosen_port = port if port is not None else find_free_port(5000, host=host)

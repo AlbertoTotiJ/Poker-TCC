@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
+from src.agents.gh_bluffer_agent import GhBlufferAgent
 from src.agents.gh_math_agent import GhMathAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
 from src.agents.hybrid_agent import HybridAgent
@@ -305,6 +306,14 @@ ROSTER_CONFIGS: Dict[str, Dict[str, Any]] = {
         ),
         "num_players": 6,
     },
+    "gh_bluffer_showdown": {
+        "name": "Duelo de Blefadores (GH vs Alberto)",
+        "description": (
+            "2 GhBluffer (Gustavo - GTO/Blockers), 2 Blefadores (Alberto), "
+            "1 Agressivo, 1 Equilibrado"
+        ),
+        "num_players": 6,
+    },
     "all_models_9": {
         "name": "Grande Torneio Multimodelo 9-Max",
         "description": (
@@ -390,6 +399,15 @@ def build_research_roster(
                 )
                 pname = f"{agent.name}{suffix}"
                 profile = f"Treinado ({agent.name})"
+            elif agent_type == "gh_bluffer":
+                pid = f"gh_blf_{seat_num}"
+                pname = f"GhBluffer {seat_num}{suffix}"
+                agent = GhBlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "GhBluffer (Gustavo)"
             elif agent_type == "gh_math":
                 pid = f"gh_mat_{seat_num}"
                 pname = f"GhMath {seat_num}{suffix}"
@@ -694,6 +712,56 @@ def build_research_roster(
                     rng=random.Random(local_rng.randint(1, 1000000)),
                 ),
                 "Matemático (Alberto)",
+            )
+        _add_player(
+            "bot_agr_1",
+            "Agressivo 1",
+            HeuristicAgent(
+                "bot_agr_1",
+                "Agressivo 1",
+                profile=AgentProfile.AGGRESSIVE,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Agressivo",
+        )
+        _add_player(
+            "bot_bal_1",
+            "Equilibrado 1",
+            HeuristicAgent(
+                "bot_bal_1",
+                "Equilibrado 1",
+                profile=AgentProfile.BALANCED,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Equilibrado",
+        )
+
+    elif roster_mode == "gh_bluffer_showdown":
+        for i in range(1, 3):
+            pid = f"gh_blf_{i}"
+            pname = f"GhBluffer {i} (GH)"
+            _add_player(
+                pid,
+                pname,
+                GhBlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "GhBluffer (Gustavo)",
+            )
+        for i in range(1, 3):
+            pid = f"bot_blf_{i}"
+            pname = f"Blefador {i} (Alberto)"
+            _add_player(
+                pid,
+                pname,
+                BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador (Alberto)",
             )
         _add_player(
             "bot_agr_1",

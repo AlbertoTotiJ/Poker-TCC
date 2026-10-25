@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
+from src.agents.gh_bluffer_agent import GhBlufferAgent
 from src.agents.gh_math_agent import GhMathAgent
 from src.agents.heuristic import AgentProfile, HeuristicAgent
 from src.agents.hybrid_agent import HybridAgent
@@ -43,6 +44,16 @@ class CustomAgentMetadata:
 
 
 STANDARD_AGENTS: List[Dict[str, Any]] = [
+    {
+        "agent_id": "gh_bluffer",
+        "name": "GhBlufferAgent (Gustavo - Nash/Blockers)",
+        "base_type": "gh_bluffer",
+        "is_custom": False,
+        "description": (
+            "Agente blefador avançado baseado em Nash GTO e efeito de remoção de cartas (Blockers)."
+        ),
+        "badge": "Original",
+    },
     {
         "agent_id": "gh_math",
         "name": "GhMathAgent (Gustavo - Kelly/XAI)",
@@ -240,7 +251,14 @@ class AgentRegistry:
         if agent_key in self.custom_agents:
             meta = self.custom_agents[agent_key]
             effective_name = name or meta.name
-            if meta.base_type == "bluffer":
+            if meta.base_type == "gh_bluffer":
+                return GhBlufferAgent(
+                    player_id=player_id,
+                    name=effective_name,
+                    rng=local_rng,
+                    **meta.parameters,
+                )
+            elif meta.base_type == "bluffer":
                 return BlufferAgent(
                     player_id=player_id,
                     name=effective_name,
@@ -272,7 +290,13 @@ class AgentRegistry:
             )
 
         # 3. Agentes originais da linha de base
-        if agent_key == "gh_math":
+        if agent_key == "gh_bluffer":
+            return GhBlufferAgent(
+                player_id=player_id,
+                name=name or "GhBlufferAgent (Original)",
+                rng=local_rng,
+            )
+        elif agent_key == "gh_math":
             return GhMathAgent(
                 player_id=player_id,
                 name=name or "GhMathAgent (Original)",
