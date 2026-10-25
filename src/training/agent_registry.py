@@ -209,6 +209,31 @@ class AgentRegistry:
         self.save()
         return entry
 
+    def register_trained_agent(
+        self,
+        name: str,
+        base_type: str,
+        parameters: Dict[str, Any],
+        qualification: Dict[str, Any],
+        target_metric: Optional[str] = None,
+        session_id: Optional[str] = None,
+        description: str = "",
+    ) -> CustomAgentMetadata:
+        """Alias de conveniência para save_custom_agent com suporte a target_metric."""
+        desc = description or (
+            f"Agente treinado com foco em {target_metric}"
+            if target_metric
+            else ""
+        )
+        return self.save_custom_agent(
+            name=name,
+            base_type=base_type,
+            parameters=parameters,
+            qualification=qualification,
+            session_id=session_id,
+            description=desc,
+        )
+
     def get_agent_info(self, agent_id: str) -> Optional[Dict[str, Any]]:
         """Busca metadados de um agente pelo identificador."""
         for std in STANDARD_AGENTS:
