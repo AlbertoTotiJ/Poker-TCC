@@ -1416,6 +1416,7 @@
     </div>
 
     <div class="header-controls">
+      <button class="btn-header btn-training" onclick="openTrainingModal()" title="Laboratório de IA: Treine e produza novos agentes com o Agente Mentor, preservando os originais">🎯 Treinar Agentes</button>
       <button class="btn-header btn-agents" onclick="openAgentsModal()" title="Escolha entre os Agentes Feitos de IA e os Bots Padrão">🤖 Selecionar Agentes</button>
       <button class="btn-header btn-record" onclick="openRecordModal()" title="Gravar rodadas da equipe com código de autenticação">🔴 Gravar Partidas</button>
       <button class="btn-header" onclick="openConfigModal()">⚙️ Configurar Mesa</button>
@@ -1585,6 +1586,18 @@
     <div class="modal-card agents-modal-card">
       <button class="modal-close-btn" onclick="closeAgentsModal()">×</button>
       <div class="modal-header">🤖 Selecionar Agentes da Mesa</div>
+
+      <!-- Banner de Acesso Rápido ao Laboratório de Treinamento -->
+      <div style="background: linear-gradient(135deg, rgba(21, 101, 192, 0.22), rgba(13, 71, 161, 0.42)); border: 1px solid #42a5f5; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size: 1.8rem;">🎯</span>
+          <div>
+            <div style="font-weight: 700; color: #90caf9; font-size: 0.9rem;">Laboratório de Treinamento de IA (Agente Mentor)</div>
+            <div style="font-size: 0.76rem; color: #b0bec5; margin-top: 2px;">Treine e qualifique métricas individualmente, adapte contra campeões e salve novos agentes sem perder os originais.</div>
+          </div>
+        </div>
+        <button class="btn-header btn-training" onclick="closeAgentsModal(); openTrainingModal();" style="white-space: nowrap; font-size: 0.82rem; padding: 8px 14px; cursor: pointer; flex-shrink: 0;">Abrir Laboratório 🎯</button>
+      </div>
 
       <div style="font-size:0.85rem; color:#bbb; line-height:1.4;">
         Escolha o modelo de inteligência dos oponentes na mesa de poker. Alterne entre os novos agentes de IA desenvolvidos (EV, probabilidade) e os bots heurísticos tradicionais:
@@ -2097,6 +2110,14 @@
       const numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || (gameState && gameState.players ? gameState.players.length : 4);
       const botSeatsCount = Math.max(1, numPlayers - 1);
 
+      const customList = (availableTrainedAgents || []).filter(a => a.is_custom);
+      let trainedGroupHtml = '';
+      if (customList.length > 0) {
+        trainedGroupHtml = `<optgroup label="⭐ Novos Agentes Treinados">` +
+          customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name}</option>`).join('') +
+          `</optgroup>`;
+      }
+
       let html = '';
       for (let i = 0; i < botSeatsCount; i++) {
         const defaultVal = customAgentsConfig[i] || (i === 0 ? 'gh_math' : (i % 2 === 0 ? 'math' : 'balanced'));
@@ -2104,6 +2125,8 @@
           <div class="custom-seat-row">
             <label for="customSeatSelect_${i}">Cadeira ${i + 1} (Bot):</label>
             <select id="customSeatSelect_${i}" onchange="customAgentsConfig[${i}] = this.value">
+              ${trainedGroupHtml}
+              <optgroup label="Modelos Padrão e IAs">
               <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
               <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
               <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>
@@ -2111,6 +2134,7 @@
               <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>🤖 Bot Agressivo</option>
               <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🤖 Bot Conservador</option>
               <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>🤖 Bot Equilibrado</option>
+              </optgroup>
             </select>
           </div>
         `;
@@ -3401,22 +3425,34 @@
     }
 
     function updateSeatDropdownsWithTrainedAgents() {
-      const customList = availableTrainedAgents.filter(a => a.is_custom);
+      const customList = (availableTrainedAgents || []).filter(a => a.is_custom);
       if (customList.length === 0) return;
 
-      // Atualiza dropdowns nas telas de assentos se existirem
+      const optsHtml = customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name}</option>`).join('');
+
       for (let i = 0; i < 9; i++) {
-        const sel = document.getElementById(`recCustomSeatSelect_${i}`);
-        if (sel) {
-          // Procura ou adiciona optgroup
-          let grp = sel.querySelector('optgroup[data-trained="true"]');
+        const recSel = document.getElementById(`recCustomSeatSelect_${i}`);
+        if (recSel) {
+          let grp = recSel.querySelector('optgroup[data-trained="true"]');
           if (!grp) {
             grp = document.createElement('optgroup');
             grp.label = '⭐ Novos Agentes Treinados';
             grp.setAttribute('data-trained', 'true');
-            sel.insertBefore(grp, sel.firstChild);
+            recSel.insertBefore(grp, recSel.firstChild);
           }
-          grp.innerHTML = customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name}</option>`).join('');
+          grp.innerHTML = optsHtml;
+        }
+
+        const seatSel = document.getElementById(`customSeatSelect_${i}`);
+        if (seatSel) {
+          let grp = seatSel.querySelector('optgroup[data-trained="true"]');
+          if (!grp) {
+            grp = document.createElement('optgroup');
+            grp.label = '⭐ Novos Agentes Treinados';
+            grp.setAttribute('data-trained', 'true');
+            seatSel.insertBefore(grp, seatSel.firstChild);
+          }
+          grp.innerHTML = optsHtml;
         }
       }
     }
