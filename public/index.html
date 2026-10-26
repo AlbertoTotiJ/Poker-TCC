@@ -1827,7 +1827,11 @@
       <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
         <div class="preview-section-title" style="display:flex; justify-content:space-between; align-items:center;">
           <span>⭐ Seus Agentes Treinados Salvos</span>
-          <span id="savedAgentsCountBadge" style="font-size:0.7rem; color:#aaa; font-weight:normal;">0 agentes</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="file" id="importAgentFileInput" accept=".json" style="display:none;" onchange="handleAgentFileImport(event)">
+            <button class="btn-header" onclick="document.getElementById('importAgentFileInput').click()" style="font-size:0.7rem; padding:3px 8px; border-color:#64b5f6; color:#90caf9;" title="Importar arquivo .json gerado no Google Colab">📥 Importar do Colab</button>
+            <span id="savedAgentsCountBadge" style="font-size:0.7rem; color:#aaa; font-weight:normal;">0 agentes</span>
+          </div>
         </div>
         <div id="savedAgentsContainer" style="max-height:160px; overflow-y:auto; padding-right:4px;">
           <div style="font-size:0.78rem; color:#777; text-align:center; padding:10px;">Nenhum agente customizado salvo ainda. Execute um treino acima!</div>

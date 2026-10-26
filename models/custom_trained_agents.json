@@ -1,0 +1,82 @@
+{
+  "custom_bluffer_meu_blefador_otimi_20261025_195437": {
+    "agent_id": "custom_bluffer_meu_blefador_otimi_20261025_195437",
+    "name": "Meu Blefador Otimizado v1",
+    "base_type": "bluffer",
+    "created_at": "2026-10-25T19:54:37.260865+00:00",
+    "parameters": {
+      "fold_equity_threshold": 0.4,
+      "bluff_frequency": 0.4,
+      "semi_bluff_frequency": 0.7,
+      "cbet_frequency": 0.65,
+      "bluff_raise_frequency": 0.35,
+      "aggression_multiplier": 1.0,
+      "scare_card_weight": 0.15,
+      "dry_board_bonus": 0.1,
+      "bet_sizing_factor": 0.4
+    },
+    "qualification": {
+      "overall_fitness": 10.0,
+      "overall_tier": "D (Iniciante)",
+      "target_focus": "bluff_success_rate",
+      "individual_scores": {
+        "bb_per_100": {
+          "raw_value": -890.0,
+          "score": 0.0,
+          "tier": "D (Iniciante)",
+          "description": "Lucratividade líquida padronizada em Big Blinds a cada 100 mãos."
+        },
+        "win_rate": {
+          "raw_value": 0.0,
+          "score": 0.0,
+          "tier": "D (Iniciante)",
+          "description": "Taxa percentual de mãos vencidas na mesa."
+        },
+        "bluff_success_rate": {
+          "raw_value": 0.0,
+          "score": 10.0,
+          "tier": "D (Iniciante)",
+          "description": "Percentual de blefes que forçaram fold e venceram sem showdown."
+        },
+        "aggression_factor": {
+          "raw_value": 0.11,
+          "score": 15.0,
+          "tier": "D (Iniciante)",
+          "description": "Razão de equilíbrio entre apostas/raises ofensivos e calls passivos."
+        },
+        "fold_equity_realized": {
+          "raw_value": 0.0,
+          "score": 7.94,
+          "tier": "D (Iniciante)",
+          "description": "Eficácia prática em induzir desistência imediata dos rivais."
+        },
+        "vpip": {
+          "raw_value": 100.0,
+          "score": 0.0,
+          "tier": "D (Iniciante)",
+          "description": "Percentual de potes disputados voluntariamente pré-flop."
+        },
+        "pfr": {
+          "raw_value": 20.0,
+          "score": 94.6,
+          "tier": "S (Elite)",
+          "description": "Frequência de aumento agressivo pré-flop (Pre-Flop Raise)."
+        },
+        "showdown_win_rate": {
+          "raw_value": 0.0,
+          "score": 1.8,
+          "tier": "D (Iniciante)",
+          "description": "Taxa de vitória quando a mão atinge a abertura final das cartas."
+        },
+        "net_chips": {
+          "raw_value": -890.0,
+          "score": 6.48,
+          "tier": "D (Iniciante)",
+          "description": "Variação líquida absoluta do stack em fichas."
+        }
+      }
+    },
+    "session_id": "train_bluffer_20261025_195435",
+    "description": "Treinado sob supervisão do TrainerAgent. Fitness: 10.0 (D (Iniciante))."
+  }
+}

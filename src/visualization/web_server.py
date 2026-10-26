@@ -1,5 +1,6 @@
 """Servidor HTTP e API REST para a interface gráfica web de Texas Hold'em."""
 
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
@@ -1037,6 +1038,50 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 agent_id = str(data.get("agent_id", "")).strip()
                 deleted = global_registry.delete_custom_agent(agent_id)
                 self._send_json({"success": deleted})
+                return
+
+            if (
+                clean_path.endswith("/training/import_agent")
+                or clean_path in (
+                    "/training/import_agent",
+                    "/api/training/import_agent",
+                )
+                or clean_path.endswith("training%2Fimport_agent")
+            ):
+                payload_data = data.get("agent_data") or data
+                name = str(
+                    payload_data.get("name")
+                    or data.get("name")
+                    or f"{payload_data.get('agent_type', 'IA').capitalize()} Importado"
+                ).strip()
+                base_type = str(
+                    payload_data.get("base_type")
+                    or payload_data.get("agent_type")
+                    or "mathematical"
+                ).strip().lower()
+                parameters = payload_data.get("parameters") or {}
+                qualification = payload_data.get("qualification") or {}
+                if not qualification and "overall_fitness" in payload_data:
+                    qualification = {
+                        "overall_fitness": payload_data.get("overall_fitness", 75.0),
+                        "overall_tier": payload_data.get("overall_tier", "A (Mestre)"),
+                        "target_focus": payload_data.get("target_focus"),
+                        "individual_scores": payload_data.get("metrics", {}),
+                    }
+                session_id = str(payload_data.get("session_id") or "import_colab")
+
+                new_entry = global_registry.save_custom_agent(
+                    name=name,
+                    base_type=base_type,
+                    parameters=parameters,
+                    qualification=qualification,
+                    session_id=session_id,
+                    description=(
+                        "Importado em "
+                        f"{datetime.now(timezone.utc).strftime('%d/%m %H:%M')}"
+                    ),
+                )
+                self._send_json({"success": True, "agent": new_entry.to_dict()})
                 return
 
             if clean_path.endswith("/start_game") or clean_path == "/start_game":

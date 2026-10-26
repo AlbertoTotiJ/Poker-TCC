@@ -20,7 +20,9 @@ htmlcov/
 
 # Dados e Modelos
 data/
-models/
+models/*
+!models/custom_trained_agents.json
+!models/hall_of_fame.json
 
 # Logs
 logs/
