@@ -156,16 +156,25 @@ class TrainerAgent(BaseAgent):
             return AgentDiagnostic(
                 target_agent="GhBlufferAgent (Gustavo - Nash/Blockers)",
                 strengths=[
-                    "Blefes matematicamente calibrados via Teoria dos Jogos (GTO B/(P+2B)).",
-                    "Detecção avançada de cartas de bloqueio (Blockers) dos nuts dos oponentes.",
+                    (
+                        "Blefes calibrados via Teoria dos Jogos (GTO B/(P+2B))."
+                    ),
+                    (
+                        "Detecção avançada de cartas de bloqueio (Blockers) "
+                        "dos nuts rivais."
+                    ),
                     "Folds disciplinados e semi-blefes táticos com draws agressivos.",
                 ],
                 vulnerabilities=[
-                    "Agressividade e limiar de blockers podem requerer sintonia contra calling stations.",
+                    (
+                        "Agressividade e blockers podem requerer sintonia contra "
+                        "calling stations."
+                    ),
                 ],
                 recommended_metric=EvaluationMetric.BLUFF_SUCCESS_RATE.value,
                 recommended_focus_rationale=(
-                    "Otimizar a Taxa de Sucesso de Blefe refinando o equilíbrio GTO e limiar de blockers."
+                    "Otimizar a Taxa de Sucesso de Blefe refinando o equilíbrio "
+                    "GTO e blockers."
                 ),
                 suggested_curriculum={
                     "generations": 4,
@@ -228,6 +237,7 @@ class TrainerAgent(BaseAgent):
         self,
         base_agent_type: str,
         new_agent_name: str,
+        initial_parameters: Optional[Dict[str, Any]] = None,
         target_metric: Optional[str] = None,
         generations: int = 3,
         population_size: int = 4,
@@ -238,6 +248,14 @@ class TrainerAgent(BaseAgent):
     ) -> Dict[str, Any]:
         """Supervisiona o treino e registra o NOVO agente, preservando o original."""
         norm_type = base_agent_type.strip().lower()
+        init_params = dict(initial_parameters) if initial_parameters else None
+
+        # Se base_agent_type for um ID de agente já salvo no catálogo:
+        if norm_type in self.registry.custom_agents:
+            saved_meta = self.registry.custom_agents[norm_type]
+            norm_type = saved_meta.base_type
+            if init_params is None:
+                init_params = dict(saved_meta.parameters)
 
         # Determina os pesos da métrica
         metric_weights: MetricWeights
@@ -253,6 +271,7 @@ class TrainerAgent(BaseAgent):
 
         trainer = AdaptiveTrainer(
             agent_type=norm_type,
+            initial_parameters=init_params,
             metric_weights=metric_weights,
             target_metric=effective_target,
             generations=generations,

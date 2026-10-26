@@ -3204,6 +3204,13 @@
       if (!select || !box) return;
 
       const agentKey = select.value;
+      const customAgent = (availableTrainedAgents || []).find(a => a.agent_id === agentKey);
+      if (customAgent) {
+        const tier = (customAgent.qualification && customAgent.qualification.overall_tier) || 'Treinado';
+        box.innerHTML = `💡 <strong>Conselho do Mentor:</strong> Você está evoluindo a partir de <strong>${customAgent.name}</strong> [${tier}]. Seus parâmetros otimizados serão o ponto de partida do novo ciclo genético!`;
+        if (nameInput) nameInput.value = `${customAgent.name} v2`;
+        return;
+      }
       const preset = coachDiagnosticsPresets[agentKey] || coachDiagnosticsPresets['bluffer'];
       box.innerHTML = preset.diag;
       if (nameInput && (!nameInput.value || nameInput.value.includes('Otimizado') || nameInput.value.includes('Treinado'))) {
@@ -3384,10 +3391,30 @@
           availableTrainedAgents = data.agents;
           renderSavedAgentsList();
           updateSeatDropdownsWithTrainedAgents();
+          updateBaseAgentSelectWithCustomAgents();
         }
       } catch (e) {
         // Fallback silencioso
       }
+    }
+
+        function updateBaseAgentSelectWithCustomAgents() {
+      const sel = document.getElementById('trainBaseAgentSelect');
+      if (!sel) return;
+      const customList = (availableTrainedAgents || []).filter(a => a.is_custom);
+
+      let grp = sel.querySelector('optgroup[data-retrain="true"]');
+      if (customList.length === 0) {
+        if (grp) grp.remove();
+        return;
+      }
+      if (!grp) {
+        grp = document.createElement('optgroup');
+        grp.label = '⭐ Re-treinar Agente Salvo (Ajuste Fino)';
+        grp.setAttribute('data-retrain', 'true');
+        sel.appendChild(grp);
+      }
+      grp.innerHTML = customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name} (Evoluir Parâmetros)</option>`).join('');
     }
 
     function renderSavedAgentsList() {

@@ -994,6 +994,13 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 import os
                 from src.agents.trainer_agent import TrainerAgent
                 agent_type = str(data.get("agent_type", "bluffer")).strip().lower()
+                initial_params = data.get("initial_parameters")
+                if agent_type in global_registry.custom_agents:
+                    meta = global_registry.custom_agents[agent_type]
+                    agent_type = meta.base_type
+                    if not initial_params:
+                        initial_params = meta.parameters
+
                 target_metric = data.get("target_metric")
                 generations = int(data.get("generations", 3))
                 population = int(data.get("population", 4))
@@ -1015,6 +1022,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 result = coach.train_and_produce_agent(
                     base_agent_type=agent_type,
                     new_agent_name=new_agent_name,
+                    initial_parameters=initial_params,
                     target_metric=target_metric,
                     generations=generations,
                     population_size=population,

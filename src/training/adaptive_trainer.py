@@ -71,6 +71,7 @@ class AdaptiveTrainer:
     def __init__(
         self,
         agent_type: str = "bluffer",
+        initial_parameters: Optional[Dict[str, Any]] = None,
         metric_weights: Optional[MetricWeights] = None,
         target_metric: Optional[EvaluationMetric | str] = None,
         generations: int = 4,
@@ -86,6 +87,9 @@ class AdaptiveTrainer:
         models_dir: Optional[Path] = None,
     ) -> None:
         self.agent_type: str = agent_type.strip().lower()
+        self.initial_parameters: Optional[Dict[str, Any]] = (
+            dict(initial_parameters) if initial_parameters else None
+        )
         self.generations: int = max(1, generations)
         self.population_size: int = max(2, population_size)
         self.hands_per_eval: int = max(5, hands_per_eval)
@@ -381,7 +385,11 @@ class AdaptiveTrainer:
         progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
     ) -> TrainingResult:
         """Executa o ciclo completo de treinamento evolutivo e adaptação."""
-        baseline_params = get_default_parameters(self.agent_type)
+        baseline_params = (
+            dict(self.initial_parameters)
+            if self.initial_parameters
+            else get_default_parameters(self.agent_type)
+        )
         population: List[Dict[str, Any]] = [dict(baseline_params)]
 
         # Se houver campeões prévios no Hall of Fame, inclui o melhor genoma
@@ -391,11 +399,21 @@ class AdaptiveTrainer:
         if top_champs:
             population.append(dict(top_champs[0].parameters))
 
-        # Completa a população inicial com variantes estocásticas
+        # Completa a população inicial
         while len(population) < self.population_size:
-            population.append(
-                generate_random_parameters(self.agent_type, rng=self.rng)
-            )
+            if self.initial_parameters:
+                mutated = mutate_parameters(
+                    self.agent_type,
+                    dict(self.initial_parameters),
+                    mutation_rate=0.45,
+                    mutation_scale=0.18,
+                    rng=self.rng,
+                )
+                population.append(mutated)
+            else:
+                population.append(
+                    generate_random_parameters(self.agent_type, rng=self.rng)
+                )
 
         generation_history: List[GenerationSummary] = []
         overall_best_params = dict(baseline_params)
