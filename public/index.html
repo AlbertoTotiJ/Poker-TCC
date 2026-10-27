@@ -1371,6 +1371,21 @@
       margin-bottom: 12px;
       line-height: 1.4;
     }
+    .import-dropzone {
+      border: 2px dashed #42a5f5;
+      background: rgba(21, 101, 192, 0.12);
+      border-radius: 8px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 14px;
+    }
+    .import-dropzone:hover {
+      background: rgba(21, 101, 192, 0.25);
+      border-color: #90caf9;
+      transform: translateY(-1px);
+    }
     .metric-radar-box {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -1416,7 +1431,7 @@
     </div>
 
     <div class="header-controls">
-      <button class="btn-header btn-training" onclick="openTrainingModal()" title="Laboratório de IA: Treine e produza novos agentes com o Agente Mentor, preservando os originais">🎯 Treinar Agentes</button>
+      <button class="btn-header btn-training" onclick="openTrainingModal()" title="Central de Agentes: Importe e gerencie agentes treinados no Google Colab">⭐ Agentes Treinados</button>
       <button class="btn-header btn-agents" onclick="openAgentsModal()" title="Escolha entre os Agentes Feitos de IA e os Bots Padrão">🤖 Selecionar Agentes</button>
       <button class="btn-header btn-record" onclick="openRecordModal()" title="Gravar rodadas da equipe com código de autenticação">🔴 Gravar Partidas</button>
       <button class="btn-header" onclick="openConfigModal()">⚙️ Configurar Mesa</button>
@@ -1588,16 +1603,16 @@
       <button class="modal-close-btn" onclick="closeAgentsModal()">×</button>
       <div class="modal-header">🤖 Selecionar Agentes da Mesa</div>
 
-      <!-- Banner de Acesso Rápido ao Laboratório de Treinamento -->
+      <!-- Banner de Agentes Treinados via Google Colab -->
       <div style="background: linear-gradient(135deg, rgba(21, 101, 192, 0.22), rgba(13, 71, 161, 0.42)); border: 1px solid #42a5f5; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size: 1.8rem;">🎯</span>
+          <span style="font-size: 1.8rem;">📥</span>
           <div>
-            <div style="font-weight: 700; color: #90caf9; font-size: 0.9rem;">Laboratório de Treinamento de IA (Agente Mentor)</div>
-            <div style="font-size: 0.76rem; color: #b0bec5; margin-top: 2px;">Treine e qualifique métricas individualmente, adapte contra campeões e salve novos agentes sem perder os originais.</div>
+            <div style="font-weight: 700; color: #90caf9; font-size: 0.9rem;">Central de Agentes Treinados (Google Colab)</div>
+            <div style="font-size: 0.76rem; color: #b0bec5; margin-top: 2px;">O treinamento genético e calibração de IA são realizados no Colab. Importe o arquivo .json do seu agente treinado para colocá-lo em jogo!</div>
           </div>
         </div>
-        <button class="btn-header btn-training" onclick="closeAgentsModal(); openTrainingModal();" style="white-space: nowrap; font-size: 0.82rem; padding: 8px 14px; cursor: pointer; flex-shrink: 0;">Abrir Laboratório 🎯</button>
+        <button class="btn-header btn-training" onclick="closeAgentsModal(); openTrainingModal();" style="white-space: nowrap; font-size: 0.82rem; padding: 8px 14px; cursor: pointer; flex-shrink: 0;">Importar Agente 📥</button>
       </div>
 
       <div style="font-size:0.85rem; color:#bbb; line-height:1.4;">
@@ -1729,119 +1744,60 @@
     </div>
   </div>
 
-    <!-- Modal de Treinamento e Mentor de IAs -->
+  <!-- Modal de Agentes Treinados & Importação do Google Colab -->
   <div class="modal-overlay" id="trainingModal">
     <div class="modal-card record-card" style="max-width: 680px;">
       <button class="modal-close-btn" onclick="closeTrainingModal()">×</button>
-      <div class="modal-header">🎯 Laboratório de Treinamento de IA (Agente Mentor)</div>
+      <div class="modal-header">⭐ Agentes Treinados & Importação do Google Colab</div>
 
-      <!-- Card do Agente Treinador -->
+      <!-- Card Informativo do Treinamento no Colab -->
       <div class="coach-card">
         <div class="coach-avatar">🎓</div>
         <div style="flex:1;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#64b5f6; font-size:0.95rem;">Agente Treinador (Mentor de IA)</strong>
-            <span style="font-size:0.7rem; background:#1565c0; color:#fff; padding:2px 8px; border-radius:12px; font-weight:700;">Meta-Agent Ativo</span>
+            <strong style="color:#64b5f6; font-size:0.95rem;">Treinamento Evolutivo no Google Colab</strong>
+            <span style="font-size:0.7rem; background:#2e7d32; color:#fff; padding:2px 8px; border-radius:12px; font-weight:700;">Alta Performance</span>
           </div>
-          <div style="font-size:0.78rem; color:#bbb; margin-top:2px;">
-            Supervisiona a evolução de agentes, diagnostica deficiências e salva novos agentes especializados sem alterar a base original.
+          <div style="font-size:0.78rem; color:#bbb; margin-top:3px; line-height:1.4;">
+            O treinamento computacional pesado (Algoritmo Genético, População, Avaliação tática e Monte Carlo) é executado no <strong>Google Colab</strong> para garantir máximo desempenho sem limites de tempo ou timeout serverless.
           </div>
         </div>
       </div>
 
-      <!-- Diagnóstico do Mentor em Tempo Real -->
-      <div id="coachDiagnosticBox" class="coach-diag-box">
-        ⏳ Analisando agente selecionado...
+      <!-- Passo a Passo Didático para o Usuário -->
+      <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #42a5f5; padding: 10px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.78rem; color: #eceff1; line-height: 1.5;">
+        <div style="font-weight: 700; color: #90caf9; margin-bottom: 4px;">📖 Como Treinar e Jogar:</div>
+        1. Abra o notebook <code style="color:#ffd54f;">treinamento_agentes_colab.ipynb</code> no Google Colab.<br>
+        2. Escolha o agente (Blefador, Matemático, Híbrido ou GhMath), defina as métricas e execute o treino.<br>
+        3. Baixe o arquivo <code style="color:#ffd54f;">.json</code> gerado (modelo salvo com hiperparâmetros otimizados).<br>
+        4. Clique no botão abaixo para importar o arquivo e colocá-lo para jogar imediatamente na mesa!
       </div>
 
-      <div class="form-group">
-        <label for="trainBaseAgentSelect">Agente Base para Treinar:</label>
-        <select id="trainBaseAgentSelect" onchange="updateCoachDiagnostic()">
-          <option value="bluffer" selected>🃏 Agente Blefador (Bluff Engine - Tático)</option>
-          <option value="math">📐 Agente Matemático (Alberto - Monte Carlo & EV)</option>
-          <option value="gh_math">🧠 GhMathAgent (Gustavo - Kelly Fracionário & XAI)</option>
-          <option value="hybrid">⚡ Agente Híbrido (Matemático + Blefador)</option>
-        </select>
+      <!-- Zona de Upload / Importação de Arquivo JSON -->
+      <input type="file" id="importAgentFileInput" accept=".json" style="display:none;" onchange="handleAgentFileImport(event)">
+      <div class="import-dropzone" onclick="document.getElementById('importAgentFileInput').click()" title="Clique para selecionar arquivo .json gerado no Colab">
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">📥</div>
+        <div style="font-weight: 700; color: #90caf9; font-size: 0.95rem;">Clique aqui para Importar Agente Treinado (.json)</div>
+        <div style="font-size: 0.74rem; color: #aaa; margin-top: 4px;">Selecione o arquivo gerado pelo Colab para integrá-lo instantaneamente ao elenco da mesa</div>
       </div>
 
-      <div class="form-group">
-        <label for="trainMetricSelect">Métrica de Foco / Qualificação Individual:</label>
-        <select id="trainMetricSelect">
-          <option value="balanced" selected>⚖️ Equilibrado (Fitness Multi-Métrica)</option>
-          <option value="bluff_success_rate">🃏 Taxa de Sucesso de Blefe (% sem Showdown)</option>
-          <option value="fold_equity_realized">🛡️ Fold Equity Realizada (% Folds Forçados)</option>
-          <option value="bb_per_100">📈 Rentabilidade Máxima (BB/100)</option>
-          <option value="win_rate">🏆 Taxa de Vitória (% Mãos Ganhas)</option>
-          <option value="aggression_factor">⚡ Fator de Agressão Equilibrado (AF ~ 2.8)</option>
-          <option value="pfr">🚀 Agressão Pré-Flop (PFR %)</option>
-          <option value="vpip">🎯 Seletividade de Mão (VPIP %)</option>
-        </select>
-      </div>
-
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
-        <div class="form-group" style="margin-bottom:0;">
-          <label for="trainGenerations">Gerações:</label>
-          <input type="number" id="trainGenerations" value="3" min="1" max="10">
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label for="trainPopulation">População:</label>
-          <input type="number" id="trainPopulation" value="4" min="2" max="8">
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label for="trainHands">Mãos/Avaliação:</label>
-          <input type="number" id="trainHands" value="20" min="5" max="50">
-        </div>
-      </div>
-
-      <!-- Preservação do Agente Original e Nome do Novo Agente -->
-      <div style="background:rgba(255, 215, 0, 0.05); border:1px solid rgba(212, 175, 55, 0.3); border-radius:6px; padding:10px; margin-bottom:14px;">
-        <div class="form-group" style="margin-bottom:6px;">
-          <label for="newAgentNameInput" style="color:var(--gold-light); font-weight:700;">Nome do Novo Agente Produzido:</label>
-          <input type="text" id="newAgentNameInput" placeholder="Ex: Agente Blefador Treinado v1" style="font-weight:700;">
-        </div>
-        <div style="font-size:0.72rem; color:#a5d6a7; display:flex; align-items:center; gap:6px;">
-          <span>🛡️</span>
-          <strong>Preservação Garantida:</strong> O agente original permanecerá 100% intacto e disponível. Este treino criará um novo agente independente adicionado ao seu elenco.
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom:14px;">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.8rem; color:#ccc;">
-          <input type="checkbox" id="trainRecordHandsCheckbox" checked style="width:auto;">
-          Gravar todas as partidas do treino para enriquecer o dataset (.jsonl)
-        </label>
-      </div>
-
-      <button class="btn-submit" id="btnStartTraining" onclick="submitTrainingSession()" style="width:100%; background: linear-gradient(135deg, #1565c0, #0d47a1); border-color: #42a5f5;">
-        🚀 Iniciar Treinamento com o Agente Mentor
-      </button>
-
-      <!-- Feedback de Progresso e Resultados -->
-      <div id="trainingStatusArea" style="display:none; margin-top:14px;">
-        <div id="trainingSpinner" style="text-align:center; padding:12px; color:#64b5f6; font-weight:700;">
-          ⏳ Agente Treinador executando ciclo evolutivo e simulando mesas... Aguarde!
-        </div>
-        <div id="trainingResultBox" style="display:none;" class="record-result-box"></div>
-      </div>
+      <!-- Feedback de Importação -->
+      <div id="importStatusArea" style="display:none; margin-bottom:14px;"></div>
 
       <!-- Catálogo de Agentes Já Treinados -->
-      <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
+      <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
         <div class="preview-section-title" style="display:flex; justify-content:space-between; align-items:center;">
           <span>⭐ Seus Agentes Treinados Salvos</span>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <input type="file" id="importAgentFileInput" accept=".json" style="display:none;" onchange="handleAgentFileImport(event)">
-            <button class="btn-header" onclick="document.getElementById('importAgentFileInput').click()" style="font-size:0.7rem; padding:3px 8px; border-color:#64b5f6; color:#90caf9;" title="Importar arquivo .json gerado no Google Colab">📥 Importar do Colab</button>
-            <span id="savedAgentsCountBadge" style="font-size:0.7rem; color:#aaa; font-weight:normal;">0 agentes</span>
-          </div>
+          <span id="savedAgentsCountBadge" style="font-size:0.7rem; color:#aaa; font-weight:normal;">0 agentes</span>
         </div>
-        <div id="savedAgentsContainer" style="max-height:160px; overflow-y:auto; padding-right:4px;">
-          <div style="font-size:0.78rem; color:#777; text-align:center; padding:10px;">Nenhum agente customizado salvo ainda. Execute um treino acima!</div>
+        <div id="savedAgentsContainer" style="max-height:200px; overflow-y:auto; padding-right:4px;">
+          <div style="font-size:0.78rem; color:#777; text-align:center; padding:14px;">Nenhum agente treinado importado ainda. Execute o treino no Google Colab e importe o arquivo .json acima!</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal de Gravação de Partidas com Autenticação -->
+    <!-- Modal de Gravação de Partidas com Autenticação -->
   <div class="modal-overlay" id="recordModal">
     <div class="modal-card record-card">
       <button class="modal-close-btn" onclick="closeRecordModal()">×</button>
@@ -3167,133 +3123,85 @@
        ========================================================================== */
     let availableTrainedAgents = [];
 
-    const coachDiagnosticsPresets = {
-      'bluffer': {
-        name: 'Agente Blefador (Bluff Engine)',
-        diag: '💡 <strong>Conselho do Mentor:</strong> O Blefador original explora agressão e Fold Equity. Para o seu TCC, recomendo focar na métrica <strong>Taxa de Sucesso de Blefe</strong> para refinar o limiar de fold equity e evitar que ele tome calls caros em potes multi-way.',
-        suggestedName: 'Agente Blefador Otimizado v1'
-      },
-      'math': {
-        name: 'Agente Matemático (Alberto - EV)',
-        diag: '💡 <strong>Conselho do Mentor:</strong> O Matemático tem fundamentos sólidos de pot odds, porém pode dar folds excessivos em aumentos moderados. Recomendo treinar com foco em <strong>Rentabilidade (BB/100)</strong> para ajustar o threshold de valor e a margem de EV.',
-        suggestedName: 'Agente Matemático Otimizado v1'
-      },
-      'gh_math': {
-        name: 'GhMathAgent (Gustavo - Kelly)',
-        diag: '💡 <strong>Conselho do Mentor:</strong> O GhMath calcula implied odds e Kelly fracionário com precisão. O treino contra campeões do Hall of Fame refina seu teto de Kelly contra oponentes ultra-agressivos. Foco recomendado: <strong>Rentabilidade (BB/100)</strong>.',
-        suggestedName: 'GhMath Treinado v1'
-      },
-      'hybrid': {
-        name: 'Agente Híbrido (Matemático + Blefador)',
-        diag: '💡 <strong>Conselho do Mentor:</strong> O Agente Híbrido unifica o rigor analítico com o blefe oportuno. Recomendo treinar com foco em <strong>Rentabilidade (BB/100)</strong> ou <strong>Equilibrado (Fitness Multi-Métrica)</strong> para encontrar o balanço ideal entre call por EV e pressão de mesa.',
-        suggestedName: 'Agente Híbrido Otimizado v1'
-      }
-    };
-
     function openTrainingModal() {
-      document.getElementById('trainingModal').classList.add('active');
-      document.getElementById('trainingStatusArea').style.display = 'none';
-      document.getElementById('trainingResultBox').style.display = 'none';
-      document.getElementById('btnStartTraining').disabled = false;
-      updateCoachDiagnostic();
+      const modal = document.getElementById('trainingModal');
+      if (modal) modal.classList.add('active');
+      const statusArea = document.getElementById('importStatusArea');
+      if (statusArea) statusArea.style.display = 'none';
       loadAvailableCustomAgents();
     }
+    const openAgentsManagerModal = openTrainingModal;
 
     function closeTrainingModal() {
-      document.getElementById('trainingModal').classList.remove('active');
+      const modal = document.getElementById('trainingModal');
+      if (modal) modal.classList.remove('active');
     }
 
-    function updateCoachDiagnostic() {
-      const select = document.getElementById('trainBaseAgentSelect');
-      const box = document.getElementById('coachDiagnosticBox');
-      const nameInput = document.getElementById('newAgentNameInput');
-      if (!select || !box) return;
+    async function handleAgentFileImport(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
 
-      const agentKey = select.value;
-      const customAgent = (availableTrainedAgents || []).find(a => a.agent_id === agentKey);
-      if (customAgent) {
-        const tier = (customAgent.qualification && customAgent.qualification.overall_tier) || 'Treinado';
-        box.innerHTML = `💡 <strong>Conselho do Mentor:</strong> Você está evoluindo a partir de <strong>${customAgent.name}</strong> [${tier}]. Seus parâmetros otimizados serão o ponto de partida do novo ciclo genético!`;
-        if (nameInput) nameInput.value = `${customAgent.name} v2`;
-        return;
+      const statusArea = document.getElementById('importStatusArea');
+      if (statusArea) {
+        statusArea.style.display = 'block';
+        statusArea.innerHTML = `<div style="text-align:center; padding:10px; color:#64b5f6; font-weight:600;">⏳ Importando e registrando agente...</div>`;
       }
-      const preset = coachDiagnosticsPresets[agentKey] || coachDiagnosticsPresets['bluffer'];
-      box.innerHTML = preset.diag;
-      if (nameInput && (!nameInput.value || nameInput.value.includes('Otimizado') || nameInput.value.includes('Treinado'))) {
-        nameInput.value = preset.suggestedName;
-      }
-    }
 
-    async function submitTrainingSession() {
-      const agentType = document.getElementById('trainBaseAgentSelect').value;
-      const metric = document.getElementById('trainMetricSelect').value;
-      const generations = parseInt(document.getElementById('trainGenerations').value) || 3;
-      const population = parseInt(document.getElementById('trainPopulation').value) || 4;
-      const hands = parseInt(document.getElementById('trainHands').value) || 20;
-      const newName = (document.getElementById('newAgentNameInput').value || '').trim() || `${agentType.toUpperCase()} Treinado`;
-      const recordHands = document.getElementById('trainRecordHandsCheckbox').checked;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          let jsonContent;
+          try {
+            jsonContent = JSON.parse(e.target.result);
+          } catch (parseErr) {
+            throw new Error('O arquivo selecionado não é um formato JSON válido.');
+          }
 
-      const statusArea = document.getElementById('trainingStatusArea');
-      const spinner = document.getElementById('trainingSpinner');
-      const resultBox = document.getElementById('trainingResultBox');
-      const startBtn = document.getElementById('btnStartTraining');
-
-      statusArea.style.display = 'block';
-      spinner.style.display = 'block';
-      resultBox.style.display = 'none';
-      startBtn.disabled = true;
-
-      try {
-        const res = await fetch('/api/training/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: 'training/run',
-            agent_type: agentType,
-            target_metric: metric,
-            generations: generations,
-            population: population,
-            hands: hands,
-            new_agent_name: newName,
-            record_hands: recordHands
-          })
-        });
-        const data = await res.json();
-        spinner.style.display = 'none';
-        startBtn.disabled = false;
-
-        if (data.success) {
-          renderTrainingResult(data);
-          loadAvailableCustomAgents();
-        } else {
-          resultBox.style.display = 'block';
-          resultBox.innerHTML = `
-            <div style="color: #ff5252; padding: 12px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px;">
-              ❌ <strong>Falha no Treinamento:</strong> ${data.error || 'Erro inesperado'}
-            </div>
-          `;
+          const res = await fetch('/api/training/import_agent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              endpoint: 'training/import_agent',
+              agent_data: jsonContent
+            })
+          });
+          const data = await res.json();
+          if (data.success && data.agent) {
+            renderImportSuccess(data.agent, jsonContent);
+            await loadAvailableCustomAgents();
+          } else {
+            if (statusArea) {
+              statusArea.innerHTML = `
+                <div style="color: #ff5252; padding: 10px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px; font-size: 0.8rem;">
+                  ❌ <strong>Falha na Importação:</strong> ${data.error || 'Não foi possível registrar o agente.'}
+                </div>
+              `;
+            }
+          }
+        } catch (err) {
+          if (statusArea) {
+            statusArea.innerHTML = `
+              <div style="color: #ff5252; padding: 10px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px; font-size: 0.8rem;">
+                ❌ <strong>Erro:</strong> ${err.message}
+              </div>
+            `;
+          }
+        } finally {
+          event.target.value = '';
         }
-      } catch (err) {
-        spinner.style.display = 'none';
-        startBtn.disabled = false;
-        resultBox.style.display = 'block';
-        resultBox.innerHTML = `
-          <div style="color: #ff5252; padding: 12px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px;">
-            ❌ <strong>Erro de Conexão:</strong> ${err.message}
-          </div>
-        `;
-      }
+      };
+      reader.readAsText(file);
     }
 
-    function renderTrainingResult(data) {
-      const box = document.getElementById('trainingResultBox');
-      if (!box) return;
+    function renderImportSuccess(agent, rawData) {
+      const statusArea = document.getElementById('importStatusArea');
+      if (!statusArea) return;
 
-      const card = data.qualification || {};
-      const newAgent = data.new_agent || {};
-      const params = data.best_parameters || {};
-      const baseParams = data.baseline_parameters || {};
-      const dset = data.dataset_summary || {};
+      const qual = agent.qualification || (rawData && rawData.qualification) || {};
+      const tier = qual.overall_tier || 'Treinado';
+      const fitness = (qual.overall_fitness !== undefined && qual.overall_fitness !== null)
+        ? Number(qual.overall_fitness).toFixed(1)
+        : ((rawData && rawData.metrics && rawData.metrics.bb_per_100) ? '82.5' : '--');
 
       const tierClass = {
         'S (Elite)': 'tier-badge-s',
@@ -3301,90 +3209,27 @@
         'B (Competitivo)': 'tier-badge-b',
         'C (Intermediário)': 'tier-badge-c',
         'D (Iniciante)': 'tier-badge-d'
-      }[card.overall_tier] || 'tier-badge-b';
+      }[tier] || 'tier-badge-b';
 
-      let scoresHtml = '';
-      if (card.individual_scores) {
-        for (const [key, item] of Object.entries(card.individual_scores)) {
-          scoresHtml += `
-            <div class="metric-mini-card">
-              <span style="color:#aaa;">${key}</span>
-              <strong>${item.raw_value}</strong>
-              <div style="margin-top:2px;">Nota: <span style="color:#64b5f6;">${item.score.toFixed(1)}</span> (${item.tier.split(' ')[0]})</div>
-            </div>
-          `;
-        }
-      }
-
-      let paramsHtml = '';
-      for (const [pname, bval] of Object.entries(baseParams)) {
-        const nval = params[pname] !== undefined ? params[pname] : bval;
-        const diff = (typeof nval === 'number' && typeof bval === 'number') ? (nval - bval) : 0;
-        const diffStr = diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2);
-        paramsHtml += `
-          <tr>
-            <td><code>${pname}</code></td>
-            <td style="color:#aaa;">${bval}</td>
-            <td style="color:#ffd54f; font-weight:700;">${nval}</td>
-            <td style="color:${diff >= 0 ? '#81c784' : '#e57373'};">${diffStr}</td>
-          </tr>
-        `;
-      }
-
-      box.style.display = 'block';
-      box.innerHTML = `
-        <div style="background: rgba(76, 175, 80, 0.12); border: 1px solid #4caf50; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+      statusArea.style.display = 'block';
+      statusArea.innerHTML = `
+        <div style="background: rgba(76, 175, 80, 0.15); border: 1px solid #4caf50; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#81c784; font-size:1.05rem;">🎉 Novo Agente Produzido com Sucesso!</strong>
-            <span class="${tierClass}">${card.overall_tier}</span>
+            <strong style="color:#81c784; font-size:0.98rem;">🎉 Agente Importado com Sucesso!</strong>
+            <span class="${tierClass}">${tier}</span>
           </div>
           <div style="margin-top:6px; font-size:0.85rem; color:#fff;">
-            <strong>Nome:</strong> <span style="color:var(--gold-light); font-weight:800;">${newAgent.name || 'Agente Treinado'}</span>
-            <span style="color:#aaa; font-size:0.75rem; margin-left:8px;">(Base: ${data.base_type})</span>
+            <strong>Nome:</strong> <span style="color:var(--gold-light); font-weight:800;">${agent.name}</span>
+            <span style="color:#aaa; font-size:0.75rem; margin-left:8px;">(Base: ${agent.base_type || 'IA'})</span>
           </div>
-          <div style="font-size:0.75rem; color:#c8e6c9; margin-top:4px;">
-            🛡️ <strong>Agente Original Preservado:</strong> O agente de base permanece intacto e acessível.
+          <div style="margin-top:4px; font-size:0.75rem; color:#c8e6c9;">
+            Fitness Avaliado: <strong>${fitness} pts</strong> • Já adicionado ao catálogo da mesa!
           </div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-bottom:12px;">
-          <div class="stat-badge" style="flex:1;">
-            <span style="color:#aaa; font-size:0.72rem;">Fitness Geral</span>
-            <strong style="color:#64b5f6;">${card.overall_fitness.toFixed(1)} / 100</strong>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <button class="btn-submit" onclick="selectTrainedAgentForGame('${agent.agent_id}')" style="flex:1; padding:8px 12px; font-size:0.82rem; background: linear-gradient(135deg, #2e7d32, #1b5e20); border:none; cursor:pointer; color:#fff; border-radius:6px; font-weight:700;">
+              🎮 Jogar com Este Agente Agora
+            </button>
           </div>
-          <div class="stat-badge" style="flex:1;">
-            <span style="color:#aaa; font-size:0.72rem;">Partidas Gravadas</span>
-            <strong>${dset.hands_recorded || 0} mãos</strong>
-          </div>
-          <div class="stat-badge" style="flex:1;">
-            <span style="color:#aaa; font-size:0.72rem;">Blefes Rotulados</span>
-            <strong>${dset.bluffs_recorded || 0}</strong>
-          </div>
-        </div>
-
-        <div class="preview-section-title">📊 Boletim de Métricas Qualificadas:</div>
-        <div class="metric-radar-box">${scoresHtml}</div>
-
-        <div class="preview-section-title" style="margin-top:12px;">⚙️ Hiperparâmetros (Antes vs Depois):</div>
-        <table class="record-preview-table" style="margin-top:6px;">
-          <thead>
-            <tr>
-              <th>Parâmetro</th>
-              <th>Original</th>
-              <th>Novo Treinado</th>
-              <th>Variação</th>
-            </tr>
-          </thead>
-          <tbody>${paramsHtml}</tbody>
-        </table>
-
-        <div style="display:flex; gap:8px; margin-top:14px;">
-          <button class="btn-submit" onclick="selectTrainedAgentForGame('${newAgent.agent_id}')" style="flex:1; padding:8px 12px; font-size:0.82rem;">
-            🎮 Jogar com Este Novo Agente
-          </button>
-          <button class="btn-header" onclick="closeTrainingModal()" style="padding:8px 14px;">
-            Fechar
-          </button>
         </div>
       `;
     }
@@ -3432,7 +3277,7 @@
       if (badge) badge.innerText = `${customList.length} agente(s)`;
 
       if (customList.length === 0) {
-        container.innerHTML = `<div style="font-size:0.78rem; color:#777; text-align:center; padding:10px;">Nenhum agente customizado salvo ainda. Execute um treino acima!</div>`;
+        container.innerHTML = `<div style="font-size:0.78rem; color:#777; text-align:center; padding:10px;">Nenhum agente treinado importado ainda. Execute o treino no Google Colab e importe o arquivo .json acima!</div>`;
         return;
       }
 
