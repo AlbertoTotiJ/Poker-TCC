@@ -144,6 +144,7 @@ class BlufferAgent(BaseAgent):
         self.bets_and_raises: int = 0
         self.calls: int = 0
         self.folds: int = 0
+        self.last_decision: Optional[BluffDecision] = None
 
     # Propriedades de compatibilidade e acesso direto
     @property
@@ -235,6 +236,7 @@ class BlufferAgent(BaseAgent):
             street=table.street,
         )
 
+        self.last_decision = decision
         self._track_decision_telemetry(decision)
         return Action(
             player_id=self.player_id,

@@ -235,6 +235,7 @@ class AdaptiveTrainer:
             actions_log: List[Dict[str, Any]] = []
             cand_acted_vpip = False
             cand_acted_pfr = False
+            cand_bluffed_in_hand = False
 
             while table.street not in (Street.FINISHED, Street.SHOWDOWN):
                 actor = table.current_player
@@ -258,6 +259,9 @@ class AdaptiveTrainer:
 
                 # Rastreamento específico do candidato
                 if actor.player_id == candidate_id:
+                    bot_dec = getattr(bot, "last_decision", None)
+                    if bot_dec and getattr(bot_dec, "is_bluff", False):
+                        cand_bluffed_in_hand = True
                     if table.street == Street.PREFLOP:
                         if action.action_type in (
                             ActionType.CALL,
@@ -300,21 +304,18 @@ class AdaptiveTrainer:
                 if cand_won:
                     showdowns_won += 1
 
-            # Avaliação de Blefes e Fold Equity para BlufferAgent
-            if isinstance(candidate_agent, BlufferAgent):
-                if hasattr(candidate_agent, "last_decision"):
-                    ld = candidate_agent.last_decision
-                    if ld and getattr(ld, "is_bluff", False):
-                        bluffs_attempted += 1
-                        if cand_won and candidate_id not in table.last_scores:
-                            bluffs_won += 1
-                            fold_equity_successes += 1
+            # Avaliação de Blefes e Fold Equity para o Candidato
+            if cand_bluffed_in_hand:
+                bluffs_attempted += 1
+                if cand_won and candidate_id not in table.last_scores:
+                    bluffs_won += 1
+                    fold_equity_successes += 1
             else:
-                # Caso genérico para outros agentes
+                # Se venceu sem showdown forçando desistências através de aposta/raise
                 if (
                     cand_won
                     and candidate_id not in table.last_scores
-                    and cand_acted_pfr
+                    and (cand_acted_pfr or total_bets_raises > 0)
                 ):
                     fold_equity_successes += 1
 
