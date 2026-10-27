@@ -304,3 +304,82 @@ def test_web_poker_session_split_pot_and_tie_resolution() -> None:
 
     # Verifica se o log de eventos registrou o empate detalhado
     assert any("🤝 Empate no Showdown" in ev for ev in session.event_log)
+
+
+def test_agent_import_and_delete_auth_protection() -> None:
+    import json
+    import threading
+    import urllib.request
+    from http.server import ThreadingHTTPServer
+    from src.visualization.web_server import PokerApiHandler
+
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), PokerApiHandler)
+    port = httpd.server_address[1]
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+
+    base = f"http://127.0.0.1:{port}"
+    try:
+        sample_agent = {
+            "name": "Agente Teste Auth",
+            "base_type": "hybrid",
+            "parameters": {"math_weight": 0.5},
+            "qualification": {"overall_tier": "A (Mestre)", "overall_fitness": 85.0},
+        }
+
+        # 1. Tentativa de import sem auth_code -> deve falhar
+        req_no_auth = urllib.request.Request(
+            f"{base}/api/training/import_agent",
+            data=json.dumps({"agent_data": sample_agent}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_no_auth) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is False
+            assert "autenticação inválido" in data["error"].lower()
+
+        # 2. Tentativa de import com auth_code errado -> deve falhar
+        req_wrong_auth = urllib.request.Request(
+            f"{base}/api/training/import_agent",
+            data=json.dumps({"auth_code": "SENHA_ERRADA", "agent_data": sample_agent}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_wrong_auth) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is False
+            assert "autenticação inválido" in data["error"].lower()
+
+        # 3. Import com auth_code correto ("TCC2026") -> deve passar
+        req_valid_auth = urllib.request.Request(
+            f"{base}/api/training/import_agent",
+            data=json.dumps({"auth_code": "TCC2026", "agent_data": sample_agent}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_valid_auth) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is True
+            imported_agent_id = data["agent"]["agent_id"]
+
+        # 4. Tentativa de delete sem auth_code -> deve falhar
+        req_del_no_auth = urllib.request.Request(
+            f"{base}/api/training/delete_agent",
+            data=json.dumps({"agent_id": imported_agent_id}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_del_no_auth) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is False
+            assert "autenticação inválido" in data["error"].lower()
+
+        # 5. Delete com auth_code correto ("TCC2026") -> deve suceder
+        req_del_valid = urllib.request.Request(
+            f"{base}/api/training/delete_agent",
+            data=json.dumps({"auth_code": "TCC2026", "agent_id": imported_agent_id}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_del_valid) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is True
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
