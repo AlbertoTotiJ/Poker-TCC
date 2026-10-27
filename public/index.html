@@ -1873,8 +1873,11 @@
             <option value="custom" data-players="9">⚙️ Personalizar Configuração da Mesa (2 a 9 Agentes de IA)</option>
           </optgroup>
           <optgroup label="🤖 Torneios de IA & Pesquisa Científica (TCC)">
+            <option value="tier_s_duelo" data-players="6" selected>⭐ Duelo dos Campeões Tier S: 3 Blefadores Tier S vs 3 Matemáticos Tier S (6 Jogadores)</option>
+            <option value="hybrid_vs_champions" data-players="6">⚡ Torneio Híbrido vs Tier S: 2 Híbridos, 2 Blefadores Tier S, 2 Matemáticos Tier S (6 Jogadores)</option>
+            <option value="tcc_champions_9" data-players="9">🌟 Grande Torneio TCC 9-Max: 3 Mat Tier S + 3 Blef Tier S + 3 Híbridos (9 Jogadores)</option>
             <option value="tcc_experiment_9" data-players="9">🎓 Experimento TCC 9-Max: 4 Matemáticos + 5 Blefadores (9 Jogadores)</option>
-            <option value="gh_bluffer_showdown" data-players="6" selected>🎭 Duelo de Blefes: 2 GhBluffer (Gustavo), 2 Blefadores (Alberto), 2 Bots (6 Jogadores)</option>
+            <option value="gh_bluffer_showdown" data-players="6">🎭 Duelo de Blefes: 2 GhBluffer (Gustavo), 2 Blefadores (Alberto), 2 Bots (6 Jogadores)</option>
             <option value="gh_math_showdown" data-players="6">🧠 Duelo GH vs Alberto: 2 GhMath (Gustavo), 2 Matemáticos (Alberto), 2 Bots (6 Jogadores)</option>
             <option value="math_vs_bots" data-players="6">📐 Duelo: 3 Matemáticos Reais vs 3 Bots Heurísticos (6 Jogadores)</option>
             <option value="full_ai_tournament" data-players="6">🏆 Torneio Completo de IAs: 2 Matemáticos, 2 Blefadores, 2 Híbridos (6 Jogadores)</option>
@@ -1889,7 +1892,7 @@
           </optgroup>
         </select>
         <div id="rosterDescriptionNotice" style="font-size:0.74rem; color:#bbb; margin-top:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-left:3px solid var(--gold-light); padding:6px 10px; border-radius:4px; line-height:1.35;">
-          📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).
+          ⭐ <strong>Duelo dos Campeões Tier S:</strong> Confronto direto entre 3 Agentes Blefadores Treinados (Tier S - 94% win rate) vs 3 Agentes Matemáticos Treinados (Tier S - +14.5k fichas). Ideal para benchmarking de elite.
         </div>
       </div>
 
@@ -2690,6 +2693,9 @@
 
       const descMap = {
         'custom': '⚙️ <strong>Mesa Personalizada:</strong> Configuração individual cadeira por cadeira (2 a 9 jogadores). Na mesa cheia (9 jogadores), o 9º assento é preenchido pelo agente selecionado no lugar do jogador humano.',
+        'tier_s_duelo': '⭐ <strong>Duelo dos Campeões Tier S:</strong> Confronto direto entre 3 Agentes Blefadores Treinados (Tier S - 94% win rate) vs 3 Agentes Matemáticos Treinados (Tier S - +14.5k fichas). Ideal para benchmarking de elite.',
+        'hybrid_vs_champions': '⚡ <strong>Torneio Híbrido vs Campeões Tier S:</strong> 2 Agentes Híbridos (adaptativos) enfrentam 2 Blefadores Tier S e 2 Matemáticos Tier S para testar a flexibilidade estratégica contra especialistas.',
+        'tcc_champions_9': '🌟 <strong>Grande Torneio TCC 9-Max:</strong> Mesa cheia de alta voltagem com 3 Matemáticos Tier S, 3 Blefadores Tier S e 3 Agentes Híbridos.',
         'tcc_experiment_9': '🎓 <strong>Experimento TCC 9-Max:</strong> 4 Agentes Matemáticos Reais (Alberto) vs 5 Agentes Blefadores (9 Jogadores autônomos, com o 9º agente ocupando a 9ª cadeira no lugar do jogador humano).',
         'gh_bluffer_showdown': '🎭 <strong>Duelo de Blefes (GH vs Alberto):</strong> 2 GhBlufferAgent (Gustavo - Razão de Nash e Nut Blockers) vs 2 Agentes Blefadores (Alberto) e 2 Bots Heurísticos.',
         'gh_math_showdown': '🧠 <strong>Duelo GH vs Alberto (XAI Quartz):</strong> 2 GhMathAgent (Gustavo com telemetria cognitiva para Rede Neural) vs 2 Agentes Matemáticos (Alberto) e 2 Bots Heurísticos.',
@@ -2746,11 +2752,13 @@
           <div class="custom-seat-row" ${highlightStyle}>
             <label for="recCustomSeatSelect_${i}">${labelText}</label>
             <select id="recCustomSeatSelect_${i}" onchange="recordCustomAgentsConfig[${i}] = this.value">
+              <option value="trained_bluffer" ${defaultVal === 'trained_bluffer' ? 'selected' : ''}>⭐ Blefador Treinado (Tier S - Elite)</option>
+              <option value="trained_math" ${defaultVal === 'trained_math' ? 'selected' : ''}>⭐ Matemático Treinado (Tier S - Elite)</option>
+              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>⚡ Agente Híbrido (Matemático + Blefador)</option>
               <option value="gh_bluffer" ${defaultVal === 'gh_bluffer' ? 'selected' : ''}>🎭 GhBlufferAgent (Gustavo - Nash/Blockers)</option>
               <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
               <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
               <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>
-              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>🧠 Agente Híbrido</option>
               <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>⚔️ Bot Agressivo</option>
               <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🛡️ Bot Conservador</option>
               <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>⚖️ Bot Equilibrado</option>

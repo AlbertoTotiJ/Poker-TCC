@@ -168,3 +168,56 @@ def test_run_recording_batch_custom_seats() -> None:
     leaderboard_names = [p["name"] for p in res["leaderboard"]]
     assert len(leaderboard_names) == 9
     assert any("9º Agente" in n for n in leaderboard_names)
+
+
+def test_build_research_roster_tier_s_presets() -> None:
+    # 1. Duelo Campeões Tier S (3 Blefadores vs 3 Matemáticos)
+    players_s, _, p_s = build_research_roster(roster_mode="tier_s_duelo")
+    assert len(players_s) == 6
+    assert list(p_s.values()).count("Blefador Treinado (Tier S)") == 3
+    assert list(p_s.values()).count("Matemático Treinado (Tier S)") == 3
+
+    # 2. Torneio Híbrido vs Campeões Tier S
+    players_h, _, p_h = build_research_roster(roster_mode="hybrid_vs_champions")
+    assert len(players_h) == 6
+    assert list(p_h.values()).count("Híbrido") == 2
+    assert list(p_h.values()).count("Blefador Treinado (Tier S)") == 2
+    assert list(p_h.values()).count("Matemático Treinado (Tier S)") == 2
+
+    # 3. Grande Torneio TCC Tier S & Híbridos 9-Max
+    players_9, _, p_9 = build_research_roster(roster_mode="tcc_champions_9")
+    assert len(players_9) == 9
+    assert list(p_9.values()).count("Matemático Treinado (Tier S)") == 3
+    assert list(p_9.values()).count("Blefador Treinado (Tier S)") == 3
+    assert list(p_9.values()).count("Híbrido") == 3
+    assert any("9º Agente" in p.name for p in players_9)
+
+
+def test_run_recording_batch_tier_s_and_hybrid() -> None:
+    # Simula rodada gravada no modo tier_s_duelo
+    res_duelo = run_recording_batch(
+        auth_code="TCC2026",
+        num_hands=2,
+        roster_mode="tier_s_duelo",
+        rng_seed=999,
+    )
+    assert res_duelo["success"] is True
+    assert res_duelo["hands_completed"] == 2
+    assert "Blefador Treinado (Tier S)" in res_duelo["wins_by_profile"]
+    assert "Matemático Treinado (Tier S)" in res_duelo["wins_by_profile"]
+
+    # Simula rodada gravada com custom_seats contendo os agentes Tier S e o Híbrido
+    custom_seats = [
+        "trained_bluffer", "trained_math", "hybrid",
+        "trained_bluffer", "trained_math", "hybrid"
+    ]
+    res_custom = run_recording_batch(
+        auth_code="TCC2026",
+        num_hands=2,
+        custom_seats=custom_seats,
+        rng_seed=888,
+    )
+    assert res_custom["success"] is True
+    assert res_custom["roster_mode"] == "custom"
+    assert res_custom["hands_completed"] == 2
+    assert len(res_custom["leaderboard"]) == 6

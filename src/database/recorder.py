@@ -260,6 +260,27 @@ def save_hand_to_file(hand_data: Dict[str, Any]) -> bool:
 
 
 ROSTER_CONFIGS: Dict[str, Dict[str, Any]] = {
+    "tier_s_duelo": {
+        "name": "⭐ Duelo Campeões Tier S (3 Blefadores vs 3 Matemáticos)",
+        "description": (
+            "3 Blefadores Treinados (Tier S) vs 3 Matemáticos Treinados (Tier S) (6 Jogadores)"
+        ),
+        "num_players": 6,
+    },
+    "hybrid_vs_champions": {
+        "name": "⚡ Torneio Híbrido vs Campeões Tier S",
+        "description": (
+            "2 Agentes Híbridos, 2 Blefadores Tier S, 2 Matemáticos Tier S (6 Jogadores)"
+        ),
+        "num_players": 6,
+    },
+    "tcc_champions_9": {
+        "name": "🌟 Grande Torneio TCC Tier S & Híbridos 9-Max",
+        "description": (
+            "3 Matemáticos Tier S, 3 Blefadores Tier S, 3 Híbridos (9 Jogadores)"
+        ),
+        "num_players": 9,
+    },
     "classic_6": {
         "name": "Clássica 6-Max",
         "description": "2 Matemáticos Reais, 2 Agressivos, 2 Conservadores",
@@ -390,7 +411,33 @@ def build_research_roster(
 
             from src.training.agent_registry import global_registry
 
-            if agent_type in global_registry.custom_agents or agent_type == "trainer":
+            if (
+                agent_type in ("trained_bluffer", "bluffer_s")
+                or agent_type == "train_bluffer_20261026_195535"
+            ):
+                pid = f"bot_tblf_{seat_num}"
+                pname = f"Blefador Treinado {seat_num}{suffix}"
+                agent = global_registry.instantiate_agent_by_id(
+                    agent_id="trained_bluffer",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Blefador Treinado (Tier S)"
+            elif (
+                agent_type in ("trained_math", "math_s")
+                or agent_type == "train_mathematical_20261026_195709"
+            ):
+                pid = f"bot_tmat_{seat_num}"
+                pname = f"Matemático Treinado {seat_num}{suffix}"
+                agent = global_registry.instantiate_agent_by_id(
+                    agent_id="trained_math",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                )
+                profile = "Matemático Treinado (Tier S)"
+            elif agent_type in global_registry.custom_agents or agent_type == "trainer":
                 pid = f"bot_cst_{seat_num}"
                 agent = global_registry.instantiate_agent_by_id(
                     agent_id=agent_type,
@@ -480,6 +527,136 @@ def build_research_roster(
 
             _add_player(pid, pname, agent, profile)
 
+        return players, agents, profile_labels
+
+    if roster_mode == "tier_s_duelo":
+        from src.training.agent_registry import global_registry
+
+        for i in range(1, 4):
+            pid = f"bot_tblf_{i}"
+            pname = f"Blefador Tier S {i}"
+            _add_player(
+                pid,
+                pname,
+                global_registry.instantiate_agent_by_id(
+                    agent_id="trained_bluffer",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador Treinado (Tier S)",
+            )
+        for i in range(1, 4):
+            pid = f"bot_tmat_{i}"
+            pname = f"Matemático Tier S {i}"
+            _add_player(
+                pid,
+                pname,
+                global_registry.instantiate_agent_by_id(
+                    agent_id="trained_math",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático Treinado (Tier S)",
+            )
+        local_rng.shuffle(players)
+        return players, agents, profile_labels
+
+    if roster_mode == "hybrid_vs_champions":
+        from src.training.agent_registry import global_registry
+
+        for i in range(1, 3):
+            pid = f"bot_hyb_{i}"
+            pname = f"Híbrido {i}"
+            _add_player(
+                pid,
+                pname,
+                HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Híbrido",
+            )
+        for i in range(1, 3):
+            pid = f"bot_tblf_{i}"
+            pname = f"Blefador Tier S {i}"
+            _add_player(
+                pid,
+                pname,
+                global_registry.instantiate_agent_by_id(
+                    agent_id="trained_bluffer",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador Treinado (Tier S)",
+            )
+        for i in range(1, 3):
+            pid = f"bot_tmat_{i}"
+            pname = f"Matemático Tier S {i}"
+            _add_player(
+                pid,
+                pname,
+                global_registry.instantiate_agent_by_id(
+                    agent_id="trained_math",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático Treinado (Tier S)",
+            )
+        local_rng.shuffle(players)
+        return players, agents, profile_labels
+
+    if roster_mode == "tcc_champions_9":
+        from src.training.agent_registry import global_registry
+
+        for i in range(1, 4):
+            pid = f"bot_tmat_{i}"
+            pname = f"Matemático Tier S {i}"
+            _add_player(
+                pid,
+                pname,
+                global_registry.instantiate_agent_by_id(
+                    agent_id="trained_math",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático Treinado (Tier S)",
+            )
+        for i in range(1, 4):
+            pid = f"bot_tblf_{i}"
+            pname = f"Blefador Tier S {i}"
+            _add_player(
+                pid,
+                pname,
+                global_registry.instantiate_agent_by_id(
+                    agent_id="trained_bluffer",
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador Treinado (Tier S)",
+            )
+        for i in range(1, 4):
+            pid = f"bot_hyb_{i}"
+            pname = f"Híbrido {i} (9º Agente)" if i == 3 else f"Híbrido {i}"
+            _add_player(
+                pid,
+                pname,
+                HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    num_simulations=100,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Híbrido",
+            )
+        local_rng.shuffle(players)
         return players, agents, profile_labels
 
     if roster_mode == "tcc_experiment_9":
