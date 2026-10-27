@@ -392,19 +392,66 @@ class AgentRegistry:
                 pass
 
     def load(self) -> None:
-        """Carrega agentes customizados pré-salvos."""
-        if not self.catalog_file.exists():
-            self.custom_agents = {}
-            return
-        try:
-            with open(self.catalog_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            self.custom_agents = {
-                aid: CustomAgentMetadata.from_dict(item)
-                for aid, item in data.items()
-            }
-        except Exception:
-            self.custom_agents = {}
+        """Carrega agentes customizados pré-salvos e auto-descobre arquivos em models/."""
+        self.custom_agents = {}
+
+        # 1. Carrega catálogo consolidado se existir
+        if self.catalog_file.exists():
+            try:
+                with open(self.catalog_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                self.custom_agents = {
+                    aid: CustomAgentMetadata.from_dict(item)
+                    for aid, item in data.items()
+                    if isinstance(item, dict)
+                }
+            except Exception:
+                pass
+
+        # 2. Auto-descoberta: Carrega automaticamente arquivos .json individuais colocados em models/
+        models_dir = self.catalog_file.parent
+        if models_dir.exists() and models_dir.is_dir():
+            for json_path in sorted(models_dir.glob("*.json")):
+                if json_path.name in ("custom_trained_agents.json", "hall_of_fame.json"):
+                    continue
+                try:
+                    with open(json_path, "r", encoding="utf-8") as f:
+                        file_data = json.load(f)
+                    if isinstance(file_data, dict) and "parameters" in file_data:
+                        agent_id = str(file_data.get("session_id") or f"custom_{json_path.stem}").strip()
+                        if agent_id in self.custom_agents:
+                            continue
+
+                        name = str(file_data.get("name") or json_path.stem.replace("_", " ").title()).strip()
+                        base_type = str(
+                            file_data.get("base_type")
+                            or file_data.get("agent_type")
+                            or "mathematical"
+                        ).strip().lower()
+                        qual = file_data.get("qualification") or {}
+                        if not qual and "overall_fitness" in file_data:
+                            qual = {
+                                "overall_fitness": file_data.get("overall_fitness", 75.0),
+                                "overall_tier": file_data.get("overall_tier", "Treinado"),
+                                "target_focus": file_data.get("target_focus"),
+                                "individual_scores": file_data.get("metrics", {}),
+                            }
+                        created_at = str(
+                            file_data.get("created_at")
+                            or datetime.fromtimestamp(json_path.stat().st_mtime, tz=timezone.utc).isoformat()
+                        )
+                        self.custom_agents[agent_id] = CustomAgentMetadata(
+                            agent_id=agent_id,
+                            name=name,
+                            base_type=base_type,
+                            created_at=created_at,
+                            parameters=file_data["parameters"],
+                            qualification=qual,
+                            session_id=file_data.get("session_id"),
+                            description=f"Carregado automaticamente de models/{json_path.name}",
+                        )
+                except Exception:
+                    continue
 
 
 # Instância global reutilizável

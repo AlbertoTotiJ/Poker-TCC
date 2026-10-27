@@ -1744,55 +1744,43 @@
     </div>
   </div>
 
-  <!-- Modal de Agentes Treinados & Importação do Google Colab -->
+  <!-- Modal de Agentes Treinados (Pasta models/) -->
   <div class="modal-overlay" id="trainingModal">
     <div class="modal-card record-card" style="max-width: 680px;">
       <button class="modal-close-btn" onclick="closeTrainingModal()">×</button>
-      <div class="modal-header">⭐ Agentes Treinados & Importação do Google Colab</div>
+      <div class="modal-header">⭐ Agentes Treinados & Pasta Local <code>models/</code></div>
 
-      <!-- Card Informativo do Treinamento no Colab -->
+      <!-- Card Informativo de Onde Colocar os Arquivos -->
       <div class="coach-card">
-        <div class="coach-avatar">🎓</div>
+        <div class="coach-avatar">📁</div>
         <div style="flex:1;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#64b5f6; font-size:0.95rem;">Treinamento Evolutivo no Google Colab</strong>
-            <span style="font-size:0.7rem; background:#2e7d32; color:#fff; padding:2px 8px; border-radius:12px; font-weight:700;">Alta Performance</span>
+            <strong style="color:#64b5f6; font-size:0.95rem;">Onde Colocar seu Agente Treinado</strong>
+            <span style="font-size:0.7rem; background:#2e7d32; color:#fff; padding:2px 8px; border-radius:12px; font-weight:700;">Pasta models/</span>
           </div>
           <div style="font-size:0.78rem; color:#bbb; margin-top:3px; line-height:1.4;">
-            O treinamento computacional pesado (Algoritmo Genético, População, Avaliação tática e Monte Carlo) é executado no <strong>Google Colab</strong> para garantir máximo desempenho sem limites de tempo ou timeout serverless.
+            Basta colocar o arquivo <code>.json</code> exportado pelo Google Colab diretamente dentro da pasta:
+            <br><code style="color:#ffd54f; font-weight:700; font-size:0.85rem;">Poker-TCC/models/seu_agente.json</code>
           </div>
         </div>
       </div>
 
-      <!-- Passo a Passo Didático para o Usuário -->
-      <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #42a5f5; padding: 10px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.78rem; color: #eceff1; line-height: 1.5;">
-        <div style="font-weight: 700; color: #90caf9; margin-bottom: 4px;">📖 Como Treinar e Jogar:</div>
-        1. Abra o notebook <code style="color:#ffd54f;">treinamento_agentes_colab.ipynb</code> no Google Colab.<br>
-        2. Escolha o agente (Blefador, Matemático, Híbrido ou GhMath), defina as métricas e execute o treino.<br>
-        3. Baixe o arquivo <code style="color:#ffd54f;">.json</code> gerado (modelo salvo com hiperparâmetros otimizados).<br>
-        4. Clique no botão abaixo para importar o arquivo e colocá-lo para jogar imediatamente na mesa!
-      </div>
-
-      <!-- Bloco de Autenticação / Segurança da Equipe -->
-      <div style="background: rgba(21, 101, 192, 0.08); border: 1px solid rgba(66, 165, 245, 0.35); border-radius: 6px; padding: 10px 12px; margin-bottom: 14px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label for="agentAuthCode" style="color: #90caf9; font-weight: 700; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem;">
-            <span>🔒 Código de Autenticação da Equipe (Senha):</span>
-            <span style="font-size: 0.72rem; color: #a5d6a7; font-weight: normal;">Padrão: TCC2026</span>
-          </label>
-          <input type="password" id="agentAuthCode" placeholder="Insira a senha da equipe (ex: TCC2026)" autocomplete="off" oninput="saveAuthCodePreference(this.value)">
-          <div style="font-size: 0.72rem; color: #90a4ae; margin-top: 4px;">
-            🛡️ Proteção ativa: Apenas membros da equipe autenticados podem importar novos modelos do Colab ou excluir agentes.
-          </div>
+      <!-- Guia de Preservação e Segurança dos Agentes -->
+      <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #81c784; padding: 10px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.78rem; color: #eceff1; line-height: 1.5;">
+        <div style="font-weight: 700; color: #a5d6a7; margin-bottom: 4px; display:flex; align-items:center; gap:6px;">
+          <span>🛡️</span> <strong>Preservação Garantida dos Agentes:</strong>
         </div>
+        • <strong>Os originais nunca são modificados:</strong> Os agentes padrão (Matemático, Blefador, Híbrido, GhMath) estão fixados no código-fonte e continuam 100% disponíveis.<br>
+        • <strong>Isolamento Total:</strong> Cada modelo treinado possui seu próprio arquivo <code>.json</code> com hiperparâmetros próprios.<br>
+        • <strong>Sem Conflitos:</strong> Você pode ter quantas versões quiser (ex: <code>bluffer_v1.json</code>, <code>bluffer_v2.json</code>, <code>hybrid_v1.json</code>) coexistindo na mesa.
       </div>
 
-      <!-- Zona de Upload / Importação de Arquivo JSON -->
+      <!-- Zona de Carregamento Automático / Importação Rápida Opcional -->
       <input type="file" id="importAgentFileInput" accept=".json" style="display:none;" onchange="handleAgentFileImport(event)">
-      <div class="import-dropzone" onclick="document.getElementById('importAgentFileInput').click()" title="Clique para selecionar arquivo .json gerado no Colab">
-        <div style="font-size: 1.8rem; margin-bottom: 6px;">📥</div>
-        <div style="font-weight: 700; color: #90caf9; font-size: 0.95rem;">Clique aqui para Importar Agente Treinado (.json)</div>
-        <div style="font-size: 0.74rem; color: #aaa; margin-top: 4px;">Selecione o arquivo gerado pelo Colab para integrá-lo instantaneamente ao elenco da mesa</div>
+      <div class="import-dropzone" onclick="document.getElementById('importAgentFileInput').click()" title="Clique para selecionar arquivo .json baixado do Colab">
+        <div style="font-size: 1.8rem; margin-bottom: 4px;">📥</div>
+        <div style="font-weight: 700; color: #90caf9; font-size: 0.92rem;">Importar arquivo .json agora (ou copie para a pasta models/)</div>
+        <div style="font-size: 0.74rem; color: #aaa; margin-top: 4px;">Arquivos colocados em <code>models/</code> são reconhecidos automaticamente</div>
       </div>
 
       <!-- Feedback de Importação -->
@@ -1801,11 +1789,11 @@
       <!-- Catálogo de Agentes Já Treinados -->
       <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
         <div class="preview-section-title" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>⭐ Seus Agentes Treinados Salvos</span>
+          <span>⭐ Agentes Carregados da Pasta models/</span>
           <span id="savedAgentsCountBadge" style="font-size:0.7rem; color:#aaa; font-weight:normal;">0 agentes</span>
         </div>
-        <div id="savedAgentsContainer" style="max-height:200px; overflow-y:auto; padding-right:4px;">
-          <div style="font-size:0.78rem; color:#777; text-align:center; padding:14px;">Nenhum agente treinado importado ainda. Execute o treino no Google Colab e importe o arquivo .json acima!</div>
+        <div id="savedAgentsContainer" style="max-height:220px; overflow-y:auto; padding-right:4px;">
+          <div style="font-size:0.78rem; color:#777; text-align:center; padding:14px;">Nenhum agente treinado encontrado. Coloque um arquivo .json na pasta models/!</div>
         </div>
       </div>
     </div>
@@ -1829,7 +1817,7 @@
 
       <div class="form-group">
         <label for="recordAuthCode">Código de Autenticação da Equipe:</label>
-        <input type="password" id="recordAuthCode" placeholder="" autocomplete="off" oninput="saveAuthCodePreference(this.value)">
+        <input type="password" id="recordAuthCode" placeholder="" autocomplete="off">
       </div>
 
       <div class="form-group">
@@ -3151,42 +3139,14 @@
       if (modal) modal.classList.remove('active');
     }
 
-    function saveAuthCodePreference(val) {
-      const code = (val || '').trim();
-      if (code) {
-        localStorage.setItem('poker_team_auth_code', code);
-        const aCode = document.getElementById('agentAuthCode');
-        const rCode = document.getElementById('recordAuthCode');
-        if (aCode && aCode.value !== code) aCode.value = code;
-        if (rCode && rCode.value !== code) rCode.value = code;
-      }
-    }
-
     async function handleAgentFileImport(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
 
-      const authInput = document.getElementById('agentAuthCode');
-      const authCode = authInput ? authInput.value.trim() : '';
       const statusArea = document.getElementById('importStatusArea');
-
-      if (!authCode) {
-        if (statusArea) {
-          statusArea.style.display = 'block';
-          statusArea.innerHTML = `
-            <div style="color: #ff5252; padding: 10px; background: rgba(255, 82, 82, 0.12); border: 1px solid #ff5252; border-radius: 6px; font-size: 0.82rem;">
-              🔒 <strong>Acesso Bloqueado:</strong> Insira o Código de Autenticação da Equipe (senha) acima antes de importar.
-            </div>
-          `;
-        }
-        if (authInput) authInput.focus();
-        event.target.value = '';
-        return;
-      }
-
       if (statusArea) {
         statusArea.style.display = 'block';
-        statusArea.innerHTML = `<div style="text-align:center; padding:10px; color:#64b5f6; font-weight:600;">⏳ Validando autenticação e importando agente...</div>`;
+        statusArea.innerHTML = `<div style="text-align:center; padding:10px; color:#64b5f6; font-weight:600;">⏳ Importando e registrando agente...</div>`;
       }
 
       const reader = new FileReader();
@@ -3204,7 +3164,6 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               endpoint: 'training/import_agent',
-              auth_code: authCode,
               agent_data: jsonContent
             })
           });
@@ -3236,7 +3195,7 @@
       reader.readAsText(file);
     }
 
-    function renderImportSuccess(agent, rawData) {
+        function renderImportSuccess(agent, rawData) {
       const statusArea = document.getElementById('importStatusArea');
       if (!statusArea) return;
 
@@ -3345,16 +3304,6 @@
     }
 
     async function deleteTrainedAgent(agentId) {
-      let authInput = document.getElementById('agentAuthCode');
-      let authCode = authInput ? authInput.value.trim() : '';
-      if (!authCode) {
-        authCode = prompt('🔒 Insira o Código de Autenticação da Equipe para autorizar a exclusão:') || '';
-        authCode = authCode.trim();
-        if (!authCode) return;
-        if (authInput) authInput.value = authCode;
-        saveAuthCodePreference(authCode);
-      }
-
       if (!confirm('Deseja realmente excluir este agente customizado?')) return;
       try {
         const res = await fetch('/api/training/delete_agent', {
@@ -3362,15 +3311,14 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             endpoint: 'training/delete_agent',
-            agent_id: agentId,
-            auth_code: authCode
+            agent_id: agentId
           })
         });
         const data = await res.json();
         if (data.success) {
           loadAvailableCustomAgents();
         } else {
-          alert('Erro ao excluir: ' + (data.error || 'Ação não autorizada.'));
+          alert('Erro ao excluir: ' + (data.error || 'Erro inesperado.'));
         }
       } catch (e) {
         alert('Erro ao excluir: ' + e.message);
@@ -3441,13 +3389,6 @@
     }
 
     window.addEventListener('load', () => {
-      const savedAuth = localStorage.getItem('poker_team_auth_code');
-      if (savedAuth) {
-        const aCode = document.getElementById('agentAuthCode');
-        const rCode = document.getElementById('recordAuthCode');
-        if (aCode) aCode.value = savedAuth;
-        if (rCode) rCode.value = savedAuth;
-      }
       loadAvailableCustomAgents();
       autoScaleTable();
       fetchState();

@@ -992,19 +992,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 or clean_path == "/api/training/run"
             ):
                 import os
-                from src.database.recorder import verify_auth_code
                 from src.agents.trainer_agent import TrainerAgent
-
-                auth_code = str(data.get("auth_code", "")).strip()
-                if not verify_auth_code(auth_code):
-                    self._send_json(
-                        {
-                            "success": False,
-                            "error": "Código de autenticação inválido. Execução de treino não autorizada.",
-                        }
-                    )
-                    return
-
                 agent_type = str(data.get("agent_type", "bluffer")).strip().lower()
                 initial_params = data.get("initial_parameters")
                 if agent_type in global_registry.custom_agents:
@@ -1055,18 +1043,6 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 or clean_path.endswith("/api/training/delete_agent")
                 or clean_path == "/api/training/delete_agent"
             ):
-                from src.database.recorder import verify_auth_code
-
-                auth_code = str(data.get("auth_code", "")).strip()
-                if not verify_auth_code(auth_code):
-                    self._send_json(
-                        {
-                            "success": False,
-                            "error": "Código de autenticação inválido. Ação não autorizada.",
-                        }
-                    )
-                    return
-
                 agent_id = str(data.get("agent_id", "")).strip()
                 deleted = global_registry.delete_custom_agent(agent_id)
                 self._send_json({"success": deleted})
@@ -1082,23 +1058,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 or clean_path.endswith("/api/training/import_agent")
                 or clean_path == "/api/training/import_agent"
             ):
-                from src.database.recorder import verify_auth_code
-
                 payload_data = data.get("agent_data") or data
-                auth_code = str(
-                    data.get("auth_code")
-                    or payload_data.get("auth_code")
-                    or ""
-                ).strip()
-
-                if not verify_auth_code(auth_code):
-                    self._send_json(
-                        {
-                            "success": False,
-                            "error": "Código de autenticação inválido. Insira a senha da equipe para importar agentes.",
-                        }
-                    )
-                    return
                 name = str(
                     payload_data.get("name")
                     or data.get("name")
