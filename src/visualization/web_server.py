@@ -90,6 +90,10 @@ class WebPokerSession:
                 agent_type = "gh_bluffer"
             elif agent_mode == "gh_math":
                 agent_type = "gh_math"
+            elif agent_mode in ("trained_bluffer", "blef"):
+                agent_type = "trained_bluffer"
+            elif agent_mode in ("trained_math", "math_s"):
+                agent_type = "trained_math"
             elif agent_mode == "math":
                 agent_type = "math"
             elif agent_mode == "bluffer":
@@ -99,12 +103,38 @@ class WebPokerSession:
             elif agent_mode == "mixed":
                 agent_type = "math" if (i % 2 == 0) else "bot"
             elif agent_mode == "all_ai":
-                ai_cycle = ["gh_bluffer", "gh_math", "math", "bluffer", "hybrid"]
+                ai_cycle = [
+                    "trained_bluffer",
+                    "trained_math",
+                    "hybrid",
+                    "gh_bluffer",
+                    "gh_math",
+                    "bluffer",
+                    "math",
+                ]
                 agent_type = ai_cycle[i % len(ai_cycle)]
             elif agent_mode == "custom" and custom_agents and i < len(custom_agents):
                 agent_type = custom_agents[i]
+            elif agent_mode in global_registry.custom_agents:
+                agent_type = agent_mode
 
-            if agent_type == "gh_bluffer":
+            if agent_type in ("trained_bluffer", "train_bluffer_20261027_161310", "blef"):
+                bot = global_registry.instantiate_agent_by_id(
+                    agent_id="trained_bluffer",
+                    player_id=bot_id,
+                    name=f"Blefador Tier S {i + 1}",
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+                bot_name = bot.name
+            elif agent_type in ("trained_math", "train_mathematical_20261026_195709", "math_s"):
+                bot = global_registry.instantiate_agent_by_id(
+                    agent_id="trained_math",
+                    player_id=bot_id,
+                    name=f"Matemático Tier S {i + 1}",
+                    rng=random.Random(self.rng.randint(1, 1000000)),
+                )
+                bot_name = bot.name
+            elif agent_type == "gh_bluffer":
                 bot_name = f"GhBluffer {i + 1} (GH)"
                 bot = GhBlufferAgent(
                     player_id=bot_id,

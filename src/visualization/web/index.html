@@ -1577,12 +1577,15 @@
       <div class="form-group">
         <label for="configAgentModeSelect">Tipo de Oponentes / Agentes:</label>
         <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
+          <option value="trained_bluffer">⭐ Agente Blefador Treinado (Tier S - 94% Vitórias)</option>
+          <option value="trained_math">⭐ Agente Matemático Treinado (Tier S - +14K Fichas)</option>
+          <option value="hybrid">⚡ Agente Híbrido (Matemático + Blefador)</option>
           <option value="gh_bluffer" selected>🎭 GhBlufferAgent (Gustavo - GTO Blockers & Nash)</option>
           <option value="gh_math">🧠 GhMathAgent (Gustavo - Implied Odds & Kelly)</option>
           <option value="math">📐 Agente Matemático (Alberto - EV)</option>
           <option value="bluffer">🃏 Agente Blefador (Alberto - Bluff Engine)</option>
+          <option value="all_ai">🏆 Torneio Multimodelo de IAs (Todos os Agentes)</option>
           <option value="mixed">⚔️ Mesa Mista (Agente Matemático vs Bots Padrão)</option>
-          <option value="all_ai">🏆 Torneio Completo de IAs (Matemáticos, Blefadores, Híbridos)</option>
           <option value="bots">🤖 Usar Bot (Padrões Anteriores)</option>
           <option value="custom">⚙️ Personalizado por Cadeira</option>
         </select>
@@ -1620,6 +1623,53 @@
       </div>
 
       <div class="agents-options-list">
+        <!-- Opção 1: Blefador Treinado Tier S (Colab) -->
+        <div class="agent-option-card selected" id="cardModeTrained_bluffer" onclick="selectAgentMode('trained_bluffer')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">⭐ Blefador Treinado (Tier S - Elite)</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(255, 215, 0, 0.25); color: #ffd54f; border: 1px solid #ffd54f;">Campeão • 94% Vitórias • +4.976 Fichas</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente blefador de elite evoluído no Google Colab com <strong>100.0 pts de Fitness</strong>. Conquistou 94% de aproveitamento (47 de 50 mãos ganhas) usando C-Bet agressivo (89.2%) e fold equity cirúrgica.
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('trained_bluffer', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #f57f17, #fbc02d); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar contra Blefador Tier S Agora
+            </button>
+          </div>
+        </div>
+
+        <!-- Opção 2: Matemático Treinado Tier S (Colab) -->
+        <div class="agent-option-card" id="cardModeTrained_math" onclick="selectAgentMode('trained_math')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">⭐ Matemático Treinado (Tier S - Elite)</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(0, 230, 118, 0.25); color: #00e676; border: 1px solid #00e676;">Campeão • +14.582 Fichas • 86.2% Showdown</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente matemático de alta performance evoluído no Google Colab com <strong>100.0 pts de Fitness</strong>. Lucratividade recorde de +14.582 fichas (+1.458 BB/100) e 86.2% de taxa de vitória em Showdown.
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('trained_math', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #00c853, #69f0ae); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar contra Matemático Tier S Agora
+            </button>
+          </div>
+        </div>
+
+        <!-- Opção 3: Agente Híbrido -->
+        <div class="agent-option-card" id="cardModeHybrid" onclick="selectAgentMode('hybrid')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">⚡ Agente Híbrido (Matemático + Blefador)</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(33, 150, 243, 0.25); color: #64b5f6; border: 1px solid #64b5f6;">Novo • Fusão de IAs</span>
+          </div>
+          <div class="agent-option-desc">
+            Fusão sinérgica que unifica o rigor analítico de Pot Odds e EV Monte Carlo do Matemático com os semi-blefes e roubo de potes do Blefador. Se adapta tanto contra jogadores conservadores quanto ultra-agressivos.
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('hybrid', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #1976d2, #42a5f5); border:none; color:#fff; font-weight:700; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar contra Agente Híbrido Agora
+            </button>
+          </div>
+        </div>
         <!-- Opção GhBluffer: GhBlufferAgent (Gustavo) -->
         <div class="agent-option-card selected" id="cardModeGh_bluffer" onclick="selectAgentMode('gh_bluffer')">
           <div class="agent-option-top">
@@ -1720,17 +1770,7 @@
           </div>
         </div>
 
-        <!-- Em Desenvolvimento (Próximos Agentes) -->
-        <div class="preview-section-title" style="margin-top:6px;">🚀 Próximos Agentes (Backlog de IA):</div>
-        <div class="agent-option-card card-disabled">
-          <div class="agent-option-top">
-            <span class="agent-option-title">🧠 Agente Híbrido / Aprendizado por Reforço (Sprint 3)</span>
-            <span class="agent-badge-tag badge-wip">Em Pesquisa</span>
-          </div>
-          <div class="agent-option-desc">
-            Agente avançado combinando modelo matemático com Q-Learning / Deep RL para tomada de decisão dinâmica e adaptativa.
-          </div>
-        </div>
+
       </div>
 
       <div style="display:flex; gap:10px; margin-top:16px;">
@@ -2073,10 +2113,13 @@
     }
 
     function syncAgentModeUI(mode) {
-      ['bots', 'gh_bluffer', 'gh_math', 'math', 'bluffer', 'mixed', 'all_ai', 'custom'].forEach(m => {
+      ['trained_bluffer', 'trained_math', 'hybrid', 'bots', 'gh_bluffer', 'gh_math', 'math', 'bluffer', 'mixed', 'all_ai', 'custom'].forEach(m => {
         let cardId = 'cardMode' + m.charAt(0).toUpperCase() + m.slice(1);
         if (m === 'gh_bluffer') cardId = 'cardModeGh_bluffer';
         else if (m === 'gh_math') cardId = 'cardModeGh_math';
+        else if (m === 'trained_bluffer') cardId = 'cardModeTrained_bluffer';
+        else if (m === 'trained_math') cardId = 'cardModeTrained_math';
+        else if (m === 'hybrid') cardId = 'cardModeHybrid';
         const card = document.getElementById(cardId);
         if (card) {
           if (m === mode) {
