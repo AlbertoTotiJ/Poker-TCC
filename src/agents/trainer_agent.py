@@ -208,6 +208,30 @@ class TrainerAgent(BaseAgent):
                 },
             )
 
+        elif norm_type == "hybrid":
+            return AgentDiagnostic(
+                target_agent="Agente Híbrido (Matemático + Blefador)",
+                strengths=[
+                    "Fusão tática entre rigor matemático de Pot Odds/EV e engano comportamental.",
+                    "Exploração oportunista de potes fracos mantendo piso probabilístico seguro.",
+                    "Capacidade de armadilha (slow-play) e semi-blefes agressivos com draws.",
+                ],
+                vulnerabilities=[
+                    "Necessidade de calibração fina no equilíbrio entre a postura matemática e de blefe.",
+                ],
+                recommended_metric=EvaluationMetric.BB_PER_100.value,
+                recommended_focus_rationale=(
+                    "Equilibrar os pesos matemáticos e de blefe para maximizar o retorno "
+                    "líquido em BB/100 sem expor fichas a riscos imprudentes."
+                ),
+                suggested_curriculum={
+                    "generations": 5,
+                    "population": 6,
+                    "hands_per_eval": 35,
+                    "target_metric": "bb_per_100",
+                },
+            )
+
         else:  # mathematical
             return AgentDiagnostic(
                 target_agent="Agente Matemático (Alberto)",

@@ -13,6 +13,7 @@ from src.agents.base import BaseAgent
 from src.agents.bluffer_agent import BlufferAgent
 from src.agents.gh_bluffer_agent import GhBlufferAgent
 from src.agents.gh_math_agent import GhMathAgent
+from src.agents.hybrid_agent import HybridAgent
 from src.agents.mathematical_agent import MathematicalAgent
 
 
@@ -190,11 +191,79 @@ GH_BLUFFER_SPECS: List[ParamSpec] = [
     ),
 ]
 
+HYBRID_SPECS: List[ParamSpec] = [
+    ParamSpec(
+        name="math_weight",
+        min_val=0.10,
+        max_val=0.90,
+        default_val=0.50,
+        description="Peso de decisão matemática vs oportunismo de blefe",
+    ),
+    ParamSpec(
+        name="raise_equity_threshold",
+        min_val=0.45,
+        max_val=0.85,
+        default_val=0.60,
+        description="Limiar de equidade para realizar apostas ou aumentos por valor",
+    ),
+    ParamSpec(
+        name="call_ev_margin",
+        min_val=-0.05,
+        max_val=0.15,
+        default_val=0.02,
+        description="Margem de segurança de EV para aceitar calls",
+    ),
+    ParamSpec(
+        name="bluff_frequency",
+        min_val=0.05,
+        max_val=0.60,
+        default_val=0.25,
+        description="Frequência de blefe oportuno em potes abandonados",
+    ),
+    ParamSpec(
+        name="semi_bluff_frequency",
+        min_val=0.10,
+        max_val=0.85,
+        default_val=0.50,
+        description="Frequência de semi-blefe com draws no Flop e Turn",
+    ),
+    ParamSpec(
+        name="fold_equity_threshold",
+        min_val=0.15,
+        max_val=0.80,
+        default_val=0.35,
+        description="Fold equity mínima estimada para validar jogadas de blefe",
+    ),
+    ParamSpec(
+        name="slowplay_prob",
+        min_val=0.05,
+        max_val=0.50,
+        default_val=0.20,
+        description="Probabilidade de armadilha (slow-play) com mãos monstro",
+    ),
+    ParamSpec(
+        name="bet_sizing_factor",
+        min_val=0.25,
+        max_val=1.20,
+        default_val=0.55,
+        description="Fração do pote utilizada em dimensionamento de apostas",
+    ),
+    ParamSpec(
+        name="num_simulations",
+        min_val=50.0,
+        max_val=300.0,
+        default_val=150.0,
+        is_int=True,
+        description="Simulações de Monte Carlo para cálculo de equidade",
+    ),
+]
+
 AGENT_PARAM_SPECS: Dict[str, List[ParamSpec]] = {
     "bluffer": BLUFFER_SPECS,
     "mathematical": MATHEMATICAL_SPECS,
     "gh_math": GH_MATH_SPECS,
     "gh_bluffer": GH_BLUFFER_SPECS,
+    "hybrid": HYBRID_SPECS,
 }
 
 
@@ -358,6 +427,13 @@ def instantiate_agent(
         )
     elif normalized == "gh_math":
         return GhMathAgent(
+            player_id=player_id,
+            name=name,
+            rng=rng,
+            **clean_kwargs,
+        )
+    elif normalized == "hybrid":
+        return HybridAgent(
             player_id=player_id,
             name=name,
             rng=rng,

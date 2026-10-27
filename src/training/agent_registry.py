@@ -297,6 +297,13 @@ class AgentRegistry:
                     rng=local_rng,
                     **meta.parameters,
                 )
+            elif meta.base_type == "hybrid":
+                return HybridAgent(
+                    player_id=player_id,
+                    name=effective_name,
+                    rng=local_rng,
+                    **meta.parameters,
+                )
             else:  # mathematical
                 return MathematicalAgent(
                     player_id=player_id,

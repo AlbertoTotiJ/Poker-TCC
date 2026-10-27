@@ -15,7 +15,7 @@ from src.agents.gh_math_agent import (
     GhPosition,
 )
 from src.agents.heuristic import AgentProfile, HeuristicAgent
-from src.agents.hybrid_agent import HybridAgent, HybridDecision
+from src.agents.hybrid_agent import HybridAgent, HybridDecision, HybridParameters
 from src.agents.mathematical_agent import MathematicalAgent, MathematicalDecision
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     "BluffDecision",
     "HybridAgent",
     "HybridDecision",
+    "HybridParameters",
     "GhPosition",
     "GhCognitiveMetrics",
     "GhMathDecision",

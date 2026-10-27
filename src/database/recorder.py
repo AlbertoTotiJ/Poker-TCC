@@ -1088,8 +1088,8 @@ def run_recording_batch(
                     action_data["cognitive_metrics"] = {
                         "raw_equity": round(dec.equity, 4),
                         "pot_odds": round(dec.pot_odds, 4),
-                        "expected_value": round(dec.expected_value, 2),
-                        "outs_count": dec.outs,
+                        "expected_value": round(getattr(dec, "expected_value", 0.0), 2),
+                        "outs_count": getattr(dec, "outs", getattr(dec, "outs_count", 0)),
                         "tactical_rationale": dec.reason,
                     }
             actions_log.append(action_data)
