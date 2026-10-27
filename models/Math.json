@@ -1,0 +1,94 @@
+{
+  "session_id": "train_mathematical_20261026_195709",
+  "agent_type": "mathematical",
+  "created_at": "2026-10-26T20:54:03.967885+00:00",
+  "overall_fitness": 100.0,
+  "overall_tier": "S (Elite)",
+  "target_focus": "bb_per_100",
+  "parameters": {
+    "raise_equity_threshold": 0.756,
+    "call_ev_margin": -0.05,
+    "draw_weight": 1.3276,
+    "bet_sizing_factor": 1.0266,
+    "num_simulations": 137
+  },
+  "metrics": {
+    "hands_played": 50,
+    "hands_won": 25,
+    "net_chips": 14582,
+    "bb_per_100": 1458.2,
+    "win_rate": 50.0,
+    "vpip": 64.0,
+    "pfr": 8.0,
+    "aggression_factor": 0.3,
+    "bluffs_attempted": 0,
+    "bluffs_won": 0,
+    "bluff_success_rate": 0.0,
+    "fold_equity_realized": 0.0,
+    "showdowns_played": 29,
+    "showdowns_won": 25,
+    "showdown_win_rate": 86.2
+  },
+  "qualification": {
+    "overall_fitness": 100.0,
+    "overall_tier": "S (Elite)",
+    "target_focus": "bb_per_100",
+    "individual_scores": {
+      "bb_per_100": {
+        "raw_value": 1458.2,
+        "score": 100.0,
+        "tier": "S (Elite)",
+        "description": "Lucratividade líquida padronizada em Big Blinds a cada 100 mãos."
+      },
+      "win_rate": {
+        "raw_value": 50.0,
+        "score": 100.0,
+        "tier": "S (Elite)",
+        "description": "Taxa percentual de mãos vencidas na mesa."
+      },
+      "bluff_success_rate": {
+        "raw_value": 0.0,
+        "score": 10.0,
+        "tier": "D (Iniciante)",
+        "description": "Percentual de blefes que forçaram fold e venceram sem showdown."
+      },
+      "aggression_factor": {
+        "raw_value": 0.3,
+        "score": 7.56,
+        "tier": "D (Iniciante)",
+        "description": "Razão de equilíbrio entre apostas/raises ofensivos e calls passivos."
+      },
+      "fold_equity_realized": {
+        "raw_value": 0.0,
+        "score": 7.94,
+        "tier": "D (Iniciante)",
+        "description": "Eficácia prática em induzir desistência imediata dos rivais."
+      },
+      "vpip": {
+        "raw_value": 64.0,
+        "score": 0.0,
+        "tier": "D (Iniciante)",
+        "description": "Percentual de potes disputados voluntariamente pré-flop."
+      },
+      "pfr": {
+        "raw_value": 8.0,
+        "score": 24.94,
+        "tier": "D (Iniciante)",
+        "description": "Frequência de aumento agressivo pré-flop (Pre-Flop Raise)."
+      },
+      "showdown_win_rate": {
+        "raw_value": 86.2,
+        "score": 94.76,
+        "tier": "S (Elite)",
+        "description": "Taxa de vitória quando a mão atinge a abertura final das cartas."
+      },
+      "net_chips": {
+        "raw_value": 14582.0,
+        "score": 100.0,
+        "tier": "S (Elite)",
+        "description": "Variação líquida absoluta do stack em fichas."
+      }
+    }
+  },
+  "name": "Matemático Treinado (Tier S)"
+}

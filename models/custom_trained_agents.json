@@ -78,5 +78,161 @@
     },
     "session_id": "train_bluffer_20261025_195435",
     "description": "Treinado sob supervisão do TrainerAgent. Fitness: 10.0 (D (Iniciante))."
+  },
+  "train_bluffer_20261027_161310": {
+    "agent_id": "train_bluffer_20261027_161310",
+    "name": "Blefador Treinado (Tier S)",
+    "base_type": "bluffer",
+    "created_at": "2026-10-27T16:23:32.823425+00:00",
+    "parameters": {
+      "fold_equity_threshold": 0.4,
+      "bluff_frequency": 0.6707,
+      "semi_bluff_frequency": 0.7,
+      "cbet_frequency": 0.8918,
+      "bluff_raise_frequency": 0.35,
+      "aggression_multiplier": 1.0,
+      "scare_card_weight": 0.15,
+      "dry_board_bonus": 0.0776,
+      "bet_sizing_factor": 0.25
+    },
+    "qualification": {
+      "overall_fitness": 100.0,
+      "overall_tier": "S (Elite)",
+      "target_focus": "bb_per_100",
+      "individual_scores": {
+        "bb_per_100": {
+          "raw_value": 497.6,
+          "score": 100.0,
+          "tier": "S (Elite)",
+          "description": "Lucratividade líquida padronizada em Big Blinds a cada 100 mãos."
+        },
+        "win_rate": {
+          "raw_value": 94.0,
+          "score": 100.0,
+          "tier": "S (Elite)",
+          "description": "Taxa percentual de mãos vencidas na mesa."
+        },
+        "bluff_success_rate": {
+          "raw_value": 0.0,
+          "score": 10.0,
+          "tier": "D (Iniciante)",
+          "description": "Percentual de blefes que forçaram fold e venceram sem showdown."
+        },
+        "aggression_factor": {
+          "raw_value": 1.03,
+          "score": 27.4,
+          "tier": "D (Iniciante)",
+          "description": "Razão de equilíbrio entre apostas/raises ofensivos e calls passivos."
+        },
+        "fold_equity_realized": {
+          "raw_value": 0.0,
+          "score": 7.94,
+          "tier": "D (Iniciante)",
+          "description": "Eficácia prática em induzir desistência imediata dos rivais."
+        },
+        "vpip": {
+          "raw_value": 54.0,
+          "score": 0.05,
+          "tier": "D (Iniciante)",
+          "description": "Percentual de potes disputados voluntariamente pré-flop."
+        },
+        "pfr": {
+          "raw_value": 8.0,
+          "score": 24.94,
+          "tier": "D (Iniciante)",
+          "description": "Frequência de aumento agressivo pré-flop (Pre-Flop Raise)."
+        },
+        "showdown_win_rate": {
+          "raw_value": 77.8,
+          "score": 90.24,
+          "tier": "S (Elite)",
+          "description": "Taxa de vitória quando a mão atinge a abertura final das cartas."
+        },
+        "net_chips": {
+          "raw_value": 4976.0,
+          "score": 100.0,
+          "tier": "S (Elite)",
+          "description": "Variação líquida absoluta do stack em fichas."
+        }
+      }
+    },
+    "session_id": "train_bluffer_20261027_161310",
+    "description": "Agente Blefador Treinado (Tier S - 94% vitórias, +4.976 fichas)."
+  },
+  "train_mathematical_20261026_195709": {
+    "agent_id": "train_mathematical_20261026_195709",
+    "name": "Matemático Treinado (Tier S)",
+    "base_type": "mathematical",
+    "created_at": "2026-10-26T20:54:03.967885+00:00",
+    "parameters": {
+      "raise_equity_threshold": 0.756,
+      "call_ev_margin": -0.05,
+      "draw_weight": 1.3276,
+      "bet_sizing_factor": 1.0266,
+      "num_simulations": 137
+    },
+    "qualification": {
+      "overall_fitness": 100.0,
+      "overall_tier": "S (Elite)",
+      "target_focus": "bb_per_100",
+      "individual_scores": {
+        "bb_per_100": {
+          "raw_value": 1458.2,
+          "score": 100.0,
+          "tier": "S (Elite)",
+          "description": "Lucratividade líquida padronizada em Big Blinds a cada 100 mãos."
+        },
+        "win_rate": {
+          "raw_value": 50.0,
+          "score": 100.0,
+          "tier": "S (Elite)",
+          "description": "Taxa percentual de mãos vencidas na mesa."
+        },
+        "bluff_success_rate": {
+          "raw_value": 0.0,
+          "score": 10.0,
+          "tier": "D (Iniciante)",
+          "description": "Percentual de blefes que forçaram fold e venceram sem showdown."
+        },
+        "aggression_factor": {
+          "raw_value": 0.3,
+          "score": 7.56,
+          "tier": "D (Iniciante)",
+          "description": "Razão de equilíbrio entre apostas/raises ofensivos e calls passivos."
+        },
+        "fold_equity_realized": {
+          "raw_value": 0.0,
+          "score": 7.94,
+          "tier": "D (Iniciante)",
+          "description": "Eficácia prática em induzir desistência imediata dos rivais."
+        },
+        "vpip": {
+          "raw_value": 64.0,
+          "score": 0.0,
+          "tier": "D (Iniciante)",
+          "description": "Percentual de potes disputados voluntariamente pré-flop."
+        },
+        "pfr": {
+          "raw_value": 8.0,
+          "score": 24.94,
+          "tier": "D (Iniciante)",
+          "description": "Frequência de aumento agressivo pré-flop (Pre-Flop Raise)."
+        },
+        "showdown_win_rate": {
+          "raw_value": 86.2,
+          "score": 94.76,
+          "tier": "S (Elite)",
+          "description": "Taxa de vitória quando a mão atinge a abertura final das cartas."
+        },
+        "net_chips": {
+          "raw_value": 14582.0,
+          "score": 100.0,
+          "tier": "S (Elite)",
+          "description": "Variação líquida absoluta do stack em fichas."
+        }
+      }
+    },
+    "session_id": "train_mathematical_20261026_195709",
+    "description": "Agente Matemático Treinado (Tier S - +14.582 fichas, 86.2% showdown)."
   }
 }

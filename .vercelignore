@@ -3,7 +3,6 @@
 tests/
 notebooks/
 data/
-models/
 .flake8
 docker-compose.yml
 Dockerfile
