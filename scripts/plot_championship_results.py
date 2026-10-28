@@ -443,19 +443,52 @@ def plot_consolidated_dashboard(
     return out_file
 
 
+def find_latest_test_dir(base_dir: Path) -> Path:
+    """Localiza a subpasta de teste mais recente em data/, ou retorna a própria base."""
+    if not base_dir.exists():
+        return base_dir
+
+    test_dirs = [
+        d
+        for d in base_dir.iterdir()
+        if d.is_dir()
+        and d.name.startswith("test_")
+        and (d / "game_actions.csv").exists()
+    ]
+    if not test_dirs:
+        return base_dir
+
+    # Ordena pelo timestamp de modificação mais recente
+    test_dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+    return test_dirs[0]
+
+
 def generate_all_plots(data_dir: str = "data", output_dir: str = "data/plots") -> List[Path]:
     """Lê os CSVs gerados e produz todos os gráficos para o TCC."""
+    import json
+
     d_dir = Path(data_dir)
     o_dir = Path(output_dir)
     o_dir.mkdir(parents=True, exist_ok=True)
 
     actions_file = d_dir / "game_actions.csv"
     telemetry_file = d_dir / "decision_telemetry_and_bluffs.csv"
+    summary_file = d_dir / "summary.json"
 
     if not actions_file.exists() or not telemetry_file.exists():
         raise FileNotFoundError(
             f"Arquivos CSV não encontrados em {data_dir}. Execute antes o gerador de telemetria."
         )
+
+    # Identifica o test_id se houver summary.json
+    test_id = d_dir.name
+    if summary_file.exists():
+        try:
+            with open(summary_file, "r", encoding="utf-8") as f:
+                sdata = json.load(f)
+                test_id = sdata.get("test_id", test_id)
+        except Exception:
+            pass
 
     df_actions = pd.read_csv(actions_file)
     df_telemetry = pd.read_csv(telemetry_file)
@@ -463,9 +496,11 @@ def generate_all_plots(data_dir: str = "data", output_dir: str = "data/plots") -
     print("=" * 80)
     print("📈 GERADOR DE GRÁFICOS CIENTÍFICOS DO CAMPEONATO (TCC POKER IA)")
     print("=" * 80)
-    print(f"• Arquivo de Ações      : {actions_file} ({len(df_actions):,} linhas)")
-    print(f"• Arquivo de Telemetria : {telemetry_file} ({len(df_telemetry):,} linhas)")
-    print(f"• Diretório de Saída    : {o_dir}/")
+    print(f"• 🆔 ID DO TESTE        : {test_id}")
+    print(f"• 📁 Diretório de Dados : {d_dir.resolve()}")
+    print(f"• Arquivo de Ações      : {actions_file.name} ({len(df_actions):,} linhas)")
+    print(f"• Arquivo de Telemetria : {telemetry_file.name} ({len(df_telemetry):,} linhas)")
+    print(f"• Diretório de Saída    : {o_dir.resolve()}/")
     print("-" * 80)
 
     generated: List[Path] = []
@@ -497,9 +532,52 @@ def generate_all_plots(data_dir: str = "data", output_dir: str = "data/plots") -
 
     print("=" * 80)
     print(f"✨ Sucesso! {len(generated)} gráficos gerados com sucesso em 300 DPI.")
+    print(f"📁 Pasta dos gráficos: {o_dir.resolve()}")
     print("=" * 80)
     return generated
 
 
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Gera gráficos científicos de resultados para o TCC a partir de um teste."
+    )
+    parser.add_argument(
+        "--test-id",
+        type=str,
+        default=None,
+        help="ID do teste específico (ex: test_20261028_150000_tier_s_duelo). Se omitido, usa o teste mais recente.",
+    )
+    parser.add_argument(
+        "--data-dir",
+        type=str,
+        default="data",
+        help="Diretório base de dados (default: data).",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default=None,
+        help="Diretório onde os gráficos serão salvos. Se omitido, salva na pasta plots/ dentro do teste.",
+    )
+    args = parser.parse_args()
+
+    base_path = Path(args.data_dir)
+    if args.test_id:
+        target_dir = base_path / args.test_id
+        if not target_dir.exists() and Path(args.test_id).exists():
+            target_dir = Path(args.test_id)
+        if not target_dir.exists():
+            print(f"❌ Erro: Não foi possível encontrar a pasta para o teste '{args.test_id}'.")
+            sys.exit(1)
+    else:
+        # Auto-detecta o teste mais recente em data/
+        target_dir = find_latest_test_dir(base_path)
+
+    out_dir = Path(args.output_dir) if args.output_dir else (target_dir / "plots")
+    generate_all_plots(data_dir=str(target_dir), output_dir=str(out_dir))
+
+
 if __name__ == "__main__":
-    generate_all_plots()
+    main()

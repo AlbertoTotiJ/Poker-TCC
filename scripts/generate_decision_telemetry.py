@@ -54,6 +54,17 @@ def main() -> None:
         help="Diretório onde os arquivos CSV serão salvos.",
     )
     parser.add_argument(
+        "--test-id",
+        type=str,
+        default=None,
+        help="ID específico para o teste (ex: test_001 ou exp_duelo_50m). Se omitido, gera timestamp automático.",
+    )
+    parser.add_argument(
+        "--no-plots",
+        action="store_true",
+        help="Desativa a geração automática de gráficos ao final da simulação.",
+    )
+    parser.add_argument(
         "--save-neon",
         action="store_true",
         help="Salva e sincroniza os registros diretamente nas tabelas do Neon PostgreSQL.",
@@ -66,13 +77,28 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # Define o ID único e padronizado do teste
+    from datetime import datetime
+
+    test_id = args.test_id
+    if not test_id:
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        clean_roster = args.roster.replace(" ", "_").lower()
+        test_id = f"test_{timestamp_str}_{clean_roster}"
+    else:
+        test_id = test_id.strip().replace(" ", "_")
+
+    base_dir = Path(args.output_dir)
+    test_dir = base_dir / test_id
+
     print("=" * 80)
     print("🔬 SIMULADOR E GERADOR DE TELEMETRIA COGNITIVA & BLEFES (TCC POKER IA)")
     print("=" * 80)
-    print(f"• Mãos a simular   : {args.hands}")
-    print(f"• Formato da mesa  : {args.roster}")
-    print(f"• Semente (Seed)   : {args.seed}")
-    print(f"• Diretório destino: {args.output_dir}/")
+    print(f"• 🆔 ID DO TESTE     : {test_id}")
+    print(f"• 📁 PASTA DO TESTE  : {test_dir}/")
+    print(f"• Mãos a simular    : {args.hands}")
+    print(f"• Formato da mesa   : {args.roster}")
+    print(f"• Semente (Seed)    : {args.seed}")
     print("-" * 80)
     print("▶ Iniciando simulação...")
 
@@ -82,6 +108,7 @@ def main() -> None:
         roster_mode=args.roster,
         rng_seed=args.seed,
         output_dir=args.output_dir,
+        test_id=test_id,
     )
     elapsed = time.time() - t0
 
@@ -104,10 +131,30 @@ def main() -> None:
     print(f"    • Vencidos (Sucesso na mão)                 : {summary['successful_outcomes']} ({summary['successful_outcomes'] / max(1, summary['total_bluffs']):.1%})")
     print(f"    • Perdidos (Derrotados)                     : {summary['failed_outcomes']} ({summary['failed_outcomes'] / max(1, summary['total_bluffs']):.1%})")
     print("-" * 80)
-    print("📁 ARQUIVOS CSV GERADOS PARA ANÁLISE NO TCC:")
-    print(f"  1. Tabela de Ações      : {Path(args.output_dir) / 'game_actions.csv'}")
-    print(f"  2. Tabela de Telemetria : {Path(args.output_dir) / 'decision_telemetry_and_bluffs.csv'}")
+    print(f"📁 ARQUIVOS DO TESTE [{test_id}] GERADOS EM:")
+    print(f"   {test_dir.resolve()}")
+    print(f"  1. Tabela de Ações      : {test_dir / 'game_actions.csv'}")
+    print(f"  2. Tabela de Telemetria : {test_dir / 'decision_telemetry_and_bluffs.csv'}")
+    print(f"  3. Resumo da Rodada     : {test_dir / 'summary.json'}")
     print("=" * 80)
+
+    # Geração automática de gráficos científicos
+    if not args.no_plots:
+        print("\n📈 Gerando gráficos científicos automaticamente para este teste...")
+        from scripts.plot_championship_results import generate_all_plots
+
+        plots_dir = test_dir / "plots"
+        try:
+            generated_plots = generate_all_plots(
+                data_dir=str(test_dir),
+                output_dir=str(plots_dir),
+            )
+            print(f"✓ {len(generated_plots)} gráficos prontos em: {plots_dir}")
+            print("💡 Visualização rápida (Dashboard Consolidado):")
+            print(f"   {plots_dir / 'dashboard_consolidado_tcc.png'}")
+        except Exception as e:
+            print(f"⚠️ Erro ao gerar gráficos: {e}")
+        print("=" * 80)
 
     if args.save_neon:
         print("☁️ Preparando sincronização com o banco de dados Neon PostgreSQL...")

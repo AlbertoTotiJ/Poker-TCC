@@ -231,10 +231,42 @@ def test_simulate_and_generate_telemetry(tmp_path) -> None:
         roster_mode="tier_s_duelo",
         rng_seed=42,
         output_dir=str(tmp_path),
+        test_id="test_exp_01",
     )
     assert len(actions) > 0
     assert len(telemetry) == len(actions)
     assert "total_bluffs" in summary
+    assert summary["test_id"] == "test_exp_01"
+
+    # Verifica se os arquivos foram isolados na pasta do test_id
+    test_subfolder = tmp_path / "test_exp_01"
+    assert (test_subfolder / "game_actions.csv").exists()
+    assert (test_subfolder / "decision_telemetry_and_bluffs.csv").exists()
+    assert (test_subfolder / "summary.json").exists()
+
+    # E também mantidos na raiz de output_dir para acesso rápido
     assert (tmp_path / "game_actions.csv").exists()
     assert (tmp_path / "decision_telemetry_and_bluffs.csv").exists()
+
+
+def test_plot_championship_results_with_test_id(tmp_path) -> None:
+    from src.database.telemetry_generator import simulate_and_generate_telemetry
+    from scripts.plot_championship_results import find_latest_test_dir, generate_all_plots
+
+    simulate_and_generate_telemetry(
+        num_hands=3,
+        roster_mode="tier_s_duelo",
+        rng_seed=42,
+        output_dir=str(tmp_path),
+        test_id="test_visual_01",
+    )
+
+    test_dir = find_latest_test_dir(tmp_path)
+    assert test_dir.name == "test_visual_01"
+
+    plots = generate_all_plots(data_dir=str(test_dir), output_dir=str(test_dir / "plots"))
+    assert len(plots) == 5
+    for p in plots:
+        assert p.exists()
+
 

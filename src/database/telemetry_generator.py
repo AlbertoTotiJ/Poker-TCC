@@ -321,8 +321,16 @@ def simulate_and_generate_telemetry(
     rng_seed: Optional[int] = 42,
     custom_seats: Optional[List[str]] = None,
     output_dir: Optional[str] = None,
+    test_id: Optional[str] = None,
 ) -> Tuple[List[GameActionRecord], List[DecisionTelemetryRecord], Dict[str, Any]]:
-    """Simula rodadas e gera as duas tabelas completas de dados."""
+    """Simula rodadas e gera as duas tabelas completas de dados organizadas por ID de teste."""
+    from datetime import datetime, timezone
+
+    if not test_id:
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        clean_roster = roster_mode.replace(" ", "_").lower()
+        test_id = f"test_{timestamp_str}_{clean_roster}"
+
     rng = random.Random(rng_seed)
     players, agents, profile_labels = build_research_roster(
         starting_stack=starting_stack,
@@ -335,7 +343,12 @@ def simulate_and_generate_telemetry(
     all_telemetry_records: List[DecisionTelemetryRecord] = []
 
     button_idx = 0
-    bluffs_summary: Dict[str, int] = {
+    bluffs_summary: Dict[str, Any] = {
+        "test_id": test_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "num_hands": num_hands,
+        "roster_mode": roster_mode,
+        "rng_seed": rng_seed,
         "total_bluffs": 0,
         "pure_bluffs": 0,
         "semi_bluffs": 0,
@@ -570,27 +583,57 @@ def simulate_and_generate_telemetry(
             all_action_records.append(act_rec)
             all_telemetry_records.append(telemetry_rec)
 
-    # Exportação para CSV caso diretório informado
+    # Exportação para CSV e JSON organizados pelo ID do teste
     if output_dir:
-        out_path = Path(output_dir)
-        out_path.mkdir(parents=True, exist_ok=True)
+        import json
 
-        actions_csv = out_path / "game_actions.csv"
-        telemetry_csv = out_path / "decision_telemetry_and_bluffs.csv"
+        base_path = Path(output_dir)
+        test_dir = base_path if base_path.name == test_id else (base_path / test_id)
+        test_dir.mkdir(parents=True, exist_ok=True)
+
+        bluffs_summary["test_dir"] = str(test_dir)
+
+        actions_csv = test_dir / "game_actions.csv"
+        telemetry_csv = test_dir / "decision_telemetry_and_bluffs.csv"
+        summary_json = test_dir / "summary.json"
 
         if all_action_records:
+            fieldnames = list(all_action_records[0].to_dict().keys())
             with open(actions_csv, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=list(all_action_records[0].to_dict().keys()))
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for rec in all_action_records:
                     writer.writerow(rec.to_dict())
 
+            # Também atualiza na raiz para acesso rápido do último teste
+            if base_path != test_dir:
+                base_path.mkdir(parents=True, exist_ok=True)
+                latest_actions_csv = base_path / "game_actions.csv"
+                with open(latest_actions_csv, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    for rec in all_action_records:
+                        writer.writerow(rec.to_dict())
+
         if all_telemetry_records:
+            fieldnames_tel = list(all_telemetry_records[0].to_dict().keys())
             with open(telemetry_csv, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=list(all_telemetry_records[0].to_dict().keys()))
+                writer = csv.DictWriter(f, fieldnames=fieldnames_tel)
                 writer.writeheader()
                 for rec in all_telemetry_records:
                     writer.writerow(rec.to_dict())
+
+            # Também atualiza na raiz para acesso rápido do último teste
+            if base_path != test_dir:
+                latest_telemetry_csv = base_path / "decision_telemetry_and_bluffs.csv"
+                with open(latest_telemetry_csv, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames_tel)
+                    writer.writeheader()
+                    for rec in all_telemetry_records:
+                        writer.writerow(rec.to_dict())
+
+        with open(summary_json, "w", encoding="utf-8") as f:
+            json.dump(bluffs_summary, f, indent=2, ensure_ascii=False)
 
     return all_action_records, all_telemetry_records, bluffs_summary
 
