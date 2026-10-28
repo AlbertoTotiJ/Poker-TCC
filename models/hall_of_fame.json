@@ -20,6 +20,26 @@
     "timestamp": "2026-10-28T18:02:06.889454+00:00"
   },
   {
+    "champion_id": "champ_hybrid_20261028_182511_g1",
+    "agent_type": "hybrid",
+    "generation": 1,
+    "fitness_score": 69.3,
+    "qualification_tier": "B (Competitivo)",
+    "parameters": {
+      "math_weight": 0.5,
+      "raise_equity_threshold": 0.6,
+      "call_ev_margin": 0.02,
+      "bluff_frequency": 0.25,
+      "semi_bluff_frequency": 0.5,
+      "fold_equity_threshold": 0.35,
+      "slowplay_prob": 0.2,
+      "bet_sizing_factor": 0.55,
+      "num_simulations": 150
+    },
+    "target_metric_focused": null,
+    "timestamp": "2026-10-28T18:25:11.095872+00:00"
+  },
+  {
     "champion_id": "champ_hybrid_20261027_161359_g1",
     "agent_type": "hybrid",
     "generation": 1,
@@ -98,6 +118,26 @@
     },
     "target_metric_focused": null,
     "timestamp": "2026-10-27T16:50:41.975081+00:00"
+  },
+  {
+    "champion_id": "champ_bluffer_20261028_182529_g1",
+    "agent_type": "bluffer",
+    "generation": 1,
+    "fitness_score": 32.59,
+    "qualification_tier": "D (Iniciante)",
+    "parameters": {
+      "fold_equity_threshold": 0.4,
+      "bluff_frequency": 0.4,
+      "semi_bluff_frequency": 0.7,
+      "cbet_frequency": 0.65,
+      "bluff_raise_frequency": 0.35,
+      "aggression_multiplier": 1.0,
+      "scare_card_weight": 0.15,
+      "dry_board_bonus": 0.1,
+      "bet_sizing_factor": 0.4
+    },
+    "target_metric_focused": null,
+    "timestamp": "2026-10-28T18:25:29.374119+00:00"
   },
   {
     "champion_id": "champ_bluffer_20261025_202021_g1",
@@ -358,45 +398,5 @@
     },
     "target_metric_focused": null,
     "timestamp": "2026-10-25T20:23:54.709119+00:00"
-  },
-  {
-    "champion_id": "champ_hybrid_20261027_161247_g1",
-    "agent_type": "hybrid",
-    "generation": 1,
-    "fitness_score": 20.25,
-    "qualification_tier": "D (Iniciante)",
-    "parameters": {
-      "math_weight": 0.5,
-      "raise_equity_threshold": 0.6,
-      "call_ev_margin": 0.02,
-      "bluff_frequency": 0.25,
-      "semi_bluff_frequency": 0.5,
-      "fold_equity_threshold": 0.35,
-      "slowplay_prob": 0.2,
-      "bet_sizing_factor": 0.55,
-      "num_simulations": 150
-    },
-    "target_metric_focused": null,
-    "timestamp": "2026-10-27T16:12:47.038947+00:00"
-  },
-  {
-    "champion_id": "champ_bluffer_20261025_190111_g1",
-    "agent_type": "bluffer",
-    "generation": 1,
-    "fitness_score": 10.0,
-    "qualification_tier": "D (Iniciante)",
-    "parameters": {
-      "fold_equity_threshold": 0.4,
-      "bluff_frequency": 0.4,
-      "semi_bluff_frequency": 0.7,
-      "cbet_frequency": 0.65,
-      "bluff_raise_frequency": 0.35,
-      "aggression_multiplier": 1.0,
-      "scare_card_weight": 0.15,
-      "dry_board_bonus": 0.1,
-      "bet_sizing_factor": 0.4
-    },
-    "target_metric_focused": "bluff_success_rate",
-    "timestamp": "2026-10-25T19:01:11.875048+00:00"
   }
 ]

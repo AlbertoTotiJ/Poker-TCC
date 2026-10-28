@@ -343,3 +343,59 @@ def test_agent_models_auto_discovery_and_import() -> None:
         inst = reg.instantiate_agent_by_id("test_auto_hybrid_123", player_id="p1")
         assert inst is not None
         assert inst.name == "Híbrido Teste Auto"
+
+
+def test_telemetry_api_endpoints() -> None:
+    import json
+    import threading
+    import urllib.request
+    from http.server import HTTPServer
+    from src.visualization.web_server import PokerApiHandler
+
+    httpd = HTTPServer(("127.0.0.1", 0), PokerApiHandler)
+    port = httpd.server_port
+    base = f"http://127.0.0.1:{port}"
+
+    server_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    server_thread.start()
+
+    try:
+        # 1. GET /api/check_db
+        with urllib.request.urlopen(f"{base}/api/check_db") as res:
+            assert res.status == 200
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is True
+            assert "neon_tables" in data
+            assert "neon_telemetry_count" in data
+            assert "neon_actions_count" in data
+
+        # 2. GET /api/telemetry/stats
+        with urllib.request.urlopen(f"{base}/api/telemetry/stats") as res:
+            assert res.status == 200
+            data = json.loads(res.read().decode("utf-8"))
+            assert "success" in data
+
+        # 3. POST /api/telemetry/simulate
+        sim_payload = json.dumps({
+            "hands": 2,
+            "roster": "tier_s_duelo",
+            "save_neon": False,
+            "auth_code": "TCC2026",
+            "test_id": "test_api_check",
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"{base}/api/telemetry/simulate",
+            data=sim_payload,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req) as res:
+            assert res.status == 200
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is True
+            assert data["hands_simulated"] == 2
+            assert data["actions_generated"] > 0
+            assert "summary" in data
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+

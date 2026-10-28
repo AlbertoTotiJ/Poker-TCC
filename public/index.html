@@ -2645,9 +2645,22 @@
           const notices = [];
 
           if (res.neon_connected) {
-            const countStr = (res.neon_hands_count !== undefined) ? ` (${res.neon_hands_count} ${res.neon_hands_count === 1 ? 'mão' : 'mãos'} salvas)` : '';
+            let detailParts = [];
+            if (res.neon_telemetry_count) {
+              detailParts.push(`${res.neon_telemetry_count} telemetrias`);
+            }
+            if (res.neon_hands_count) {
+              detailParts.push(`${res.neon_hands_count} mãos`);
+            }
+            const countStr = detailParts.length > 0 ? ` (${detailParts.join(' | ')})` : '';
             neonBadge.innerHTML = `🐘 Neon: <strong style="color:#69f0ae;">🟢 Conectado${countStr}</strong>`;
-            neonBadge.title = `Banco de dados Neon PostgreSQL conectado e operacional. Total gravado no banco: ${res.neon_hands_count || 0}.`;
+            let tooltip = `Banco Neon PostgreSQL conectado!\n• Tabelas: ${(res.neon_tables || []).join(', ')}`;
+            if (res.neon_telemetry_count) tooltip += `\n• Registros de Telemetria/Blefe: ${res.neon_telemetry_count}`;
+            if (res.neon_actions_count) tooltip += `\n• Ações Físicas: ${res.neon_actions_count}`;
+            if (res.neon_hands_count) tooltip += `\n• Partidas (Hands): ${res.neon_hands_count}`;
+            if (res.neon_bluffs_count) tooltip += `\n• Blefes catalogados: ${res.neon_bluffs_count}`;
+            neonBadge.title = tooltip;
+            neonBadge.onclick = () => alert(tooltip);
           } else if (res.database_url_configured) {
             const diag = (res.neon_diag || 'Erro na conexão').replace(/"/g, '&quot;');
             neonBadge.innerHTML = `<span title="${diag}">🐘 Neon: <strong style="color:#ef5350;">🔴 Erro Conexão</strong></span>`;

@@ -816,3 +816,126 @@ def save_telemetry_to_neon(
         except Exception:
             pass
 
+
+def get_neon_telemetry_stats(custom_url: Optional[str] = None) -> Dict[str, Any]:
+    """Consulta e consolida as métricas de telemetria e blefes salvas no Neon PostgreSQL."""
+    from src.database.recorder import get_neon_connection
+
+    conn = get_neon_connection(custom_url=custom_url)
+    if conn is None:
+        return {
+            "success": False,
+            "connected": False,
+            "error": "Não foi possível conectar ao banco de dados Neon. Verifique a DATABASE_URL.",
+        }
+
+    try:
+        cur = conn.cursor()
+
+        # Verifica quais tabelas existem no schema public
+        cur.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+              AND table_name IN ('game_actions', 'decision_telemetry_and_bluffs', 'hands');
+        """)
+        existing_tables = set(r[0] for r in cur.fetchall())
+
+        actions_count = 0
+        telemetry_count = 0
+        hands_count = 0
+        total_bluffs = 0
+        bluffs_by_type: Dict[str, int] = {}
+        responses: Dict[str, int] = {}
+        outcomes: Dict[str, int] = {}
+        wins_by_profile: Dict[str, int] = {}
+
+        if "hands" in existing_tables:
+            cur.execute("SELECT count(*) FROM hands;")
+            row = cur.fetchone()
+            if row:
+                hands_count = int(row[0])
+
+        if "game_actions" in existing_tables:
+            cur.execute("SELECT count(*) FROM game_actions;")
+            row = cur.fetchone()
+            if row:
+                actions_count = int(row[0])
+
+        if "decision_telemetry_and_bluffs" in existing_tables:
+            cur.execute("SELECT count(*) FROM decision_telemetry_and_bluffs;")
+            row = cur.fetchone()
+            if row:
+                telemetry_count = int(row[0])
+
+            cur.execute(
+                "SELECT count(*) FROM decision_telemetry_and_bluffs WHERE is_bluff = TRUE;"
+            )
+            row = cur.fetchone()
+            if row:
+                total_bluffs = int(row[0])
+
+            cur.execute("""
+                SELECT bluff_type, count(*) 
+                FROM decision_telemetry_and_bluffs 
+                WHERE is_bluff = TRUE 
+                GROUP BY bluff_type 
+                ORDER BY count(*) DESC;
+            """)
+            bluffs_by_type = dict(cur.fetchall())
+
+            cur.execute("""
+                SELECT opponent_response, count(*) 
+                FROM decision_telemetry_and_bluffs 
+                WHERE is_bluff = TRUE 
+                GROUP BY opponent_response 
+                ORDER BY count(*) DESC;
+            """)
+            responses = dict(cur.fetchall())
+
+            cur.execute("""
+                SELECT bluff_outcome, count(*) 
+                FROM decision_telemetry_and_bluffs 
+                WHERE is_bluff = TRUE 
+                GROUP BY bluff_outcome 
+                ORDER BY count(*) DESC;
+            """)
+            outcomes = dict(cur.fetchall())
+
+            cur.execute("""
+                SELECT profile, count(DISTINCT hand_id)
+                FROM decision_telemetry_and_bluffs
+                WHERE hand_result IN ('WON_HAND', 'SPLIT_POT')
+                GROUP BY profile
+                ORDER BY count(DISTINCT hand_id) DESC;
+            """)
+            wins_by_profile = dict(cur.fetchall())
+
+        cur.close()
+        conn.close()
+
+        return {
+            "success": True,
+            "connected": True,
+            "tables_found": list(existing_tables),
+            "hands_count": hands_count,
+            "actions_count": actions_count,
+            "telemetry_count": telemetry_count,
+            "total_bluffs": total_bluffs,
+            "bluffs_by_type": bluffs_by_type,
+            "opponent_responses": responses,
+            "bluff_outcomes": outcomes,
+            "wins_by_profile": wins_by_profile,
+        }
+    except Exception as e:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {
+            "success": False,
+            "connected": True,
+            "error": f"Erro ao consultar telemetria no Neon: {str(e)}",
+        }
+
+

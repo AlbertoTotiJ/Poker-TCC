@@ -33,7 +33,30 @@ Em menos de 1 minuto, a Vercel gerará o link oficial do seu jogo (ex: `https://
 
 ---
 
-## 💻 3. Método Alternativo: Publicação pelo Terminal (`npx vercel`)
+## 🐘 3. Configurando o Banco de Dados Neon na Vercel
+
+Para que as funções serverless da Vercel consigam se conectar ao seu banco Neon e sincronizar tanto as partidas quanto as novas tabelas de telemetria cognitiva e blefes (`game_actions` e `decision_telemetry_and_bluffs`):
+
+1. Acesse o **[Dashboard da Vercel](https://vercel.com/dashboard)**.
+2. Clique no seu projeto (**`poker-tcc`**).
+3. Vá na aba **Settings** (Configurações) no menu superior.
+4. No menu lateral esquerdo, clique em **Environment Variables**.
+5. Adicione a variável de conexão do Neon:
+   - **Key:** `DATABASE_URL`
+   - **Value:** Cole a URL completa fornecida pelo Neon (ex: `postgresql://neondb_owner:npg_...@ep-orange-hall-...sa-east-1.aws.neon.tech/neondb?sslmode=require`)
+   - **Environments:** Marque *Production*, *Preview* e *Development*.
+6. Clique em **Save**.
+7. **Importante:** Se você já tinha feito deploy antes de adicionar a variável, vá na aba **Deployments**, clique nos três pontinhos `...` do último deploy e selecione **Redeploy** para aplicar a variável de ambiente.
+
+### 🔍 Como testar a conexão do Neon no Vercel no navegador:
+- Acesse `https://seu-app.vercel.app/api/check_db`
+  - Deve retornar `"neon_connected": true` e a lista das tabelas (`game_actions`, `decision_telemetry_and_bluffs`, `hands`).
+- Acesse `https://seu-app.vercel.app/api/telemetry/stats`
+  - Deve retornar o resumo em tempo real dos blefes e vitórias gravados no Neon!
+
+---
+
+## 💻 4. Método Alternativo: Publicação pelo Terminal (`npx vercel`)
 
 Você também pode publicar diretamente pelo seu terminal, sem precisar abrir o navegador:
 

@@ -792,30 +792,60 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 conn, neon_diag = get_neon_connection_with_diag()
                 neon_ok = conn is not None
                 neon_hands_count = 0
+                neon_actions_count = 0
+                neon_telemetry_count = 0
+                neon_bluffs_count = 0
+                neon_tables = []
                 neon_columns = []
                 neon_sample = []
                 if conn:
                     try:
                         cur = conn.cursor()
-                        cur.execute("SELECT COUNT(*) FROM hands;")
-                        row = cur.fetchone()
-                        if row:
-                            neon_hands_count = int(row[0])
                         cur.execute(
-                            "SELECT column_name FROM information_schema.columns "
-                            "WHERE table_name = 'hands';"
+                            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
                         )
-                        neon_columns = [r[0] for r in cur.fetchall()]
-                        cur.execute(
-                            "SELECT id, pot_total, created_at FROM hands "
-                            "ORDER BY id DESC LIMIT 2;"
-                        )
-                        for r in cur.fetchall():
-                            neon_sample.append({
-                                "id": r[0],
-                                "pot_total": r[1],
-                                "created_at": str(r[2]),
-                            })
+                        neon_tables = [r[0] for r in cur.fetchall()]
+
+                        if "hands" in neon_tables:
+                            cur.execute("SELECT COUNT(*) FROM hands;")
+                            row = cur.fetchone()
+                            if row:
+                                neon_hands_count = int(row[0])
+                            cur.execute(
+                                "SELECT column_name FROM information_schema.columns "
+                                "WHERE table_name = 'hands';"
+                            )
+                            neon_columns = [r[0] for r in cur.fetchall()]
+                            cur.execute(
+                                "SELECT id, pot_total, created_at FROM hands "
+                                "ORDER BY id DESC LIMIT 2;"
+                            )
+                            for r in cur.fetchall():
+                                neon_sample.append({
+                                    "id": r[0],
+                                    "pot_total": r[1],
+                                    "created_at": str(r[2]),
+                                })
+
+                        if "game_actions" in neon_tables:
+                            cur.execute("SELECT COUNT(*) FROM game_actions;")
+                            row = cur.fetchone()
+                            if row:
+                                neon_actions_count = int(row[0])
+
+                        if "decision_telemetry_and_bluffs" in neon_tables:
+                            cur.execute("SELECT COUNT(*) FROM decision_telemetry_and_bluffs;")
+                            row = cur.fetchone()
+                            if row:
+                                neon_telemetry_count = int(row[0])
+
+                            cur.execute(
+                                "SELECT COUNT(*) FROM decision_telemetry_and_bluffs WHERE is_bluff = TRUE;"
+                            )
+                            row = cur.fetchone()
+                            if row:
+                                neon_bluffs_count = int(row[0])
+
                         cur.close()
                     except Exception as ex:
                         neon_diag = f"Erro na inspeção: {str(ex)}"
@@ -856,6 +886,10 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     "neon_connected": neon_ok,
                     "neon_diag": neon_diag,
                     "neon_hands_count": neon_hands_count,
+                    "neon_actions_count": neon_actions_count,
+                    "neon_telemetry_count": neon_telemetry_count,
+                    "neon_bluffs_count": neon_bluffs_count,
+                    "neon_tables": neon_tables,
                     "neon_columns": neon_columns,
                     "neon_sample": neon_sample,
                     "neon_host": neon_host,
@@ -867,6 +901,17 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     "total_hands_recorded": total_hands,
                     "file_name": target_file.name,
                 })
+                return
+
+            if (
+                clean_path.endswith("/telemetry/stats")
+                or clean_path == "/telemetry/stats"
+                or clean_path.endswith("telemetry%2Fstats")
+            ):
+                from src.database.telemetry_generator import get_neon_telemetry_stats
+
+                stats = get_neon_telemetry_stats()
+                self._send_json(stats)
                 return
 
             if (
@@ -1012,6 +1057,67 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     hands=hands,
                 )
                 self._send_json(result)
+                return
+
+            if (
+                clean_path.endswith("/telemetry/simulate")
+                or clean_path == "/telemetry/simulate"
+                or clean_path.endswith("telemetry%2Fsimulate")
+            ):
+                import os
+                from src.database.recorder import verify_auth_code
+                from src.database.telemetry_generator import (
+                    save_telemetry_to_neon,
+                    simulate_and_generate_telemetry,
+                )
+
+                auth_code = str(data.get("auth_code", "TCC2026"))
+                if not verify_auth_code(auth_code):
+                    self._send_json(
+                        {"success": False, "error": "Código de autorização inválido."},
+                        status_code=403,
+                    )
+                    return
+
+                num_hands = int(data.get("hands", 10))
+                roster_mode = str(data.get("roster", "tier_s_duelo")).strip()
+                save_neon = bool(data.get("save_neon", False))
+                custom_url = data.get("database_url")
+                test_id = data.get("test_id")
+
+                is_serverless = bool(
+                    os.environ.get("VERCEL")
+                    or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+                )
+                if is_serverless:
+                    num_hands = min(num_hands, 20)
+
+                actions, telemetry, summary = simulate_and_generate_telemetry(
+                    num_hands=num_hands,
+                    roster_mode=roster_mode,
+                    test_id=test_id,
+                )
+
+                neon_saved = False
+                neon_msg = None
+                if save_neon:
+                    ok, count, err = save_telemetry_to_neon(
+                        actions=actions,
+                        telemetry=telemetry,
+                        custom_url=custom_url,
+                    )
+                    neon_saved = ok
+                    neon_msg = f"{count} registros gravados" if ok else err
+
+                self._send_json({
+                    "success": True,
+                    "hands_simulated": num_hands,
+                    "actions_generated": len(actions),
+                    "telemetry_records": len(telemetry),
+                    "summary": summary,
+                    "neon_saved": neon_saved,
+                    "neon_message": neon_msg,
+                })
                 return
 
             if (
