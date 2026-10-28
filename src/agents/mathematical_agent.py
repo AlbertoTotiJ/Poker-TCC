@@ -107,6 +107,7 @@ class MathematicalAgent(BaseAgent):
         self.bets_and_raises: int = 0
         self.calls: int = 0
         self.folds: int = 0
+        self.last_decision: Optional[MathematicalDecision] = None
 
     @property
     def raise_equity_threshold(self) -> float:
@@ -208,6 +209,7 @@ class MathematicalAgent(BaseAgent):
         )
 
         self._track_decision_telemetry(decision.action_type, table.street)
+        self.last_decision = decision
         return Action(
             player_id=self.player_id,
             action_type=decision.action_type,

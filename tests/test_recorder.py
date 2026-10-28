@@ -221,3 +221,20 @@ def test_run_recording_batch_tier_s_and_hybrid() -> None:
     assert res_custom["roster_mode"] == "custom"
     assert res_custom["hands_completed"] == 2
     assert len(res_custom["leaderboard"]) == 6
+
+
+def test_simulate_and_generate_telemetry(tmp_path) -> None:
+    from src.database.telemetry_generator import simulate_and_generate_telemetry
+
+    actions, telemetry, summary = simulate_and_generate_telemetry(
+        num_hands=2,
+        roster_mode="tier_s_duelo",
+        rng_seed=42,
+        output_dir=str(tmp_path),
+    )
+    assert len(actions) > 0
+    assert len(telemetry) == len(actions)
+    assert "total_bluffs" in summary
+    assert (tmp_path / "game_actions.csv").exists()
+    assert (tmp_path / "decision_telemetry_and_bluffs.csv").exists()
+
