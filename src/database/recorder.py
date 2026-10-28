@@ -260,6 +260,13 @@ def save_hand_to_file(hand_data: Dict[str, Any]) -> bool:
 
 
 ROSTER_CONFIGS: Dict[str, Dict[str, Any]] = {
+    "tier_s_trio": {
+        "name": "⭐ Trio de Elite Tier S (1 Mat, 1 Blef, 1 Híbrido)",
+        "description": (
+            "1 Matemático Tier S, 1 Blefador Tier S, 1 Híbrido (3 Jogadores)"
+        ),
+        "num_players": 3,
+    },
     "tier_s_duelo": {
         "name": "⭐ Duelo Campeões Tier S (3 Blefadores vs 3 Matemáticos)",
         "description": (
@@ -527,6 +534,54 @@ def build_research_roster(
 
             _add_player(pid, pname, agent, profile)
 
+        return players, agents, profile_labels
+
+    if roster_mode in ("tier_s_trio", "trio_champions_3"):
+        from src.training.agent_registry import global_registry
+
+        # 1. Agente Híbrido
+        pid = "bot_hyb_1"
+        pname = "Híbrido 1"
+        _add_player(
+            pid,
+            pname,
+            HybridAgent(
+                player_id=pid,
+                name=pname,
+                num_simulations=100,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Híbrido",
+        )
+        # 2. Blefador Treinado Tier S
+        pid = "bot_tblf_1"
+        pname = "Blefador Tier S 1"
+        _add_player(
+            pid,
+            pname,
+            global_registry.instantiate_agent_by_id(
+                agent_id="trained_bluffer",
+                player_id=pid,
+                name=pname,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Blefador Treinado (Tier S)",
+        )
+        # 3. Matemático Treinado Tier S
+        pid = "bot_tmat_1"
+        pname = "Matemático Tier S 1"
+        _add_player(
+            pid,
+            pname,
+            global_registry.instantiate_agent_by_id(
+                agent_id="trained_math",
+                player_id=pid,
+                name=pname,
+                rng=random.Random(local_rng.randint(1, 1000000)),
+            ),
+            "Matemático Treinado (Tier S)",
+        )
+        local_rng.shuffle(players)
         return players, agents, profile_labels
 
     if roster_mode == "tier_s_duelo":

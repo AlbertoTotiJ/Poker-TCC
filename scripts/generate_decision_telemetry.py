@@ -38,8 +38,20 @@ def main() -> None:
     parser.add_argument(
         "--roster",
         type=str,
-        default="tier_s_duelo",
-        help="Formato do torneio: tier_s_duelo, hybrid_vs_champions, tcc_champions_9, etc.",
+        default="tier_s_trio",
+        help=(
+            "Formato do torneio:\n"
+            "  • tier_s_trio (3 jogadores: 1 Mat Tier S, 1 Blef Tier S, 1 Híbrido)\n"
+            "  • hybrid_vs_champions (6 jogadores: 2 Mat Tier S, 2 Blef Tier S, 2 Híbridos)\n"
+            "  • tcc_champions_9 (9 jogadores: 3 Mat Tier S, 3 Blef Tier S, 3 Híbridos)\n"
+            "  • tier_s_duelo (6 jogadores: 3 Mat Tier S vs 3 Blef Tier S)"
+        ),
+    )
+    parser.add_argument(
+        "--custom-seats",
+        nargs="+",
+        default=None,
+        help="Lista explícita de assentos (ex: --custom-seats trained_math trained_bluffer hybrid).",
     )
     parser.add_argument(
         "--seed",
@@ -98,6 +110,8 @@ def main() -> None:
     print(f"• 📁 PASTA DO TESTE  : {test_dir}/")
     print(f"• Mãos a simular    : {args.hands}")
     print(f"• Formato da mesa   : {args.roster}")
+    if args.custom_seats:
+        print(f"• Assentos (Custom) : {', '.join(args.custom_seats)}")
     print(f"• Semente (Seed)    : {args.seed}")
     print("-" * 80)
     print("▶ Iniciando simulação...")
@@ -107,6 +121,7 @@ def main() -> None:
         num_hands=args.hands,
         roster_mode=args.roster,
         rng_seed=args.seed,
+        custom_seats=args.custom_seats,
         output_dir=args.output_dir,
         test_id=test_id,
     )
