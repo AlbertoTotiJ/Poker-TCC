@@ -110,11 +110,46 @@ def main() -> None:
     print("=" * 80)
 
     if args.save_neon:
-        print("☁️ Sincronizando dados com o banco de dados Neon PostgreSQL...")
+        print("☁️ Preparando sincronização com o banco de dados Neon PostgreSQL...")
+        from src.database.recorder import _load_env_fallback
+        import os
+
+        _load_env_fallback()
+        neon_url = (
+            args.neon_url
+            or os.environ.get("DATABASE_URL")
+            or os.environ.get("POSTGRES_URL")
+        )
+
+        if not neon_url:
+            print("\n" + "=" * 80)
+            print("🔑 DATABASE_URL não configurada no ambiente ou no arquivo .env.")
+            print("Cole a URL de conexão do seu banco de dados Neon (ex: postgresql://...):")
+            print("=" * 80)
+            try:
+                neon_url = input("👉 URL do Neon: ").strip().strip('"').strip("'")
+            except (EOFError, KeyboardInterrupt):
+                neon_url = ""
+
+            if neon_url and neon_url.startswith("postgres"):
+                # Salva no .env local para evitar ter que digitar novamente
+                env_file = _ROOT / ".env"
+                try:
+                    with open(env_file, "a", encoding="utf-8") as f:
+                        f.write(f"\nDATABASE_URL={neon_url}\n")
+                    print(f"✓ URL salva com segurança no arquivo local .env para execuções futuras.")
+                except Exception:
+                    pass
+
+        if not neon_url or not neon_url.startswith("postgres"):
+            print("⚠️ Operação cancelada: Nenhuma URL válida informada. Os dados permanecem salvos nos arquivos CSV locais.")
+            print("=" * 80)
+            return
+
         ok, count, err = save_telemetry_to_neon(
             actions=actions,
             telemetry=telemetry,
-            custom_url=args.neon_url,
+            custom_url=neon_url,
         )
         if ok:
             print(f"✓ Sucesso! {count} registros gravados com sucesso nas tabelas 'game_actions' e 'decision_telemetry_and_bluffs' do Neon.")
