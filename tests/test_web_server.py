@@ -395,6 +395,26 @@ def test_telemetry_api_endpoints() -> None:
             assert data["hands_simulated"] == 2
             assert data["actions_generated"] > 0
             assert "summary" in data
+
+        # 4. GET /vis-network.min.js
+        with urllib.request.urlopen(f"{base}/vis-network.min.js") as res:
+            assert res.status == 200
+            assert len(res.read()) > 100000
+
+        # 5. GET /api/xai/hands
+        with urllib.request.urlopen(f"{base}/api/xai/hands?limit=5") as res:
+            assert res.status == 200
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is True
+            assert isinstance(data["hands"], list)
+
+        # 6. GET /api/xai/macro_graph
+        with urllib.request.urlopen(f"{base}/api/xai/macro_graph?hand_id=1") as res:
+            assert res.status == 200
+            data = json.loads(res.read().decode("utf-8"))
+            assert data["success"] is True
+            assert "nodes" in data
+            assert "edges" in data
     finally:
         httpd.shutdown()
         httpd.server_close()

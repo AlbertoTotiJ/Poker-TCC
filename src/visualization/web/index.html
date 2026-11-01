@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Texas Hold'em Poker - Mesa Virtual TCC</title>
+  <script src="/vis-network.min.js"></script>
   <style>
     :root {
       --bg-dark: #0a0e14;
@@ -1410,6 +1411,550 @@
     .tier-badge-c { background: #ff9800; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
     .tier-badge-d { background: #f44336; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
 
+    /* ===================================================================== */
+    /* XAI COGNITIVE GRAPH WORKSPACE STYLES                                  */
+    /* ===================================================================== */
+    .btn-header.btn-xai-tab {
+      background: linear-gradient(135deg, #1e1b4b 0%, #3b0764 100%);
+      border: 1.5px solid #a855f7;
+      color: #f5f3ff;
+      font-weight: 700;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.45);
+      letter-spacing: 0.3px;
+      transition: all 0.25s ease;
+    }
+    .btn-header.btn-xai-tab:hover {
+      background: linear-gradient(135deg, #2e1065 0%, #581c87 100%);
+      border-color: #c084fc;
+      box-shadow: 0 0 18px rgba(192, 132, 252, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .xai-workspace-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #090d14;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      color: #f8fafc;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .xai-topbar {
+      height: 58px;
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1.5px solid rgba(168, 85, 247, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      gap: 10px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      flex-shrink: 0;
+      overflow: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .xai-topbar::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    .xai-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: auto;
+      flex-shrink: 0;
+    }
+    .xai-icon {
+      font-size: 1.6rem;
+      filter: drop-shadow(0 0 8px #a855f7);
+    }
+    .xai-title {
+      font-size: 0.96rem;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      background: linear-gradient(90deg, #c084fc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+    }
+    .xai-subtitle {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .xai-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+    }
+
+    .xai-control-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(30, 41, 59, 0.8);
+      padding: 4px 8px;
+      border-radius: 7px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .xai-control-group label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      white-space: nowrap;
+    }
+    .xai-control-group select {
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      outline: none;
+      max-width: 210px;
+      white-space: nowrap;
+    }
+
+    .btn-xai-filter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-xai-filter.active {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+    }
+
+    .xai-mode-switcher {
+      display: inline-flex;
+      align-items: center;
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 2px;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-xai-mode {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-xai-mode.active {
+      background: linear-gradient(135deg, #2e1065, #6b21a8);
+      color: #f5f3ff;
+      border: 1px solid #c084fc;
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+    }
+
+    .btn-xai-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      background: #1e293b;
+      border: 1px solid #64748b;
+      color: #e2e8f0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-xai-action:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .btn-xai-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      border: 1px solid #ef4444;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-xai-close:hover {
+      background: #ef4444;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+    }
+
+    .xai-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .xai-canvas-wrapper {
+      flex: 1;
+      position: relative;
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      overflow: hidden;
+    }
+
+    .xai-network-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .xai-hint-banner {
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      right: 360px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      color: #e0f2fe;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .xai-floating-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+    .xai-floating-controls button {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: #f1f5f9;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.2s;
+    }
+    .xai-floating-controls button:hover {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    .xai-legend-box {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1.5px solid rgba(148, 163, 184, 0.35);
+      border-radius: 10px;
+      padding: 10px 14px;
+      backdrop-filter: blur(10px);
+      z-index: 10;
+      max-width: 580px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      transition: all 0.25s ease;
+    }
+    .xai-legend-box.collapsed {
+      padding: 6px 12px;
+      max-width: 260px;
+      cursor: pointer;
+    }
+    .xai-legend-box.collapsed .legend-items {
+      display: none;
+    }
+    .xai-legend-box.collapsed .legend-title {
+      margin-bottom: 0;
+    }
+    .btn-legend-toggle {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94a3b8;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      transition: all 0.2s ease;
+      line-height: 1;
+      padding: 0;
+      margin-left: 8px;
+    }
+    .btn-legend-toggle:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-color: #38bdf8;
+    }
+
+    .xai-legend-box .legend-title {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .xai-legend-box .legend-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 6px 10px;
+    }
+    .leg-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.73rem;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 7px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s;
+    }
+    .leg-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+      transform: translateY(-1px);
+    }
+    .leg-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* Right Inspector Sidebar */
+    .xai-inspector-sidebar {
+      width: 350px;
+      background: #0f172a;
+      border-left: 1.5px solid rgba(168, 85, 247, 0.35);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+      z-index: 20;
+    }
+
+    .inspector-header {
+      padding: 14px 16px;
+      background: rgba(30, 41, 59, 0.6);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .inspector-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: 0.3px;
+    }
+    .inspector-badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #475569;
+      font-weight: 600;
+    }
+
+    .inspector-content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .inspector-empty-state {
+      text-align: center;
+      padding: 40px 16px;
+    }
+
+    .inspect-card {
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .inspect-card-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .inspect-field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 0.82rem;
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.15);
+    }
+    .inspect-field-row:last-child {
+      border-bottom: none;
+    }
+    .inspect-field-label {
+      color: #94a3b8;
+    }
+    .inspect-field-value {
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .inspect-reason-box {
+      background: rgba(88, 28, 135, 0.25);
+      border: 1px solid #a855f7;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 0.82rem;
+      color: #f3e8ff;
+      line-height: 1.4;
+      font-style: italic;
+    }
+
+    .inspect-bluff-alert {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1.5px solid #ef4444;
+      border-radius: 6px;
+      padding: 10px;
+      color: #fecaca;
+      font-size: 0.82rem;
+    }
+
+    .inspector-footer {
+      padding: 12px 16px;
+      background: rgba(30, 41, 59, 0.7);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .btn-inspect-drilldown {
+      width: 100%;
+      background: linear-gradient(135deg, #6d28d9, #9333ea);
+      border: 1px solid #c084fc;
+      color: #fff;
+      font-weight: 800;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.86rem;
+      box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-inspect-drilldown:hover {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      box-shadow: 0 4px 18px rgba(168, 85, 247, 0.6);
+      transform: translateY(-1px);
+    }
+
+    /* State of the Art XAI: Contrafactual & Blocker styles */
+    .inspect-cf-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-top: 6px;
+    }
+    .inspect-cf-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .inspect-cf-item:last-child {
+      border-bottom: none;
+    }
+    .cf-status-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .cf-status-chosen {
+      background: #064e3b;
+      color: #34d399;
+      border: 1px solid #10b981;
+    }
+    .cf-status-rejected {
+      background: #1f2937;
+      color: #94a3b8;
+      border: 1px solid #4b5563;
+    }
+
   </style>
 </head>
 <body>
@@ -1431,6 +1976,7 @@
     </div>
 
     <div class="header-controls">
+      <button class="btn-header btn-xai-tab" onclick="openXaiWorkspace()" title="Grafo Cognitivo XAI: Exploração em Rede Neural e Trilha da Vitória">🧠 Grafo Cognitivo (XAI)</button>
       <button class="btn-header btn-training" onclick="openTrainingModal()" title="Central de Agentes: Importe e gerencie agentes treinados no Google Colab">⭐ Agentes Treinados</button>
       <button class="btn-header btn-agents" onclick="openAgentsModal()" title="Escolha entre os Agentes Feitos de IA e os Bots Padrão">🤖 Selecionar Agentes</button>
       <button class="btn-header btn-record" onclick="openRecordModal()" title="Gravar rodadas da equipe com código de autenticação">🔴 Gravar Partidas</button>
@@ -1933,6 +2479,115 @@
           ⏳ Simulando partidas e calculando métricas de blefe... Aguarde!
         </div>
         <div id="recordResultBox" style="display: none;" class="record-result-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- XAI COGNITIVE GRAPH WORKSPACE (VISÃO MACRO E MICRO)                   -->
+  <!-- ===================================================================== -->
+  <div class="xai-workspace-overlay" id="xaiWorkspaceOverlay" style="display: none;">
+    <!-- Top Bar -->
+    <div class="xai-topbar">
+      <div class="xai-brand">
+        <span class="xai-icon">🧠</span>
+        <div>
+          <div class="xai-title">Grafo Cognitivo XAI · Texas Hold'em</div>
+          <div class="xai-subtitle" id="xaiBreadcrumb">🔭 Visão MACRO · Trilha da Vitória & Fluxo da Partida</div>
+        </div>
+      </div>
+
+      <!-- Controls & Hand Selector -->
+      <div class="xai-toolbar">
+        <div class="xai-control-group">
+          <label for="xaiHandSelect">Mão:</label>
+          <select id="xaiHandSelect" onchange="onXaiHandChange(this.value)">
+            <option value="">Carregando mãos do banco Neon...</option>
+          </select>
+        </div>
+
+        <button class="btn-xai-filter" id="btnXaiOnlyBluffs" onclick="toggleXaiBluffFilter()">
+          🎭 Apenas Blefes
+        </button>
+
+        <div class="xai-mode-switcher">
+          <button class="btn-xai-mode active" id="btnModeMacro" onclick="switchXaiView('macro')">
+            🔭 Visão MACRO
+          </button>
+          <button class="btn-xai-mode" id="btnModeMicro" onclick="switchXaiView('micro')" title="Clique em uma ação no grafo Macro para abrir a visão Micro">
+            🔬 Visão MICRO (Rede Neural)
+          </button>
+        </div>
+
+        <button class="btn-xai-action" onclick="reloadXaiHands()" title="Recarregar dados mais recentes do Neon">
+          🔄 Atualizar
+        </button>
+
+        <button class="btn-xai-close" onclick="closeXaiWorkspace()" title="Fechar Grafo e Voltar para a Mesa">
+          ✖ Voltar à Mesa
+        </button>
+      </div>
+    </div>
+
+    <!-- Workspace Main Body -->
+    <div class="xai-body">
+      <!-- Network Canvas Container -->
+      <div class="xai-canvas-wrapper">
+        <!-- Floating Status / Instruction Banner -->
+        <div class="xai-hint-banner" id="xaiHintBanner">
+          <span style="font-size: 1.2rem;">💡</span>
+          <span id="xaiHintText">Visão MACRO ativa. A <strong>Trilha da Vitória</strong> está destacada em dourado. <strong>Dê um clique</strong> em qualquer nó de ação para inspecionar, ou <strong>clique duplo</strong> para abrir a <strong>Visão MICRO (Rede Neural)</strong>!</span>
+        </div>
+
+        <!-- Vis.js Canvas Element -->
+        <div id="xaiNetworkContainer" class="xai-network-container"></div>
+
+        <!-- Floating Graph Controls (Bottom-Left) -->
+        <div class="xai-floating-controls">
+          <button onclick="xaiZoomIn()" title="Aumentar Zoom">➕ Zoom</button>
+          <button onclick="xaiZoomOut()" title="Diminuir Zoom">➖ Zoom</button>
+          <button onclick="xaiFitGraph()" title="Centralizar Grafo">⛶ Centralizar</button>
+          <button id="btnXaiPhysics" onclick="toggleXaiPhysics()" title="Ligar/Desligar Física de Molas">⚛️ Física: ON</button>
+        </div>
+
+        <!-- Legend Bar (Bottom-Right) -->
+        <div class="xai-legend-box" id="xaiLegendBox">
+          <div class="legend-title" style="color: #38bdf8;">
+            <span>🔭 LEGENDA · FLUXO DA PARTIDA (MACRO)</span>
+            <button class="btn-legend-toggle" onclick="toggleXaiLegendCollapse(event)" title="Minimizar Legenda">➖</button>
+          </div>
+          <div class="legend-items">
+            <span class="leg-item" title="Arestas douradas contínuas conectando cada ação vitoriosa até o pote"><span class="leg-color" style="background:#fbbf24; border:1px solid #fef08a; box-shadow:0 0 6px rgba(251,191,36,0.6);"></span> 👑 Trilha da Vitória</span>
+            <span class="leg-item" title="Nó de aposta identificado pelo motor de IA como blefe puro ou semiblefe"><span class="leg-color" style="background:#ef4444; border:1px solid #f87171;"></span> 🎭 Blefe Detectado</span>
+            <span class="leg-item" title="Jogada calculada baseada em Pot Odds, equidade e EV"><span class="leg-color" style="background:#3b82f6; border:1px solid #60a5fa;"></span> 📐 Decisão Matemática</span>
+            <span class="leg-item" title="Nó final de encerramento da rodada que recolheu o pote da mesa"><span class="leg-color" style="background:#10b981; border:1px solid #34d399;"></span> 🏆 Vencedor da Mão</span>
+            <span class="leg-item" title="Jogador que desistiu voluntariamente da mão diante de aposta"><span class="leg-color" style="background:#6b7280; border:1px solid #9ca3af;"></span> ❌ Desistência (Fold)</span>
+            <span class="leg-item" title="Fases sequenciais da rodada (Pré-Flop, Flop, Turn e River)"><span class="leg-color" style="background:#334155; border:1px solid #94a3b8;"></span> 📍 Fases / Ruas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Inspector Sidebar -->
+      <div class="xai-inspector-sidebar" id="xaiInspectorSidebar">
+        <div class="inspector-header">
+          <span class="inspector-title" id="inspectorTitle">🔍 Inspetor de Decisão</span>
+          <span class="inspector-badge" id="inspectorBadge">Nenhum nó selecionado</span>
+        </div>
+
+        <div class="inspector-content" id="inspectorContent">
+          <div class="inspector-empty-state">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">👆</div>
+            <div style="font-weight: 600; color: #94a3b8;">Selecione um nó no Grafo</div>
+            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Clique em uma ação ou componente cognitivo para ver as métricas de IA, equidade e motivação em detalhes.</div>
+          </div>
+        </div>
+
+        <!-- Bottom Action CTA -->
+        <div class="inspector-footer" id="inspectorFooter" style="display: none;">
+          <button class="btn-inspect-drilldown" id="btnInspectDrilldown" onclick="drilldownToSelectedAction()">
+            🔬 Explorar Rede Neural Desta Decisão ➔
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3449,6 +4104,792 @@
           }
           grp.innerHTML = optsHtml;
         }
+      }
+    }
+
+    /* ===================================================================== */
+    /* XAI COGNITIVE GRAPH WORKSPACE LOGIC (VISÃO MACRO E MICRO)             */
+    /* ===================================================================== */
+    let xaiNetwork = null;
+    let xaiCurrentHandId = null;
+    let xaiCurrentActionId = null;
+    let xaiCurrentView = 'macro';
+    let xaiOnlyBluffs = false;
+    let xaiPhysicsEnabled = true;
+    let xaiSelectedNodeData = null;
+    let xaiMacroNodesMap = {};
+    let xaiMicroNodesMap = {};
+
+    function openXaiWorkspace() {
+      const overlay = document.getElementById('xaiWorkspaceOverlay');
+      if (overlay) overlay.style.display = 'flex';
+      reloadXaiHands();
+    }
+
+    function closeXaiWorkspace() {
+      const overlay = document.getElementById('xaiWorkspaceOverlay');
+      if (overlay) overlay.style.display = 'none';
+      if (xaiNetwork) {
+        try { xaiNetwork.destroy(); } catch (e) {}
+        xaiNetwork = null;
+      }
+    }
+
+    function toggleXaiBluffFilter() {
+      xaiOnlyBluffs = !xaiOnlyBluffs;
+      const btn = document.getElementById('btnXaiOnlyBluffs');
+      if (btn) {
+        if (xaiOnlyBluffs) {
+          btn.classList.add('active');
+          btn.innerHTML = '🔥 Filtrado: Com Blefes';
+        } else {
+          btn.classList.remove('active');
+          btn.innerHTML = '🎭 Apenas Blefes';
+        }
+      }
+      reloadXaiHands();
+    }
+
+    async function reloadXaiHands() {
+      const select = document.getElementById('xaiHandSelect');
+      if (select) {
+        select.innerHTML = '<option value="">⏳ Conectando ao Neon PostgreSQL...</option>';
+      }
+
+      try {
+        const resp = await safeFetchJson(`/api/xai/hands?only_bluffs=${xaiOnlyBluffs}&limit=60`);
+        if (!resp || !resp.success || !resp.hands || resp.hands.length === 0) {
+          if (select) {
+            select.innerHTML = '<option value="">Nenhuma mão encontrada no banco</option>';
+          }
+          return;
+        }
+
+        let html = '';
+        resp.hands.forEach(h => {
+          const bluffIcon = h.has_bluff ? `🔥 (${h.bluff_count} blefe${h.bluff_count > 1 ? 's' : ''})` : '';
+          const winnerTxt = h.winner_name ? `🏆 ${h.winner_name}` : 'Mão em Aberto';
+          const label = `Mão #${h.hand_id} • ${winnerTxt} (+${h.total_pot} fichas) ${bluffIcon}`;
+          const isSelected = xaiCurrentHandId && parseInt(xaiCurrentHandId) === h.hand_id;
+          html += `<option value="${h.hand_id}" ${isSelected ? 'selected' : ''}>${label}</option>`;
+        });
+
+        if (select) {
+          select.innerHTML = html;
+        }
+
+        // Se não tiver selecionado ainda, seleciona a primeira
+        const chosenHandId = (xaiCurrentHandId && resp.hands.some(h => h.hand_id === xaiCurrentHandId)) 
+          ? xaiCurrentHandId 
+          : resp.hands[0].hand_id;
+
+        xaiCurrentHandId = chosenHandId;
+        if (select) select.value = chosenHandId;
+        loadMacroGraph(chosenHandId);
+
+      } catch (err) {
+        console.error('Erro ao buscar mãos para XAI:', err);
+        if (select) {
+          select.innerHTML = `<option value="">Erro ao conectar: ${err.message}</option>`;
+        }
+      }
+    }
+
+    function onXaiHandChange(handId) {
+      if (!handId) return;
+      xaiCurrentHandId = parseInt(handId);
+      xaiCurrentActionId = null;
+      loadMacroGraph(xaiCurrentHandId);
+    }
+
+    async function loadMacroGraph(handId) {
+      xaiCurrentView = 'macro';
+      xaiCurrentHandId = handId;
+
+      const btnMacro = document.getElementById('btnModeMacro');
+      const btnMicro = document.getElementById('btnModeMicro');
+      const breadcrumb = document.getElementById('xaiBreadcrumb');
+      const hintText = document.getElementById('xaiHintText');
+      const inspectorFooter = document.getElementById('inspectorFooter');
+
+      if (btnMacro) btnMacro.classList.add('active');
+      if (btnMicro) btnMicro.classList.remove('active');
+      if (inspectorFooter) inspectorFooter.style.display = 'none';
+
+      if (breadcrumb) {
+        breadcrumb.innerHTML = `🔭 Visão MACRO · Trilha da Vitória (Mão #${handId})`;
+      }
+      if (hintText) {
+        hintText.innerHTML = `Visão MACRO ativa. A <strong>Trilha da Vitória</strong> está destacada em dourado. <strong>Dê um clique</strong> em qualquer nó de ação para inspecionar, ou <strong>clique duplo</strong> para abrir a <strong>Visão MICRO (Rede Neural)</strong>!`;
+      }
+
+      updateXaiLegend('macro');
+      resetInspectorState();
+
+      try {
+        const resp = await safeFetchJson(`/api/xai/macro_graph?hand_id=${handId}`);
+        if (!resp || !resp.success) {
+          console.error('Falha ao carregar Grafo Macro:', resp);
+          return;
+        }
+
+        xaiMacroNodesMap = {};
+        (resp.nodes || []).forEach(n => {
+          xaiMacroNodesMap[n.id] = n;
+        });
+
+        renderVisNetwork(resp.nodes, resp.edges, 'macro');
+
+      } catch (err) {
+        console.error('Erro ao buscar Grafo Macro:', err);
+      }
+    }
+
+    async function loadMicroGraph(actionId) {
+      if (!actionId) return;
+      xaiCurrentActionId = actionId;
+      xaiCurrentView = 'micro';
+
+      const btnMacro = document.getElementById('btnModeMacro');
+      const btnMicro = document.getElementById('btnModeMicro');
+      const breadcrumb = document.getElementById('xaiBreadcrumb');
+      const hintText = document.getElementById('xaiHintText');
+      const inspectorFooter = document.getElementById('inspectorFooter');
+
+      if (btnMacro) btnMacro.classList.remove('active');
+      if (btnMicro) btnMicro.classList.add('active');
+      if (inspectorFooter) inspectorFooter.style.display = 'none';
+
+      updateXaiLegend('micro');
+
+      try {
+        const resp = await safeFetchJson(`/api/xai/micro_graph?action_id=${actionId}`);
+        if (!resp || !resp.success) {
+          console.error('Falha ao carregar Grafo Micro:', resp);
+          return;
+        }
+
+        if (breadcrumb) {
+          breadcrumb.innerHTML = `
+            <span style="cursor:pointer; text-decoration:underline; color:#93c5fd;" onclick="loadMacroGraph(${resp.hand_id})">🔭 Mão #${resp.hand_id}</span>
+            <span style="margin: 0 4px; color:#64748b;">➔</span>
+            <span>🔬 Visão MICRO · Rede Neural (${resp.player_name}: ${resp.action_type} ${resp.amount > 0 ? resp.amount : ''})</span>
+          `;
+        }
+
+        if (hintText) {
+          hintText.innerHTML = `🧠 Visão MICRO ativa. Representação em <strong>Rede Neural (3 Camadas)</strong> da tomada de decisão. Clique em qualquer nó para inspecionar inputs, ponderação cognitiva e desfecho!`;
+        }
+
+        xaiMicroNodesMap = {};
+        (resp.nodes || []).forEach(n => {
+          xaiMicroNodesMap[n.id] = n;
+        });
+
+        renderVisNetwork(resp.nodes, resp.edges, 'micro');
+        inspectMicroDefault(resp);
+
+      } catch (err) {
+        console.error('Erro ao buscar Grafo Micro:', err);
+      }
+    }
+
+    let xaiLegendCollapsed = false;
+
+    function toggleXaiLegendCollapse(event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      xaiLegendCollapsed = !xaiLegendCollapsed;
+      const box = document.getElementById('xaiLegendBox');
+      if (box) {
+        if (xaiLegendCollapsed) {
+          box.classList.add('collapsed');
+        } else {
+          box.classList.remove('collapsed');
+        }
+      }
+      updateXaiLegend(xaiCurrentView);
+    }
+
+    function updateXaiLegend(viewMode) {
+      const box = document.getElementById('xaiLegendBox');
+      if (!box) return;
+
+      const isCollapsed = xaiLegendCollapsed;
+      if (isCollapsed) {
+        box.classList.add('collapsed');
+      } else {
+        box.classList.remove('collapsed');
+      }
+
+      const toggleIcon = isCollapsed ? '➕' : '➖';
+      const toggleTitle = isCollapsed ? 'Expandir Legenda' : 'Minimizar Legenda (Evitar atrapalhar visualização)';
+
+      if (viewMode === 'micro') {
+        const titleText = isCollapsed ? '🔬 Legenda (MICRO)' : '🔬 LEGENDA · REDE NEURAL DE DECISÃO (MICRO)';
+        box.innerHTML = `
+          <div class="legend-title" style="color: #c084fc;" onclick="if(xaiLegendCollapsed) toggleXaiLegendCollapse(event)">
+            <span>${titleText}</span>
+            <button class="btn-legend-toggle" onclick="toggleXaiLegendCollapse(event)" title="${toggleTitle}">${toggleIcon}</button>
+          </div>
+          <div class="legend-items" style="${isCollapsed ? 'display:none;' : ''}">
+            <span class="leg-item" title="Camada 1: Cartas privadas, bordo comunitário, Pot Odds e Pote total"><span class="leg-color" style="background:#38bdf8; border:1px solid #7dd3fc;"></span> 🎴 C1: Entradas da Mesa</span>
+            <span class="leg-item" title="Camada 1: Análise dinâmica do bordo (Wet, Dry, Scare Cards)"><span class="leg-color" style="background:#818cf8; border:1px solid #a5b4fc;"></span> 🎲 Textura do Bordo</span>
+            <span class="leg-item" title="Camada 2: Equidade Monte Carlo, Modo Ativado, EV e Justificativa XAI"><span class="leg-color" style="background:#a855f7; border:1px solid #c084fc;"></span> 🧠 C2: Ponderação Cognitiva</span>
+            <span class="leg-item" title="Camada 2: Remoção de cartas e combos fortes do adversário"><span class="leg-color" style="background:#f472b6; border:1px solid #f9a8d4;"></span> 🛡️ Blocker (Remoção)</span>
+            <span class="leg-item" title="Camada 2: Pressão comportamental e probabilidade estimada de fold"><span class="leg-color" style="background:#fb923c; border:1px solid #fdba74;"></span> 👥 Fold Equity (Pressão)</span>
+            <span class="leg-item" title="Camada 3: Ação física executada na mesa (BET, RAISE, CALL, CHECK)"><span class="leg-color" style="background:#10b981; border:1px solid #34d399;"></span> 🎯 C3: Saída / Veredito</span>
+            <span class="leg-item" title="Camada 3: Ação classificada como blefe puro ou semiblefe"><span class="leg-color" style="background:#ef4444; border:1px solid #f87171;"></span> 🎭 Detector de Blefe</span>
+            <span class="leg-item" title="Aresta com espessura proporcional à causalidade (Fold Equity / Blocker)"><span class="leg-color" style="background:#f59e0b; border:1px solid #fde047; box-shadow:0 0 6px rgba(245,158,11,0.6);"></span> ⚡ Aresta Causal</span>
+          </div>
+        `;
+      } else {
+        const titleText = isCollapsed ? '🔭 Legenda (MACRO)' : '🔭 LEGENDA · FLUXO DA PARTIDA (MACRO)';
+        box.innerHTML = `
+          <div class="legend-title" style="color: #38bdf8;" onclick="if(xaiLegendCollapsed) toggleXaiLegendCollapse(event)">
+            <span>${titleText}</span>
+            <button class="btn-legend-toggle" onclick="toggleXaiLegendCollapse(event)" title="${toggleTitle}">${toggleIcon}</button>
+          </div>
+          <div class="legend-items" style="${isCollapsed ? 'display:none;' : ''}">
+            <span class="leg-item" title="Arestas douradas contínuas conectando cada ação vitoriosa até o pote"><span class="leg-color" style="background:#fbbf24; border:1px solid #fef08a; box-shadow:0 0 6px rgba(251,191,36,0.6);"></span> 👑 Trilha da Vitória</span>
+            <span class="leg-item" title="Nó de aposta identificado pelo motor de IA como blefe puro ou semiblefe"><span class="leg-color" style="background:#ef4444; border:1px solid #f87171;"></span> 🎭 Blefe Detectado</span>
+            <span class="leg-item" title="Jogada calculada baseada em Pot Odds, equidade e EV"><span class="leg-color" style="background:#3b82f6; border:1px solid #60a5fa;"></span> 📐 Decisão Matemática</span>
+            <span class="leg-item" title="Nó final de encerramento da rodada que recolheu o pote da mesa"><span class="leg-color" style="background:#10b981; border:1px solid #34d399;"></span> 🏆 Vencedor da Mão</span>
+            <span class="leg-item" title="Jogador que desistiu voluntariamente da mão diante de aposta"><span class="leg-color" style="background:#6b7280; border:1px solid #9ca3af;"></span> ❌ Desistência (Fold)</span>
+            <span class="leg-item" title="Fases sequenciais da rodada (Pré-Flop, Flop, Turn e River)"><span class="leg-color" style="background:#334155; border:1px solid #94a3b8;"></span> 📍 Fases / Ruas</span>
+          </div>
+        `;
+      }
+    }
+
+    function switchXaiView(mode) {
+      if (mode === 'macro') {
+        if (xaiCurrentHandId) {
+          loadMacroGraph(xaiCurrentHandId);
+        }
+      } else if (mode === 'micro') {
+        if (xaiCurrentActionId) {
+          loadMicroGraph(xaiCurrentActionId);
+        } else {
+          alert('Por favor, dê um clique duplo em qualquer nó de ação no Grafo Macro para abrir a Visão Micro daquela jogada!');
+        }
+      }
+    }
+
+    function renderVisNetwork(nodes, edges, mode) {
+      const container = document.getElementById('xaiNetworkContainer');
+      if (!container) return;
+
+      if (typeof vis === 'undefined' || !vis.Network) {
+        container.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #ef4444;">
+            <h3>⚠️ Biblioteca Vis.js não carregada</h3>
+            <p>O arquivo /vis-network.min.js não pôde ser inicializado.</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (xaiNetwork) {
+        try { xaiNetwork.destroy(); } catch (e) {}
+        xaiNetwork = null;
+      }
+
+      const data = {
+        nodes: new vis.DataSet(nodes),
+        edges: new vis.DataSet(edges)
+      };
+
+      let options = {};
+      if (mode === 'macro') {
+        options = {
+          layout: {
+            hierarchical: {
+              enabled: true,
+              direction: 'LR',
+              sortMethod: 'directed',
+              levelSeparation: 220,
+              nodeSpacing: 130,
+              treeSpacing: 160,
+              blockShifting: true,
+              edgeMinimization: true
+            }
+          },
+          physics: {
+            enabled: xaiPhysicsEnabled,
+            hierarchicalRepulsion: {
+              centralGravity: 0.0,
+              springLength: 130,
+              springConstant: 0.03,
+              nodeDistance: 160
+            }
+          },
+          interaction: {
+            hover: true,
+            tooltipDelay: 80,
+            zoomView: true,
+            dragView: true,
+            selectConnectedEdges: true
+          }
+        };
+      } else {
+        // Modo Micro: Layout em 3 Camadas Neurais
+        options = {
+          layout: {
+            hierarchical: {
+              enabled: true,
+              direction: 'LR',
+              levelSeparation: 320,
+              nodeSpacing: 100,
+              sortMethod: 'directed'
+            }
+          },
+          physics: {
+            enabled: false // Posições limpas de rede neural
+          },
+          interaction: {
+            hover: true,
+            tooltipDelay: 80,
+            zoomView: true,
+            dragView: true
+          }
+        };
+      }
+
+      xaiNetwork = new vis.Network(container, data, options);
+
+      // Evento de Clique Simples
+      xaiNetwork.on('click', function(params) {
+        if (params.nodes && params.nodes.length > 0) {
+          const nodeId = params.nodes[0];
+          handleNodeClick(nodeId);
+        }
+      });
+
+      // Evento de Clique Duplo (Drilldown para Micro)
+      xaiNetwork.on('doubleClick', function(params) {
+        if (params.nodes && params.nodes.length > 0) {
+          const nodeId = params.nodes[0];
+          const nodeData = xaiMacroNodesMap[nodeId];
+          if (nodeData && nodeData.customData && nodeData.customData.type === 'action_node') {
+            loadMicroGraph(nodeData.customData.action_id);
+          }
+        }
+      });
+
+      // Centraliza suavemente
+      setTimeout(() => {
+        if (xaiNetwork) xaiNetwork.fit({ animation: { duration: 500 } });
+      }, 100);
+    }
+
+    function handleNodeClick(nodeId) {
+      if (xaiCurrentView === 'macro') {
+        const node = xaiMacroNodesMap[nodeId];
+        if (node) {
+          inspectMacroNode(node);
+        }
+      } else {
+        const node = xaiMicroNodesMap[nodeId];
+        if (node) {
+          inspectMicroNode(node);
+        }
+      }
+    }
+
+    function inspectMacroNode(node) {
+      const titleEl = document.getElementById('inspectorTitle');
+      const badgeEl = document.getElementById('inspectorBadge');
+      const contentEl = document.getElementById('inspectorContent');
+      const footerEl = document.getElementById('inspectorFooter');
+
+      xaiSelectedNodeData = node;
+      const cData = node.customData || {};
+
+      if (cData.type === 'action_node') {
+        if (titleEl) titleEl.innerText = `Ação: ${cData.player_name}`;
+        if (badgeEl) {
+          badgeEl.innerText = cData.street;
+          badgeEl.style.background = cData.is_bluff ? '#7f1d1d' : '#1e293b';
+          badgeEl.style.color = cData.is_bluff ? '#fca5a5' : '#94a3b8';
+          badgeEl.style.borderColor = cData.is_bluff ? '#ef4444' : '#475569';
+        }
+
+        let html = '';
+
+        // Card do Jogador e Ação
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">👤 Jogador & Decisão</div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Nome:</span><span class="inspect-field-value">${cData.player_name}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Perfil da IA:</span><span class="inspect-field-value">${cData.profile}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Ação Tomada:</span><span class="inspect-field-value" style="color:#38bdf8;">${cData.action_type} ${cData.amount > 0 ? cData.amount + ' fichas' : ''}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Street / Fase:</span><span class="inspect-field-value">${cData.street}</span></div>
+          </div>
+        `;
+
+        // Card de Textura da Mesa & Remoção (XAI Estado da Arte)
+        if (cData.board_texture || cData.blocker || cData.fold_equity) {
+          const bt = cData.board_texture || {};
+          const blk = cData.blocker || {};
+          const fe = cData.fold_equity || {};
+          html += `
+            <div class="inspect-card">
+              <div class="inspect-card-title">🎲 Textura da Mesa & Remoção</div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Textura do Bordo:</span><span class="inspect-field-value" style="color:#818cf8;">${bt.label || bt.type || 'Padrão'}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Blocker Score:</span><span class="inspect-field-value" style="color:#f472b6;">${blk.label || blk.score || '0.0'}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Fold Equity:</span><span class="inspect-field-value" style="color:#fb923c;">${fe.label || '0.0%'} de pressão</span></div>
+              ${bt.description ? `<div style="font-size:0.75rem; color:#94a3b8; margin-top:6px; line-height:1.3;">${bt.description}</div>` : ''}
+            </div>
+          `;
+        }
+
+        // Card de Análise Contrafactual (XAI Estado da Arte: Por que esta ação e não outra?)
+        if (cData.counterfactuals && cData.counterfactuals.options) {
+          const cf = cData.counterfactuals;
+          let cfRows = '';
+          cf.options.forEach(opt => {
+            const isChosen = opt.status === 'CHOSEN';
+            const tagClass = isChosen ? 'cf-status-chosen' : 'cf-status-rejected';
+            const tagLabel = isChosen ? 'ESCOLHIDA' : 'DESCARTADA';
+            cfRows += `
+              <div class="inspect-cf-item">
+                <span style="font-weight:700; color:${isChosen ? '#38bdf8' : '#cbd5e1'};">${opt.action}</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <strong style="color:${opt.color || '#fff'};">${opt.ev >= 0 ? '+' : ''}${opt.ev.toFixed(2)} BB</strong>
+                  <span class="cf-status-tag ${tagClass}">${tagLabel}</span>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `
+            <div class="inspect-card">
+              <div class="inspect-card-title">⚖️ Análise Contrafactual (Opções)</div>
+              <div class="inspect-cf-box">${cfRows}</div>
+              <div style="font-size:0.75rem; color:#a7f3d0; margin-top:6px; line-height:1.3; background:rgba(6,78,59,0.3); border:1px solid rgba(16,185,129,0.3); border-radius:4px; padding:6px;">
+                💡 <i>${cf.rationale_contrast}</i>
+              </div>
+            </div>
+          `;
+        }
+
+        // Card de Cartas e Mesa
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">🎴 Cartas e Pote</div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Mão Privada:</span><span class="inspect-field-value">${cData.hole_cards || 'Oculta'}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Bordo Comunitário:</span><span class="inspect-field-value">${cData.community_cards || 'Nenhuma'}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Pote na Decisão:</span><span class="inspect-field-value">${cData.pot_before} fichas</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Pote Resultante:</span><span class="inspect-field-value" style="color:#34d399;">${cData.pot_after} fichas</span></div>
+          </div>
+        `;
+
+        // Card de Blefe (se houver)
+        if (cData.is_bluff) {
+          html += `
+            <div class="inspect-bluff-alert">
+              <div style="font-weight: 800; font-size: 0.88rem; margin-bottom: 4px;">🎭 Blefe Detectado (${cData.bluff_type})</div>
+              <div>Esta aposta foi classificada como decepção intencional com base na equidade e fold equity calculadas pela IA.</div>
+            </div>
+          `;
+        }
+
+        // Card de Justificativa XAI
+        if (cData.tactical_reason) {
+          html += `
+            <div class="inspect-card">
+              <div class="inspect-card-title">🧠 Raciocínio da IA (XAI)</div>
+              <div class="inspect-reason-box">"${cData.tactical_reason}"</div>
+            </div>
+          `;
+        }
+
+        if (contentEl) contentEl.innerHTML = html;
+        if (footerEl) footerEl.style.display = 'block';
+
+      } else if (cData.type === 'hand_root') {
+        if (titleEl) titleEl.innerText = `Partida #${cData.hand_id}`;
+        if (badgeEl) badgeEl.innerText = 'Raiz da Mão';
+        if (footerEl) footerEl.style.display = 'none';
+
+        if (contentEl) {
+          contentEl.innerHTML = `
+            <div class="inspect-card">
+              <div class="inspect-card-title">♠️ Resumo da Mão</div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Mão ID:</span><span class="inspect-field-value">#${cData.hand_id}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Pote Total:</span><span class="inspect-field-value" style="color:#fbbf24;">${cData.total_pot} fichas</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Vencedor:</span><span class="inspect-field-value" style="color:#34d399;">${cData.winner_name}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Perfil Vencedor:</span><span class="inspect-field-value">${cData.winner_profile}</span></div>
+            </div>
+          `;
+        }
+      } else if (cData.type === 'winner_node') {
+        if (titleEl) titleEl.innerText = `🏆 Campeão da Rodada`;
+        if (badgeEl) badgeEl.innerText = 'Encerramento';
+        if (footerEl) footerEl.style.display = 'none';
+
+        if (contentEl) {
+          contentEl.innerHTML = `
+            <div class="inspect-card">
+              <div class="inspect-card-title">👑 Desfecho Final</div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Vencedor:</span><span class="inspect-field-value" style="color:#34d399;">${cData.winner_name}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Perfil:</span><span class="inspect-field-value">${cData.winner_profile}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Fichas Coletadas:</span><span class="inspect-field-value" style="color:#fbbf24;">+${cData.pot_won} fichas</span></div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    let xaiMicroCurrentResponse = null;
+
+    function inspectMicroNode(node) {
+      const titleEl = document.getElementById('inspectorTitle');
+      const badgeEl = document.getElementById('inspectorBadge');
+      const contentEl = document.getElementById('inspectorContent');
+      const footerEl = document.getElementById('inspectorFooter');
+
+      if (footerEl) footerEl.style.display = 'none';
+
+      const cData = node.customData || {};
+      const layerName = cData.layer === 'input' ? 'Camada 1: Entrada' : (cData.layer === 'hidden' ? 'Camada 2: Cognição' : 'Camada 3: Saída');
+
+      if (titleEl) titleEl.innerText = node.label.split('\n')[0] || 'Nó Cognitivo';
+      if (badgeEl) badgeEl.innerText = layerName;
+
+      let html = `
+        <div class="inspect-card">
+          <div class="inspect-card-title">🔬 Detalhes do Componente</div>
+          <div class="inspect-field-row"><span class="inspect-field-label">Camada:</span><span class="inspect-field-value">${layerName}</span></div>
+          <div class="inspect-field-row"><span class="inspect-field-label">Identificador:</span><span class="inspect-field-value" style="font-family:monospace;">${node.id}</span></div>
+          <div class="inspect-field-row"><span class="inspect-field-label">Categoria:</span><span class="inspect-field-value">${cData.category || 'Geral'}</span></div>
+        </div>
+      `;
+
+      // Inspeção Especializada de Textura
+      if (cData.category === 'board_texture' && cData.data) {
+        const bt = cData.data;
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">🎲 Análise da Textura da Mesa</div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Tipo Estrutural:</span><span class="inspect-field-value" style="color:#818cf8;">${bt.type}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Classificação:</span><span class="inspect-field-value">${bt.label}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Scare Cards:</span><span class="inspect-field-value">${bt.has_scare ? 'Sim (Cartas de Borda)' : 'Não'}</span></div>
+            <div style="font-size:0.8rem; color:#cbd5e1; margin-top:8px; line-height:1.4; background:rgba(30,27,75,0.4); border:1px solid rgba(129,140,248,0.3); border-radius:6px; padding:8px;">
+              💡 <i>${bt.description}</i>
+            </div>
+          </div>
+        `;
+      }
+
+      // Inspeção Especializada de Blocker
+      if (cData.category === 'blocker' && cData.data) {
+        const blk = cData.data;
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">🛡️ Efeito de Remoção de Cartas (Blocker)</div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Score Normalizado:</span><span class="inspect-field-value" style="color:#f472b6;">${blk.score.toFixed(2)} / 1.00</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Impacto no Range:</span><span class="inspect-field-value">${blk.label}</span></div>
+            <div style="font-size:0.8rem; color:#cbd5e1; margin-top:8px; line-height:1.4; background:rgba(74,4,78,0.4); border:1px solid rgba(244,114,182,0.3); border-radius:6px; padding:8px;">
+              🛡️ <i>${blk.description}</i>
+            </div>
+          </div>
+        `;
+      }
+
+      // Inspeção Especializada de Fold Equity
+      if (cData.category === 'fold_equity' && cData.data) {
+        const fe = cData.data;
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">👥 Fold Equity (Pressão Comportamental)</div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Probabilidade de Fold:</span><span class="inspect-field-value" style="color:#fb923c;">${fe.label}</span></div>
+            <div style="font-size:0.8rem; color:#cbd5e1; margin-top:8px; line-height:1.4; background:rgba(63,20,4,0.4); border:1px solid rgba(251,146,60,0.3); border-radius:6px; padding:8px;">
+              ⚡ <i>Esta estimativa quantifica a chance de sucesso imediato de uma aposta sem necessidade de ir ao showdown.</i>
+            </div>
+          </div>
+        `;
+      }
+
+      // Inspeção Especializada de Expected Value e Contrafactuais
+      if (cData.counterfactuals && cData.counterfactuals.options) {
+        const cf = cData.counterfactuals;
+        let cfRows = '';
+        cf.options.forEach(opt => {
+          const isChosen = opt.status === 'CHOSEN';
+          const tagClass = isChosen ? 'cf-status-chosen' : 'cf-status-rejected';
+          const tagLabel = isChosen ? 'ESCOLHIDA' : 'DESCARTADA';
+          cfRows += `
+            <div class="inspect-cf-item">
+              <span style="font-weight:700; color:${isChosen ? '#38bdf8' : '#cbd5e1'};">${opt.action}</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <strong style="color:${opt.color || '#fff'};">${opt.ev >= 0 ? '+' : ''}${opt.ev.toFixed(2)} BB</strong>
+                <span class="cf-status-tag ${tagClass}">${tagLabel}</span>
+              </div>
+            </div>
+          `;
+        });
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">⚖️ Análise Contrafactual (Opções)</div>
+            <div class="inspect-cf-box">${cfRows}</div>
+            <div style="font-size:0.75rem; color:#a7f3d0; margin-top:6px; line-height:1.3; background:rgba(6,78,59,0.3); border:1px solid rgba(16,185,129,0.3); border-radius:4px; padding:6px;">
+              💡 <i>${cf.rationale_contrast}</i>
+            </div>
+          </div>
+        `;
+      }
+
+      if (cData.full_text) {
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">🧠 Raciocínio Integral da IA</div>
+            <div class="inspect-reason-box">"${cData.full_text}"</div>
+          </div>
+        `;
+      } else if (node.title) {
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">ℹ️ Informação Adicional</div>
+            <div style="font-size:0.84rem; color:#cbd5e1; line-height:1.4;">${node.title}</div>
+          </div>
+        `;
+      }
+
+      if (contentEl) contentEl.innerHTML = html;
+    }
+
+    function inspectMicroDefault(resp) {
+      xaiMicroCurrentResponse = resp;
+      const titleEl = document.getElementById('inspectorTitle');
+      const badgeEl = document.getElementById('inspectorBadge');
+      const contentEl = document.getElementById('inspectorContent');
+
+      if (titleEl) titleEl.innerText = `Decisão: ${resp.player_name}`;
+      if (badgeEl) {
+        badgeEl.innerText = resp.is_bluff ? `🎭 ${resp.bluff_type}` : 'Decisão Padrão';
+        badgeEl.style.background = resp.is_bluff ? '#7f1d1d' : '#1e293b';
+        badgeEl.style.color = resp.is_bluff ? '#fca5a5' : '#94a3b8';
+      }
+
+      if (contentEl) {
+        let html = `
+          <div class="inspect-card">
+            <div class="inspect-card-title">🧠 Visão Geral da Decisão</div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Jogador:</span><span class="inspect-field-value">${resp.player_name}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Perfil:</span><span class="inspect-field-value">${resp.profile}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Ação Executada:</span><span class="inspect-field-value" style="color:#38bdf8;">${resp.action_type} ${resp.amount > 0 ? resp.amount : ''}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Fase:</span><span class="inspect-field-value">${resp.street}</span></div>
+          </div>
+        `;
+
+        // Card de Textura da Mesa & Remoção (XAI Estado da Arte)
+        if (resp.board_texture || resp.blocker || resp.fold_equity) {
+          const bt = resp.board_texture || {};
+          const blk = resp.blocker || {};
+          const fe = resp.fold_equity || {};
+          html += `
+            <div class="inspect-card">
+              <div class="inspect-card-title">🎲 Textura da Mesa & Remoção</div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Textura do Bordo:</span><span class="inspect-field-value" style="color:#818cf8;">${bt.label || bt.type || 'Padrão'}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Blocker Score:</span><span class="inspect-field-value" style="color:#f472b6;">${blk.label || blk.score || '0.0'}</span></div>
+              <div class="inspect-field-row"><span class="inspect-field-label">Fold Equity:</span><span class="inspect-field-value" style="color:#fb923c;">${fe.label || '0.0%'} de pressão</span></div>
+              ${bt.description ? `<div style="font-size:0.75rem; color:#94a3b8; margin-top:6px; line-height:1.3;">${bt.description}</div>` : ''}
+            </div>
+          `;
+        }
+
+        // Card de Análise Contrafactual (XAI Estado da Arte: Por que esta ação e não outra?)
+        if (resp.counterfactuals && resp.counterfactuals.options) {
+          const cf = resp.counterfactuals;
+          let cfRows = '';
+          cf.options.forEach(opt => {
+            const isChosen = opt.status === 'CHOSEN';
+            const tagClass = isChosen ? 'cf-status-chosen' : 'cf-status-rejected';
+            const tagLabel = isChosen ? 'ESCOLHIDA' : 'DESCARTADA';
+            cfRows += `
+              <div class="inspect-cf-item">
+                <span style="font-weight:700; color:${isChosen ? '#38bdf8' : '#cbd5e1'};">${opt.action}</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <strong style="color:${opt.color || '#fff'};">${opt.ev >= 0 ? '+' : ''}${opt.ev.toFixed(2)} BB</strong>
+                  <span class="cf-status-tag ${tagClass}">${tagLabel}</span>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `
+            <div class="inspect-card">
+              <div class="inspect-card-title">⚖️ Análise Contrafactual (Opções)</div>
+              <div class="inspect-cf-box">${cfRows}</div>
+              <div style="font-size:0.75rem; color:#a7f3d0; margin-top:6px; line-height:1.3; background:rgba(6,78,59,0.3); border:1px solid rgba(16,185,129,0.3); border-radius:4px; padding:6px;">
+                💡 <i>${cf.rationale_contrast}</i>
+              </div>
+            </div>
+          `;
+        }
+
+        // Card de Justificativa XAI
+        if (resp.tactical_reason) {
+          html += `
+            <div class="inspect-card">
+              <div class="inspect-card-title">💬 Justificativa Explicável (XAI)</div>
+              <div class="inspect-reason-box">"${resp.tactical_reason}"</div>
+            </div>
+          `;
+        }
+
+        contentEl.innerHTML = html;
+      }
+    }
+
+    function drilldownToSelectedAction() {
+      if (xaiSelectedNodeData && xaiSelectedNodeData.customData && xaiSelectedNodeData.customData.action_id) {
+        loadMicroGraph(xaiSelectedNodeData.customData.action_id);
+      }
+    }
+
+    function resetInspectorState() {
+      xaiSelectedNodeData = null;
+      const titleEl = document.getElementById('inspectorTitle');
+      const badgeEl = document.getElementById('inspectorBadge');
+      const contentEl = document.getElementById('inspectorContent');
+      const footerEl = document.getElementById('inspectorFooter');
+
+      if (titleEl) titleEl.innerText = '🔍 Inspetor de Decisão';
+      if (badgeEl) badgeEl.innerText = 'Nenhum nó selecionado';
+      if (footerEl) footerEl.style.display = 'none';
+      if (contentEl) {
+        contentEl.innerHTML = `
+          <div class="inspector-empty-state">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">👆</div>
+            <div style="font-weight: 600; color: #94a3b8;">Selecione um nó no Grafo</div>
+            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Clique em uma ação ou componente cognitivo para ver as métricas de IA, equidade e motivação em detalhes.</div>
+          </div>
+        `;
+      }
+    }
+
+    function xaiZoomIn() {
+      if (xaiNetwork) xaiNetwork.moveTo({ scale: xaiNetwork.getScale() * 1.3, animation: { duration: 300 } });
+    }
+
+    function xaiZoomOut() {
+      if (xaiNetwork) xaiNetwork.moveTo({ scale: xaiNetwork.getScale() * 0.7, animation: { duration: 300 } });
+    }
+
+    function xaiFitGraph() {
+      if (xaiNetwork) xaiNetwork.fit({ animation: { duration: 500 } });
+    }
+
+    function toggleXaiPhysics() {
+      xaiPhysicsEnabled = !xaiPhysicsEnabled;
+      const btn = document.getElementById('btnXaiPhysics');
+      if (btn) btn.innerText = xaiPhysicsEnabled ? '⚛️ Física: ON' : '⏸️ Física: OFF';
+      if (xaiNetwork) {
+        xaiNetwork.setOptions({ physics: { enabled: xaiPhysicsEnabled } });
       }
     }
 

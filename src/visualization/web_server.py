@@ -755,6 +755,23 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
 
+            if clean_path.endswith("/vis-network.min.js") or clean_path == "/vis-network.min.js":
+                js_file = _WEB_DIR / "vis-network.min.js"
+                if not js_file.exists():
+                    js_file = Path(__file__).resolve().parent.parent.parent / "public" / "vis-network.min.js"
+                if js_file.exists():
+                    content = js_file.read_bytes()
+                    self.send_response(200)
+                    self._set_cors_headers()
+                    self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
+                    return
+                else:
+                    self.send_error(404, "Arquivo vis-network.min.js não encontrado.")
+                    return
+
             if (
                 clean_path in ("/api", "/api/health", "/health", "/api/health.py")
                 or clean_path.endswith("/health")
@@ -912,6 +929,46 @@ class PokerApiHandler(BaseHTTPRequestHandler):
 
                 stats = get_neon_telemetry_stats()
                 self._send_json(stats)
+                return
+
+            if (
+                clean_path.endswith("/xai/hands")
+                or clean_path == "/xai/hands"
+                or clean_path.endswith("xai%2Fhands")
+            ):
+                from urllib.parse import parse_qs
+                from src.visualization.xai_graph_service import get_available_hands_for_xai
+                params = parse_qs(parsed.query) if parsed.query else {}
+                only_bluffs = params.get("only_bluffs", ["false"])[0].lower() in ("true", "1")
+                limit = int(params.get("limit", [50])[0])
+                res = get_available_hands_for_xai(only_bluffs=only_bluffs, limit=limit)
+                self._send_json(res)
+                return
+
+            if (
+                clean_path.endswith("/xai/macro_graph")
+                or clean_path == "/xai/macro_graph"
+                or clean_path.endswith("xai%2Fmacro_graph")
+            ):
+                from urllib.parse import parse_qs
+                from src.visualization.xai_graph_service import build_macro_graph
+                params = parse_qs(parsed.query) if parsed.query else {}
+                hand_id = int(params.get("hand_id", [1])[0])
+                res = build_macro_graph(hand_id=hand_id)
+                self._send_json(res)
+                return
+
+            if (
+                clean_path.endswith("/xai/micro_graph")
+                or clean_path == "/xai/micro_graph"
+                or clean_path.endswith("xai%2Fmicro_graph")
+            ):
+                from urllib.parse import parse_qs
+                from src.visualization.xai_graph_service import build_micro_graph
+                params = parse_qs(parsed.query) if parsed.query else {}
+                action_id = params.get("action_id", [""])[0]
+                res = build_micro_graph(action_id=action_id)
+                self._send_json(res)
                 return
 
             if (
@@ -1118,6 +1175,40 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     "neon_saved": neon_saved,
                     "neon_message": neon_msg,
                 })
+                return
+
+            if (
+                clean_path.endswith("/xai/hands")
+                or clean_path == "/xai/hands"
+                or clean_path.endswith("xai%2Fhands")
+            ):
+                from src.visualization.xai_graph_service import get_available_hands_for_xai
+                only_bluffs = bool(data.get("only_bluffs", False)) if data else False
+                limit = int(data.get("limit", 50)) if data else 50
+                res = get_available_hands_for_xai(only_bluffs=only_bluffs, limit=limit)
+                self._send_json(res)
+                return
+
+            if (
+                clean_path.endswith("/xai/macro_graph")
+                or clean_path == "/xai/macro_graph"
+                or clean_path.endswith("xai%2Fmacro_graph")
+            ):
+                from src.visualization.xai_graph_service import build_macro_graph
+                hand_id = int(data.get("hand_id", 1)) if data else 1
+                res = build_macro_graph(hand_id=hand_id)
+                self._send_json(res)
+                return
+
+            if (
+                clean_path.endswith("/xai/micro_graph")
+                or clean_path == "/xai/micro_graph"
+                or clean_path.endswith("xai%2Fmicro_graph")
+            ):
+                from src.visualization.xai_graph_service import build_micro_graph
+                action_id = str(data.get("action_id", "")) if data else ""
+                res = build_micro_graph(action_id=action_id)
+                self._send_json(res)
                 return
 
             if (
