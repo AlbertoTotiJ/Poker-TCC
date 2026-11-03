@@ -1,19 +1,26 @@
 """Script Automatizado de Execução dos Experimentos de Desktop (TCC Poker IA).
 
 Executa:
-1. Mesa 6-Max Heterogênea (1.000 mãos, seed 42)
-   -> data/01_desktop_mesas/6max_heterogeneo_1000m
-2. Mesa 9-Max Full Ring (1.000 mãos, seed 42)
-   -> data/01_desktop_mesas/9max_full_ring_1000m
+1. Mesa 6-Max Heterogênea (1.000 mãos) -> data/01_desktop_mesas/6max_heterogeneo_1000m
+2. Mesa 9-Max Full Ring (1.000 mãos)    -> data/01_desktop_mesas/9max_full_ring_1000m
 3. Geração de gráficos científicos (300 DPI) para cada experimento.
+4. Proteção contra perda de dados: se os dados já existirem, cria backup automático
+   ou aceita o argumento --tag (ex: --tag v2) para gerar em pastas separadas.
 
 Uso:
     python scripts/run_experiments_desktop.py
+    python scripts/run_experiments_desktop.py --tag v2 --seed 101
 """
 
+import argparse
+from datetime import datetime
 from pathlib import Path
+import shutil
 import sys
 import time
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
@@ -33,6 +40,17 @@ def run_single_exp(
     test_id: str,
     output_dir: str,
 ) -> None:
+    target_dir = Path(output_dir) / test_id
+
+    # Proteção de dados: se já existirem resultados, cria backup de segurança
+    if (target_dir / "game_actions.csv").exists():
+        backup_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dest = target_dir.parent / f"{target_dir.name}_backup_{backup_stamp}"
+        print(f"\n⚠️ Dados anteriores detectados em {target_dir.name}!")
+        print(f"📦 Criando backup de segurança automático em {backup_dest.name}...")
+        shutil.copytree(target_dir, backup_dest)
+        print("✓ Backup concluído! Os dados anteriores estão 100% preservados.")
+
     print("\n" + "=" * 80)
     print(f"🚀 INICIANDO: {name}")
     print(f"• Mãos: {hands} | Seed: {seed} | Saída: {output_dir}/{test_id}/")
@@ -49,7 +67,6 @@ def run_single_exp(
     elapsed = time.time() - t0
     print(f"✓ Simulação concluída em {elapsed:.2f}s!")
 
-    target_dir = Path(output_dir) / test_id
     plots_dir = target_dir / "plots"
     print(f"📊 Gerando gráficos científicos (300 DPI) em {plots_dir}...")
     try:
@@ -60,12 +77,28 @@ def run_single_exp(
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Experimentos Desktop TCC")
+    parser.add_argument(
+        "--tag",
+        type=str,
+        default="",
+        help="Sufixo ou versão da rodada (ex: v2, seed999, run2).",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Semente pseudoaleatória controlada.",
+    )
+    args = parser.parse_args()
+
     t_start = time.time()
     print("*" * 80)
     print("🖥️  ORQUESTRADOR DE EXPERIMENTOS DO COMPUTADOR DESKTOP — TCC POKER IA")
     print("*" * 80)
 
     out_base = "data/01_desktop_mesas"
+    suffix = f"_{args.tag}" if args.tag else ""
 
     # 1. Mesa 6-Max Heterogênea
     seats_6max = [
@@ -80,8 +113,8 @@ def main() -> None:
         name="Experimento 1: Mesa 6-Max Heterogênea",
         hands=1000,
         custom_seats=seats_6max,
-        seed=42,
-        test_id="6max_heterogeneo_1000m",
+        seed=args.seed,
+        test_id=f"6max_heterogeneo_1000m{suffix}",
         output_dir=out_base,
     )
 
@@ -101,8 +134,8 @@ def main() -> None:
         name="Experimento 2: Mesa 9-Max Full Ring Completa",
         hands=1000,
         custom_seats=seats_9max,
-        seed=42,
-        test_id="9max_full_ring_1000m",
+        seed=args.seed,
+        test_id=f"9max_full_ring_1000m{suffix}",
         output_dir=out_base,
     )
 

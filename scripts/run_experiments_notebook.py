@@ -4,14 +4,23 @@ Executa:
 1. Três Duelos Heads-Up 1v1 (500 mãos cada)      -> data/02_notebook_headsup/
 2. Três Mesas de Estresse Homogêneas 1v5 (500 mãos) -> data/03_notebook_estresse_1v5/
 3. Geração de gráficos científicos (300 DPI) para cada experimento.
+4. Proteção contra perda de dados: se os dados já existirem, cria backup automático
+   ou aceita o argumento --tag (ex: --tag v2) para gerar em pastas separadas.
 
 Uso:
     python scripts/run_experiments_notebook.py
+    python scripts/run_experiments_notebook.py --tag v2
 """
 
+import argparse
+from datetime import datetime
 from pathlib import Path
+import shutil
 import sys
 import time
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
@@ -31,6 +40,17 @@ def run_single_exp(
     test_id: str,
     output_dir: str,
 ) -> None:
+    target_dir = Path(output_dir) / test_id
+
+    # Proteção de dados: se já existirem resultados, cria backup de segurança
+    if (target_dir / "game_actions.csv").exists():
+        backup_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dest = target_dir.parent / f"{target_dir.name}_backup_{backup_stamp}"
+        print(f"\n⚠️ Dados anteriores detectados em {target_dir.name}!")
+        print(f"📦 Criando backup de segurança automático em {backup_dest.name}...")
+        shutil.copytree(target_dir, backup_dest)
+        print("✓ Backup concluído! Os dados anteriores estão 100% preservados.")
+
     print("\n" + "=" * 80)
     print(f"🚀 INICIANDO: {name}")
     print(f"• Mãos: {hands} | Seed: {seed} | Saída: {output_dir}/{test_id}/")
@@ -47,7 +67,6 @@ def run_single_exp(
     elapsed = time.time() - t0
     print(f"✓ Simulação concluída em {elapsed:.2f}s!")
 
-    target_dir = Path(output_dir) / test_id
     plots_dir = target_dir / "plots"
     print(f"📊 Gerando gráficos científicos (300 DPI) em {plots_dir}...")
     try:
@@ -58,10 +77,21 @@ def run_single_exp(
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Experimentos Notebook TCC")
+    parser.add_argument(
+        "--tag",
+        type=str,
+        default="",
+        help="Sufixo ou versão da rodada (ex: v2, seed999, run2).",
+    )
+    args = parser.parse_args()
+
     t_start = time.time()
     print("*" * 80)
     print("💻 ORQUESTRADOR DE EXPERIMENTOS DO NOTEBOOK — TCC POKER IA")
     print("*" * 80)
+
+    suffix = f"_{args.tag}" if args.tag else ""
 
     # ---------------------------------------------------------
     # PARTE 1: DUELOS HEADS-UP 1v1 (data/02_notebook_headsup)
@@ -73,7 +103,7 @@ def main() -> None:
         hands=500,
         custom_seats=["gh_bluffer", "math"],
         seed=101,
-        test_id="duel_ghbluffer_vs_matematico",
+        test_id=f"duel_ghbluffer_vs_matematico{suffix}",
         output_dir=headsup_base,
     )
 
@@ -82,7 +112,7 @@ def main() -> None:
         hands=500,
         custom_seats=["hybrid", "gh_math"],
         seed=102,
-        test_id="duel_hibrido_vs_ghmath",
+        test_id=f"duel_hibrido_vs_ghmath{suffix}",
         output_dir=headsup_base,
     )
 
@@ -91,7 +121,7 @@ def main() -> None:
         hands=500,
         custom_seats=["bluffer", "math"],
         seed=103,
-        test_id="duel_bluffer_vs_matematico",
+        test_id=f"duel_bluffer_vs_matematico{suffix}",
         output_dir=headsup_base,
     )
 
@@ -105,7 +135,7 @@ def main() -> None:
         hands=500,
         custom_seats=["math", "bluffer", "bluffer", "bluffer", "bluffer", "bluffer"],
         seed=201,
-        test_id="01_math_vs_5_bluffers",
+        test_id=f"01_math_vs_5_bluffers{suffix}",
         output_dir=stress_base,
     )
 
@@ -121,7 +151,7 @@ def main() -> None:
             "conservative",
         ],
         seed=202,
-        test_id="02_ghbluffer_vs_5_passivos",
+        test_id=f"02_ghbluffer_vs_5_passivos{suffix}",
         output_dir=stress_base,
     )
 
@@ -137,7 +167,7 @@ def main() -> None:
             "aggressive",
         ],
         seed=203,
-        test_id="03_hibrido_vs_5_agressivos",
+        test_id=f"03_hibrido_vs_5_agressivos{suffix}",
         output_dir=stress_base,
     )
 

@@ -26,6 +26,7 @@ data/**/plots/
 data/*_tcc_*
 data/test_*
 data/training_sessions/
+data/backups/
 !data/01_desktop_mesas/
 !data/01_desktop_mesas/README.md
 !data/02_notebook_headsup/

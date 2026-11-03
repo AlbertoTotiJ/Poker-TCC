@@ -363,6 +363,12 @@ def simulate_and_generate_telemetry(
     }
 
     for hand_idx in range(1, num_hands + 1):
+        if hand_idx % 100 == 0 or hand_idx == num_hands or hand_idx == 1:
+            print(
+                f"  ▶ Progresso: Mão {hand_idx}/{num_hands} "
+                f"({hand_idx / num_hands:.1%})...",
+                flush=True,
+            )
         active_players = [p for p in players if p.stack > 0]
         if len(active_players) < 2:
             for p in players:
