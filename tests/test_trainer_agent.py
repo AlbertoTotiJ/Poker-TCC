@@ -40,7 +40,9 @@ class TestTrainerAgent(unittest.TestCase):
 
     def test_diagnose_gh_bluffer_agent(self) -> None:
         diag: AgentDiagnostic = self.trainer.diagnose_agent("gh_bluffer")
-        self.assertEqual(diag.target_agent, "GhBlufferAgent (Gustavo - Nash/Blockers)")
+        self.assertEqual(
+            diag.target_agent, "GhBlufferAgent (Gustavo - Nash/Blockers)"
+        )
         self.assertEqual(diag.recommended_metric, "bluff_success_rate")
         self.assertGreater(len(diag.strengths), 0)
 
@@ -48,7 +50,11 @@ class TestTrainerAgent(unittest.TestCase):
         saved = self.registry.save_custom_agent(
             name="GhBluffer Alpha",
             base_type="gh_bluffer",
-            parameters={"bluff_aggression": 1.45, "gto_balance_factor": 1.15, "min_blocker_threshold": 0.35},
+            parameters={
+                "bluff_aggression": 1.45,
+                "gto_balance_factor": 1.15,
+                "min_blocker_threshold": 0.35,
+            },
             qualification={"overall_fitness": 94.2, "overall_tier": "S (Elite)"},
         )
         inst = self.registry.instantiate_agent_by_id(
@@ -124,6 +130,86 @@ class TestTrainerAgent(unittest.TestCase):
             agent_id="bluffer", player_id="seat_2", rng=random.Random(1)
         )
         self.assertEqual(inst_orig.params.bluff_frequency, 0.40)
+
+    def test_parameter_health_evaluation(self) -> None:
+        # Parâmetros nominais saudáveis
+        healthy = self.trainer.evaluate_parameter_health(
+            "bluffer", {"bluff_frequency": 0.40, "fold_equity_threshold": 0.45}
+        )
+        self.assertEqual(healthy["status"], "HEALTHY")
+        self.assertGreaterEqual(healthy["overall_health_score"], 80.0)
+
+        # Parâmetros com anomalia crítica (violando limites)
+        critical = self.trainer.evaluate_parameter_health(
+            "bluffer", {"bluff_frequency": 1.50, "fold_equity_threshold": -0.10}
+        )
+        self.assertEqual(critical["status"], "CRITICAL")
+        self.assertLess(critical["overall_health_score"], 50.0)
+        self.assertGreaterEqual(len(critical["anomalies"]), 2)
+
+    def test_leak_detection_from_metrics(self) -> None:
+        # Simula telemetria com vazamentos graves de calling station e sangria
+        leaky_metrics = {
+            "vpip": 0.12,
+            "pfr": 0.04,
+            "aggression_factor": 0.60,
+            "bluff_success_rate": 0.20,
+            "bluffs_attempted": 6,
+            "bb_per_100": -18.5,
+            "showdown_win_rate": 0.30,
+            "showdowns_played": 10,
+        }
+        diag = self.trainer.diagnose_agent(
+            "bluffer", performance_metrics=leaky_metrics
+        )
+        self.assertGreaterEqual(len(diag.detected_leaks), 3)
+        self.assertTrue(
+            any("Calling Station" in leak for leak in diag.detected_leaks)
+        )
+        self.assertTrue(
+            any("Passividade crítica" in leak for leak in diag.detected_leaks)
+        )
+
+    def test_diagnose_all_agents(self) -> None:
+        all_diags = self.trainer.diagnose_all_agents()
+        expected = [
+            "bluffer",
+            "mathematical",
+            "hybrid",
+            "gh_bluffer",
+            "gh_math",
+            "heuristic",
+        ]
+        for exp in expected:
+            self.assertIn(exp, all_diags)
+            self.assertIsNotNone(all_diags[exp].target_agent)
+
+    def test_train_curriculum(self) -> None:
+        curriculum_res = self.trainer.train_curriculum(
+            base_agent_type="bluffer",
+            new_agent_name="Blefador Graduado",
+            stages=[
+                {
+                    "stage_name": "Fundação Rápida",
+                    "target_metric": "bb_per_100",
+                    "generations": 1,
+                    "population_size": 2,
+                    "hands_per_eval": 2,
+                },
+                {
+                    "stage_name": "Afinação Tática",
+                    "target_metric": "bluff_success_rate",
+                    "generations": 1,
+                    "population_size": 2,
+                    "hands_per_eval": 2,
+                },
+            ],
+            record_hands=False,
+            rng_seed=42,
+        )
+        self.assertTrue(curriculum_res["success"])
+        self.assertEqual(len(curriculum_res["stage_history"]), 2)
+        self.assertIn("Blefador Graduado", curriculum_res["new_agent"]["name"])
 
 
 if __name__ == "__main__":

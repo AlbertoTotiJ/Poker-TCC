@@ -1,0 +1,14 @@
+# Arquivos intermediários de geração de relatórios
+*.tmp
+*.temp
+*.log
+*.html
+!template.html
+
+# Caches do sistema
+Thumbs.db
+.DS_Store
+
+# Preservar artefatos finais versionados
+!*.md
+!*.pdf

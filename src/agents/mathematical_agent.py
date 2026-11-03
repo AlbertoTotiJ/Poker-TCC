@@ -330,7 +330,7 @@ class MathematicalAgent(BaseAgent):
     ) -> Tuple[float, int]:
         """Calcula a equidade ajustada incluindo Monte Carlo e outs de draws."""
         capped_opponents = min(3, max(1, num_opponents))
-        sims = min(50, self.num_simulations)
+        sims = min(120, max(60, self.num_simulations))
 
         if not community_cards:
             preflop_score = self._evaluate_preflop_combinatorics(hole_cards)
@@ -354,14 +354,21 @@ class MathematicalAgent(BaseAgent):
 
         outs = self._calculate_draw_outs(hole_cards, community_cards)
 
-        # Regra de 4 e 2 para Texas Hold'em
+        # Regra de 4 e 2 para Texas Hold'em ajustada por multiway
         draw_prob = 0.0
         if len(community_cards) == 3:  # Flop (2 cartas por vir)
-            draw_prob = min(0.65, outs * 0.04)
+            draw_prob = min(0.60, (outs * 0.04) / max(1.0, 1.0 + (capped_opponents - 1) * 0.25))
         elif len(community_cards) == 4:  # Turn (1 carta por vir)
-            draw_prob = min(0.40, outs * 0.02)
+            draw_prob = min(0.35, (outs * 0.02) / max(1.0, 1.0 + (capped_opponents - 1) * 0.25))
 
-        adjusted_equity = max(eq_res.equity, draw_prob * self.draw_weight)
+        # Ponderação equilibrada sem dupla contagem sobre Monte Carlo
+        if outs >= 4:
+            adjusted_equity = max(
+                eq_res.equity,
+                min(0.65, (eq_res.equity * 0.60) + (draw_prob * self.draw_weight * 0.40)),
+            )
+        else:
+            adjusted_equity = eq_res.equity
         return adjusted_equity, outs
 
     def _decide_zero_cost(
@@ -489,12 +496,15 @@ class MathematicalAgent(BaseAgent):
             has_pair = hand_rank_val >= 2
             is_mod_bet = to_call <= max(big_blind * 3, int(pot_size * 0.45))
 
-            if has_pair and to_call <= max(big_blind * 5, int(pot_size * 0.65)):
+            if street == Street.RIVER and not has_pair:
+                # No River, nunca paga apostas sem jogo formado (mínimo de Par para bluff catch)
+                is_profitable = False
+            elif has_pair and to_call <= max(big_blind * 5, int(pot_size * 0.65)):
                 is_profitable = True
-            elif is_mod_bet and (outs >= 4 or street == Street.RIVER):
+            elif is_mod_bet and outs >= 4 and street in (Street.FLOP, Street.TURN):
                 is_profitable = True
             else:
-                bluff_catch_bonus = 0.12 if is_mod_bet else 0.05
+                bluff_catch_bonus = 0.10 if (is_mod_bet and has_pair) else 0.0
                 effective_margin = self.call_ev_margin + bluff_catch_bonus
                 is_profitable = equity >= (pot_odds - effective_margin)
 
@@ -576,17 +586,23 @@ class MathematicalAgent(BaseAgent):
         self, hole_cards: Tuple[Card, Card], community_cards: Sequence[Card]
     ) -> int:
         """Calcula a quantidade estimada de outs para evolução de mãos especulativas."""
+        if len(community_cards) >= 5 or len(community_cards) < 3:
+            return 0
+
         combined = list(hole_cards) + list(community_cards)
         outs = 0
 
-        if has_flush_draw(combined):
-            outs += 9
+        flush_draw = has_flush_draw(combined)
+        straight_draw = has_straight_draw(combined)
 
-        if has_straight_draw(combined):
-            outs += 8
-
-        if has_overcards(hole_cards, community_cards):
-            outs += 6
+        if flush_draw and straight_draw:
+            outs = 15  # Combo draw descontando sobreposições de outs
+        elif flush_draw:
+            outs = 9
+        elif straight_draw:
+            outs = 8
+        elif has_overcards(hole_cards, community_cards):
+            outs = 6
 
         return outs
 

@@ -330,6 +330,8 @@ class BlufferAgent(BaseAgent):
                     reason="Check gratuito no Big Blind para ver o Flop",
                 )
 
+            # Cobrir ou completar o Big Blind pré-flop (to_call <= big_blind):
+            # O blefador defende para ver o Flop barato e explorar pós-flop
             if ActionType.CALL in legal_actions:
                 return BluffDecision(
                     action_type=ActionType.CALL,
@@ -343,8 +345,8 @@ class BlufferAgent(BaseAgent):
         # Cenário B: Enfrentando aumento padrão pré-flop (to_call entre 1 e 3.5 BBs)
         is_standard_raise = to_call <= big_blind * 3.5
         if is_standard_raise:
-            # Defesa com mão especulativa ou equidade para disputar o Flop
-            if (is_speculative or roll < 0.60) and ActionType.CALL in legal_actions:
+            # Defesa com mão especulativa para disputar o Flop; folda lixo desconectado
+            if is_speculative and ActionType.CALL in legal_actions:
                 return BluffDecision(
                     action_type=ActionType.CALL,
                     amount=0,
@@ -412,7 +414,7 @@ class BlufferAgent(BaseAgent):
             )
 
         all_cards = list(hole_cards) + list(community_cards)
-        is_strong, hand_desc = self._classify_hand_strength(hole_cards, all_cards)
+        is_strong, hand_desc, hand_rank_val = self._classify_hand_strength(hole_cards, all_cards)
 
         # Análise das propriedades de textura da mesa
         is_dry, is_wet, is_scare = self.analyze_board_texture(community_cards)
@@ -444,6 +446,7 @@ class BlufferAgent(BaseAgent):
                 hand_desc=hand_desc,
                 street=street,
                 num_opponents=num_opponents,
+                hand_rank_val=hand_rank_val,
             )
 
         # 2. Oportunidade de Semi-Blefe (draws no Flop e Turn)
@@ -565,14 +568,13 @@ class BlufferAgent(BaseAgent):
                     semi_bluff_outs=semi_outs,
                 )
 
-        # Pagar aposta acessível com draws, overcards ou no river para showdown
+        # Pagar aposta acessível com draws consistentes ou pot odds justificadas
         can_call = ActionType.CALL in legal_actions
         is_massive_overbet = to_call > pot_size * 1.2
-        is_mod_bet = to_call <= max(big_blind * 3, int(pot_size * 0.45))
-        is_river_catch = street == Street.RIVER and to_call <= pot_size * 0.50
+        is_mod_bet = to_call <= max(big_blind * 2, int(pot_size * 0.35))
         wants_call = (
             not is_massive_overbet
-            and (semi_outs >= 4 or is_mod_bet or is_river_catch or roll < 0.60)
+            and (semi_outs >= 4 or (is_mod_bet and semi_outs >= 2 and roll < 0.35))
         )
 
         if can_call and wants_call:
@@ -700,13 +702,13 @@ class BlufferAgent(BaseAgent):
 
     def _classify_hand_strength(
         self, hole_cards: Sequence[Card], all_cards: Sequence[Card]
-    ) -> Tuple[bool, str]:
+    ) -> Tuple[bool, str, int]:
         """Classifica se a mão atual possui valor intrínseco consolidado."""
         if len(all_cards) >= 5:
             score = evaluate_hand(all_cards)
             # Qualquer par ou melhor é tratado como jogo formado legítimo para showdown
             is_strong = score.hand_rank.value >= 2
-            return is_strong, score.description
+            return is_strong, score.description, score.hand_rank.value
 
         if len(hole_cards) >= 2:
             c1, c2 = hole_cards[0], hole_cards[1]
@@ -715,9 +717,10 @@ class BlufferAgent(BaseAgent):
             is_strong = (is_pair and high_rank >= 10) or (
                 high_rank == Rank.ACE.value and min(c1.rank.value, c2.rank.value) >= 11
             )
-            return is_strong, f"Par/Carta Alta ({c1.rank.symbol}{c2.rank.symbol})"
+            rank_val = 2 if is_pair else 1
+            return is_strong, f"Par/Carta Alta ({c1.rank.symbol}{c2.rank.symbol})", rank_val
 
-        return False, "Desconhecida"
+        return False, "Desconhecida", 1
 
     def _evaluate_semi_bluff(
         self,
@@ -812,8 +815,46 @@ class BlufferAgent(BaseAgent):
         hand_desc: str,
         street: Optional[Street] = None,
         num_opponents: int = 1,
+        hand_rank_val: int = 1,
     ) -> BluffDecision:
         """Executa aposta legítima por valor ao deter mão forte."""
+        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
+        if to_call > 0 and can_raise:
+            is_monster = hand_rank_val >= 3 or any(
+                term in hand_desc.lower()
+                for term in [
+                    "trinca", "three", "straight", "sequência", "flush",
+                    "full house", "quadra", "four", "royal", "dois pares",
+                    "two pair", "aa", "kk", "qq", "jj", "ak"
+                ]
+            )
+            # Re-aumento legítimo com Top Pair / Par Alto contra apostas moderadas
+            if not is_monster and hand_rank_val == 2:
+                has_high_pair = any(
+                    h in hand_desc.lower()
+                    for h in ["par de ás", "par de rei", "par de dama", "par de valete", "par de dez"]
+                )
+                if has_high_pair and to_call <= big_blind * 3:
+                    is_monster = self.rng.random() < 0.45
+
+            if is_monster:
+                raise_amount = current_highest_bet + max(
+                    min_raise,
+                    int(to_call * 2.5),
+                    int(pot_size * self.params.bet_sizing_factor),
+                )
+                max_pos = player_current_bet + player_stack
+                raise_amount = min(max_pos, raise_amount)
+                if raise_amount >= current_highest_bet + min_raise:
+                    return BluffDecision(
+                        action_type=ActionType.RAISE,
+                        amount=raise_amount,
+                        is_bluff=False,
+                        tactic=BluffTactic.VALUE_PLAY.value,
+                        fold_equity=0.20,
+                        reason=f"Re-aumento por valor com mão forte ({hand_desc})",
+                    )
+
         if to_call > 0 and ActionType.CALL in legal_actions:
             return BluffDecision(
                 action_type=ActionType.CALL,

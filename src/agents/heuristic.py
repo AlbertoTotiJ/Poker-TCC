@@ -77,15 +77,26 @@ class HeuristicAgent(BaseAgent):
         if ActionType.BET not in legal_actions or player_stack == 0:
             return Action(self.player_id, ActionType.CHECK)
 
+        active_opponents = sum(
+            1 for p in table.players if p.is_active and p.player_id != self.player_id
+        )
+        is_heads_up = active_opponents <= 1
+
         should_bet = False
         rand_val = self.rng.random()
 
         if self.profile == AgentProfile.CONSERVATIVE:
             should_bet = hand_strength >= 0.65 and rand_val < 0.70
         elif self.profile == AgentProfile.AGGRESSIVE:
-            should_bet = hand_strength >= 0.40 or rand_val < 0.35
+            bluff_prob = (
+                0.35 if is_heads_up else (0.10 if active_opponents == 2 else 0.02)
+            )
+            should_bet = hand_strength >= 0.40 or rand_val < bluff_prob
         else:
-            should_bet = hand_strength >= 0.50 or rand_val < 0.18
+            bluff_prob = (
+                0.18 if is_heads_up else (0.05 if active_opponents == 2 else 0.01)
+            )
+            should_bet = hand_strength >= 0.50 or rand_val < bluff_prob
 
         if should_bet:
             pot = table.pot_manager.total_pot
@@ -109,19 +120,24 @@ class HeuristicAgent(BaseAgent):
         call_ratio = to_call / max(1, table.pot_manager.total_pot + to_call)
         rand_val = self.rng.random()
 
+        active_opponents = sum(
+            1 for p in table.players if p.is_active and p.player_id != self.player_id
+        )
+        is_heads_up = active_opponents <= 1
+
         can_raise = ActionType.RAISE in legal_actions
         should_raise = False
 
         if can_raise:
             if self.profile == AgentProfile.AGGRESSIVE:
                 should_raise = hand_strength >= 0.70 or (
-                    hand_strength < 0.30 and rand_val < 0.20
+                    hand_strength < 0.30 and rand_val < (0.20 if is_heads_up else 0.03)
                 )
             elif self.profile == AgentProfile.CONSERVATIVE:
                 should_raise = hand_strength >= 0.85 and rand_val < 0.60
             else:
                 should_raise = hand_strength >= 0.75 or (
-                    hand_strength < 0.30 and rand_val < 0.08
+                    hand_strength < 0.30 and rand_val < (0.08 if is_heads_up else 0.01)
                 )
 
         if should_raise:
@@ -177,7 +193,21 @@ class HeuristicAgent(BaseAgent):
 
         base = rank_weights.get(score.hand_rank, 0.20)
         kicker_bonus = (score.tiebreakers[0] / 14.0) * 0.08 if score.tiebreakers else 0
-        return min(1.0, base + kicker_bonus)
+
+        # Modulador de textura (penalidade em bordos monótonos para mãos fracas)
+        board_suits = [c.suit for c in community_cards]
+        max_suit_board = (
+            max(board_suits.count(s) for s in set(board_suits))
+            if board_suits
+            else 0
+        )
+        if (
+            max_suit_board >= 3
+            and score.hand_rank in (HandRank.HIGH_CARD, HandRank.ONE_PAIR)
+        ):
+            base -= 0.08
+
+        return min(1.0, max(0.05, base + kicker_bonus))
 
     def _evaluate_preflop_strength(self, c1: Card, c2: Card) -> float:
         """Calcula força pré-flop estimada com base nos ranques e naipes."""

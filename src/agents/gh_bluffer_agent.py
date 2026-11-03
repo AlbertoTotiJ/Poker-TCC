@@ -16,7 +16,7 @@ from enum import Enum
 from pathlib import Path
 import random
 import sys
-from typing import List, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 # Garante resolução dos módulos a partir da raiz do repositório
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -24,7 +24,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from src.agents.base import BaseAgent  # noqa: E402
-from src.engine.deck import Card, Rank, Suit  # noqa: E402
+from src.engine.deck import Card, Rank  # noqa: E402
 from src.engine.equity import (  # noqa: E402
     calculate_pot_odds,
     estimate_hand_equity,
@@ -831,8 +831,18 @@ class GhBlufferAgent(BaseAgent):
 
                 # Razão de Indiferença GTO: B / (P + 2B)
                 gto_ratio = self.calculate_gto_bluff_ratio(target_sizing, pot_size)
-                # Pondera a probabilidade pelo blocker score
-                bluff_threshold = gto_ratio * (blocker_score / 0.40) * self.gto_balance_factor
+
+                # Modulador de textura monótona extrema (4 cartas do mesmo naipe no bordo)
+                board_suits = [c.suit for c in community_cards]
+                suit_counts = Counter(board_suits)
+                max_suit_count = max(suit_counts.values()) if suit_counts else 0
+                monotone_discount = 0.65 if max_suit_count >= 4 else 1.0
+
+                # Pondera a probabilidade pelo blocker score limitada pelo teto de indiferença GTO
+                bluff_threshold = min(
+                    0.45,
+                    gto_ratio * (blocker_score / 0.40) * self.gto_balance_factor * monotone_discount,
+                )
 
                 if to_call == 0 and can_bet and target_sizing > 0 and roll < bluff_threshold:
                     tactic_name = (

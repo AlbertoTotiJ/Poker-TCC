@@ -19,7 +19,21 @@ htmlcov/
 .ipynb_checkpoints/
 
 # Dados e Modelos
-data/
+data/**/*.csv
+data/**/*.jsonl
+data/**/summary.json
+data/**/plots/
+data/*_tcc_*
+data/test_*
+data/training_sessions/
+!data/01_desktop_mesas/
+!data/01_desktop_mesas/README.md
+!data/02_notebook_headsup/
+!data/02_notebook_headsup/README.md
+!data/03_notebook_estresse_1v5/
+!data/03_notebook_estresse_1v5/README.md
+!data/04_ml_sprint4_consolidado/
+!data/04_ml_sprint4_consolidado/README.md
 models/*
 !models/*.json
 models/*_trained_*.json

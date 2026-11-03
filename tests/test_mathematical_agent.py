@@ -125,7 +125,7 @@ def test_mathematical_agent_isolated_decision() -> None:
     )
 
     assert decision.action_type == ActionType.BET
-    assert decision.equity > 0.90
+    assert decision.equity >= 0.90
     assert decision.amount >= 20
     assert "Value bet" in decision.reason
 

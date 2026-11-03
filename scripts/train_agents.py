@@ -35,7 +35,7 @@ def parse_arguments() -> argparse.Namespace:
         "--agent",
         type=str,
         default="bluffer",
-        choices=["bluffer", "mathematical", "gh_math"],
+        choices=["bluffer", "mathematical", "gh_math", "gh_bluffer", "hybrid"],
         help="Tipo de agente a ser treinado (padrão: bluffer)",
     )
     parser.add_argument(
@@ -115,7 +115,7 @@ def main() -> None:
 
     weights: MetricWeights
     if args.metric == "balanced":
-        if args.agent == "bluffer":
+        if args.agent in ("bluffer", "gh_bluffer"):
             weights = MetricWeights.preset_bluff_specialist()
         else:
             weights = MetricWeights.preset_balanced()

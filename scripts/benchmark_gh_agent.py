@@ -297,7 +297,7 @@ def print_duel_report(
     report.append("-" * 105)
     report.append("\n🎯 DESTAQUES DO CONFRONTO GH vs ALBERTO:")
     report.append(
-        f"  1. Redução de Folds no Pré-Flop: {fold_reduction_pct:+.1f}% de melhoria"
+        f"  1. Folds no Pré-Flop: {'Aumento' if gh.preflop_folds > alb.preflop_folds else 'Redução'} de {abs(fold_reduction_pct):.1f}% de GhMath vs Alberto"
     )
     report.append(
         f"     -> GhMath: {gh.preflop_folds} folds ({gh_preflop_fold_pct:.1f}%) | "
@@ -305,7 +305,7 @@ def print_duel_report(
     )
     report.append(
         f"  2. Diferencial de Lucratividade (BB/100): "
-        f"{gh.bb_per_100 - alb.bb_per_100:+.2f} BB/100 a favor de Gustavo"
+        f"{abs(gh.bb_per_100 - alb.bb_per_100):.2f} BB/100 a favor de {'Gustavo (GH)' if gh.bb_per_100 >= alb.bb_per_100 else 'Alberto'}"
     )
     report.append(
         f"  3. Taxa de Vitória (Win Rate): "

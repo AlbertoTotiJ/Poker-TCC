@@ -14,7 +14,6 @@ import time
 from typing import Any, Callable, Dict, List, Optional
 
 from src.agents.base import BaseAgent
-from src.agents.bluffer_agent import BlufferAgent
 from src.agents.heuristic import HeuristicAgent
 from src.engine.player import Player
 from src.engine.table import ActionType, Street, Table
@@ -213,15 +212,18 @@ class AdaptiveTrainer:
         button_idx = 0
 
         for hand_idx in range(1, self.hands_per_eval + 1):
-            # Recarrega jogadores sem fichas
+            # Recarrega jogadores sem fichas para garantir participação contínua
+            for p in players:
+                if p.stack < self.big_blind * 2:
+                    if p.player_id == candidate_id:
+                        total_reloads += 1
+                    p.stack = self.starting_stack
+
             active = [p for p in players if p.stack > 0]
             if len(active) < 2:
                 for p in players:
-                    if p.stack <= 0:
-                        if p.player_id == candidate_id:
-                            total_reloads += 1
-                        p.stack = self.starting_stack
-                active = players
+                    p.stack = self.starting_stack
+                active = list(players)
 
             table = Table(
                 players=active,
@@ -260,7 +262,7 @@ class AdaptiveTrainer:
                 # Rastreamento específico do candidato
                 if actor.player_id == candidate_id:
                     bot_dec = getattr(bot, "last_decision", None)
-                    if bot_dec and getattr(bot_dec, "is_bluff", False):
+                    if bot_dec and (getattr(bot_dec, "is_bluff", False) or getattr(bot_dec, "is_deceptive", False)):
                         cand_bluffed_in_hand = True
                     if table.street == Street.PREFLOP:
                         if action.action_type in (

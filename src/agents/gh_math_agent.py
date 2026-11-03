@@ -548,7 +548,11 @@ class GhMathAgent(BaseAgent):
 
         bluff_margin = 0.08 if is_bluff_catch else 0.0
         direct_call_ok = adjusted_equity >= (direct_pot_odds - bluff_margin)
-        implied_call_ok = (outs >= 8) and (adjusted_equity >= implied_odds)
+        implied_call_ok = (
+            (outs >= 8)
+            and (street in (Street.FLOP, Street.TURN))
+            and (adjusted_equity >= implied_odds)
+        )
 
         if can_call and (direct_call_ok or implied_call_ok):
             if is_bluff_catch and not (adjusted_equity >= direct_pot_odds):
@@ -734,8 +738,10 @@ class GhMathAgent(BaseAgent):
         street: Optional[Street],
     ) -> float:
         """Calcula as odds implícitas considerando fichas futuras do adversário."""
-        if to_call <= 0 or outs < 4:
-            return 1.0
+        if to_call <= 0:
+            return 0.0
+        if outs < 4 or street == Street.RIVER:
+            return to_call / max(1, pot_size + to_call)
 
         # Mãos pós-flop com draws têm expectativa de extrair fichas futuras
         discounted_future_chips = min(effective_stack * 0.35, pot_size * 1.5)
@@ -762,15 +768,23 @@ class GhMathAgent(BaseAgent):
         self, hole_cards: Tuple[Card, Card], community_cards: Sequence[Card]
     ) -> int:
         """Estima a quantidade de outs para evolução da mão."""
+        if len(community_cards) >= 5 or len(community_cards) < 3:
+            return 0
+
         combined = list(hole_cards) + list(community_cards)
         outs = 0
 
-        if has_flush_draw(combined):
-            outs += 9
-        if has_straight_draw(combined):
-            outs += 8
-        if has_overcards(hole_cards, community_cards):
-            outs += 6
+        flush_draw = has_flush_draw(combined)
+        straight_draw = has_straight_draw(combined)
+
+        if flush_draw and straight_draw:
+            outs = 15  # Combo draw descontando sobreposições
+        elif flush_draw:
+            outs = 9
+        elif straight_draw:
+            outs = 8
+        elif has_overcards(hole_cards, community_cards):
+            outs = 6
 
         return outs
 

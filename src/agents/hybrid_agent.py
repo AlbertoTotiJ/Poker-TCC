@@ -47,6 +47,14 @@ class HybridDecision:
     reason: str
     expected_value: float = 0.0
     outs: int = 0
+    is_bluff: bool = False
+    tactic: str = ""
+
+    def __post_init__(self) -> None:
+        if self.is_deceptive and self.mode in ("SEMI_BLUFF", "PURE_BLUFF"):
+            object.__setattr__(self, "is_bluff", True)
+        if not self.tactic:
+            object.__setattr__(self, "tactic", self.mode)
 
 
 @dataclass
@@ -54,7 +62,7 @@ class HybridParameters:
     """Hiperparâmetros calibráveis que regem as decisões táticas e matemáticas do Híbrido."""
 
     math_weight: float = 0.50            # Peso atribuído ao rigor matemático vs oportunismo de blefe (0.10 a 0.90)
-    raise_equity_threshold: float = 0.60 # Equidade mínima para apostar ou aumentar por valor (0.45 a 0.85)
+    raise_equity_threshold: float = 0.60  # Equidade mínima para apostar ou aumentar por valor (0.45 a 0.85)
     call_ev_margin: float = 0.02         # Margem de tolerância de EV para aceitar calls (-0.05 a 0.15)
     bluff_frequency: float = 0.25        # Frequência base de blefe oportuno em potes abandonados (0.05 a 0.60)
     semi_bluff_frequency: float = 0.50   # Frequência de semi-blefe agressivo com draws (0.10 a 0.85)
@@ -303,14 +311,43 @@ class HybridAgent(BaseAgent):
         street: Street,
     ) -> HybridDecision:
         """Calcula equidade via Monte Carlo e balanceia rigor matemático com blefe."""
-        eq_res = estimate_hand_equity(
-            hole_cards=hole_cards,
-            community_cards=community_cards,
-            num_opponents=num_opponents,
-            num_simulations=self.params.num_simulations,
-            rng=self.rng,
-        )
-        equity = eq_res.equity
+        preflop_score = 0.0
+        is_preflop = len(community_cards) == 0 or street == Street.PREFLOP
+        if is_preflop and len(hole_cards) >= 2:
+            c1, c2 = hole_cards[0], hole_cards[1]
+            high_r = max(c1.rank.value, c2.rank.value)
+            low_r = min(c1.rank.value, c2.rank.value)
+            is_pair = high_r == low_r
+            is_suited = c1.suit == c2.suit
+            gap = high_r - low_r
+
+            if is_pair:
+                preflop_score = 0.52 + ((high_r / 14.0) * 0.40)
+            else:
+                preflop_score = ((high_r + (low_r * 0.60)) / 22.4) * 0.70
+                if is_suited:
+                    preflop_score += 0.08
+                if gap <= 2:
+                    preflop_score += 0.05
+
+            capped_opp = min(2, max(1, num_opponents))
+            eq_res = estimate_hand_equity(
+                hole_cards=hole_cards,
+                community_cards=(),
+                num_opponents=capped_opp,
+                num_simulations=min(100, self.params.num_simulations),
+                rng=self.rng,
+            )
+            equity = (preflop_score * 0.50) + (eq_res.equity * 0.50)
+        else:
+            eq_res = estimate_hand_equity(
+                hole_cards=hole_cards,
+                community_cards=community_cards,
+                num_opponents=num_opponents,
+                num_simulations=self.params.num_simulations,
+                rng=self.rng,
+            )
+            equity = eq_res.equity
         pot_odds = calculate_pot_odds(to_call=to_call, pot_size=pot_size)
 
         # Detecção de Draws (Flush / Straight) no Flop e Turn
@@ -460,6 +497,54 @@ class HybridAgent(BaseAgent):
                     is_deceptive=False,
                     reason="Call de valor marginal quase gratuito",
                 )
+
+            # Proteção de ranges e defesa pré-flop contra apostas padrão
+            if is_preflop:
+                # 1. Defesa barata (<= 1 BB) com mãos jogáveis
+                if (
+                    to_call <= big_blind
+                    and (preflop_score >= 0.35 or equity >= 0.28)
+                    and ActionType.CALL in legal_actions
+                ):
+                    return HybridDecision(
+                        action_type=ActionType.CALL,
+                        amount=0,
+                        mode="BLIND_DEFEND",
+                        equity=equity,
+                        pot_odds=pot_odds,
+                        is_deceptive=False,
+                        reason="Defesa pré-flop de custo baixo com mão jogável",
+                    )
+                # 2. Defesa contra aumento padrão (<= 3.5 BBs) com cartas fortes/especulativas
+                if to_call <= big_blind * 3.5:
+                    if (
+                        preflop_score >= 0.72
+                        and ActionType.RAISE in legal_actions
+                        and player_stack > to_call
+                    ):
+                        raise_amt = current_highest_bet + max(min_raise, to_call * 2)
+                        max_pos = player_current_bet + player_stack
+                        raise_amt = min(max_pos, raise_amt)
+                        if raise_amt >= current_highest_bet + min_raise:
+                            return HybridDecision(
+                                action_type=ActionType.RAISE,
+                                amount=raise_amt,
+                                mode="PREFLOP_3BET",
+                                equity=equity,
+                                pot_odds=pot_odds,
+                                is_deceptive=False,
+                                reason=f"3-bet por valor pré-flop com mão premium (score={preflop_score:.2f})",
+                            )
+                    if (preflop_score >= 0.48 or equity >= 0.34) and ActionType.CALL in legal_actions:
+                        return HybridDecision(
+                            action_type=ActionType.CALL,
+                            amount=0,
+                            mode="PREFLOP_CALL",
+                            equity=equity,
+                            pot_odds=pot_odds,
+                            is_deceptive=False,
+                            reason=f"Call pré-flop com mão de alto potencial (score={preflop_score:.2f})",
+                        )
 
         # Cenário 6: Desistência disciplinada (EV Negativo e sem justificativa de blefe)
         if ActionType.FOLD in legal_actions:

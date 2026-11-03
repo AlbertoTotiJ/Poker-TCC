@@ -551,10 +551,10 @@ def simulate_and_generate_telemetry(
                     bluffs_summary["accepted_folds"] += 1
                     bluffs_summary["successful_outcomes"] += 1
 
-                # Cálculo de fichas líquidas da mão para o jogador
-                curr_p = next((p for p in table.players if p.player_id == actor_id), None)
-                final_stack = curr_p.stack if curr_p is not None else stacks_before_hand.get(actor_id, 0)
-                net_bluff_chips = final_stack - stacks_before_hand.get(actor_id, 0)
+            # Cálculo de fichas líquidas da mão para o jogador (saldo real acumulado)
+            curr_p = next((p for p in table.players if p.player_id == actor_id), None)
+            final_stack = curr_p.stack if curr_p is not None else stacks_before_hand.get(actor_id, 0)
+            net_bluff_chips = final_stack - stacks_before_hand.get(actor_id, 0)
 
             telemetry_rec = DecisionTelemetryRecord(
                 action_id=act_rec.action_id,

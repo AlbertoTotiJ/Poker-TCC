@@ -56,6 +56,10 @@ class TrainingRecorderBridge:
 
         if output_file is not None:
             self.session_file: Path = Path(output_file)
+            try:
+                self.session_file.parent.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
         else:
             self.session_file = (
                 self.training_dir / f"{self.session_id}.jsonl"
