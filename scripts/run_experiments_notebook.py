@@ -75,6 +75,18 @@ def run_single_exp(
     except Exception as e:
         print(f"⚠️ Aviso ao gerar gráficos: {e}")
 
+    # Sincroniza metadados de modificação das pastas para o Windows Explorer exibir o horário exato
+    try:
+        now_ts = time.time()
+        import os
+        os.utime(target_dir, (now_ts, now_ts))
+        if plots_dir.exists():
+            os.utime(plots_dir, (now_ts, now_ts))
+        if target_dir.parent.exists():
+            os.utime(target_dir.parent, (now_ts, now_ts))
+    except Exception:
+        pass
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Experimentos Notebook TCC")
