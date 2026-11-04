@@ -126,7 +126,7 @@ def main() -> None:
             name="Duelo Heads-Up 1: GhBluffer (GTO Nash) vs Matemático (Baseline)",
             hands=500,
             custom_seats=["gh_bluffer", "math"],
-            seed=101,
+            seed=args.seed if args.seed != 42 else 101,
             test_id=f"duel_ghbluffer_vs_matematico{suffix}",
             output_dir=headsup_base,
         )
@@ -135,7 +135,7 @@ def main() -> None:
             name="Duelo Heads-Up 2: Híbrido (Evolutivo) vs GhMath (Kelly/XAI)",
             hands=500,
             custom_seats=["hybrid", "gh_math"],
-            seed=102,
+            seed=args.seed if args.seed != 42 else 102,
             test_id=f"duel_hibrido_vs_ghmath{suffix}",
             output_dir=headsup_base,
         )
@@ -144,7 +144,7 @@ def main() -> None:
             name="Duelo Heads-Up 3: Blefador (Heurístico) vs Matemático (Baseline)",
             hands=500,
             custom_seats=["bluffer", "math"],
-            seed=103,
+            seed=args.seed if args.seed != 42 else 103,
             test_id=f"duel_bluffer_vs_matematico{suffix}",
             output_dir=headsup_base,
         )
