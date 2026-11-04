@@ -51,6 +51,48 @@ Este diretório armazena os testes de estresse projetados para avaliar a robuste
       --output-dir data/03_notebook_estresse_1v5
   ```
 
+### Cenário 4: 1 GhMath (Gustavo) vs 5 Blefadores Maníacos
+- **Objetivo:** Avaliar a precisão bayesiana e o dimensionamento de Kelly do GhMath ao caçar blefes constantes de 5 oponentes irracionais.
+- **Assentos:** `gh_math`, `bluffer`, `bluffer`, `bluffer`, `bluffer`, `bluffer`
+- **Semente:** 42
+- **Pasta:** `data/03_notebook_estresse_1v5/04_ghmath_vs_5_bluffers/`
+
+### Cenário 5: 1 Matemático Treinado (Tier S) vs 5 Blefadores Maníacos
+- **Objetivo:** Avaliar a política por reforço (DQN/RL) do Matemático Treinado contra blefes contínuos.
+- **Assentos:** `trained_math`, `bluffer`, `bluffer`, `bluffer`, `bluffer`, `bluffer`
+- **Semente:** 42
+- **Pasta:** `data/03_notebook_estresse_1v5/05_trained_math_vs_5_bluffers/`
+
+### Cenário 6: 1 Blefador Treinado (Tier S) vs 5 Conservadores Passivos (NITs)
+- **Objetivo:** Avaliar como a rede de blefe treinada explora jogadores super passivos.
+- **Assentos:** `trained_bluffer`, `conservative`, `conservative`, `conservative`, `conservative`, `conservative`
+- **Semente:** 42
+- **Pasta:** `data/03_notebook_estresse_1v5/06_trained_bluffer_vs_5_passivos/`
+
+### Cenário 7: 1 Blefador Heurístico vs 5 Matemáticos Baseline
+- **Objetivo:** Testar o que acontece com um blefador contínuo quando a mesa inteira calcula Pot Odds friamente.
+- **Assentos:** `bluffer`, `math`, `math`, `math`, `math`, `math`
+- **Semente:** 42
+- **Pasta:** `data/03_notebook_estresse_1v5/07_bluffer_vs_5_matematicos/`
+
+### Cenário 8: 1 Equilibrado (TAG) vs 5 Blefadores Maníacos
+- **Objetivo:** Avaliar a disciplina de uma estratégia Tight-Aggressive padrão contra maníacos.
+- **Assentos:** `balanced`, `bluffer`, `bluffer`, `bluffer`, `bluffer`, `bluffer`
+- **Semente:** 42
+- **Pasta:** `data/03_notebook_estresse_1v5/08_balanced_vs_5_bluffers/`
+
+### Cenário 9: 1 Conservador (NIT) vs 5 Agressivos Descontrolados (LAGs)
+- **Objetivo:** Testar a capacidade de sobrevivência e punição de um jogador ultra-tight contra LAGs.
+- **Assentos:** `conservative`, `aggressive`, `aggressive`, `aggressive`, `aggressive`, `aggressive`
+- **Semente:** 42
+- **Pasta:** `data/03_notebook_estresse_1v5/09_conservative_vs_5_agressivos/`
+
+### Cenário 10: 1 Agressivo (LAG) vs 5 Conservadores Passivos (NITs)
+- **Objetivo:** Medir a taxa de roubo de potes incontestados de um jogador agressivo contra passivos.
+- **Assentos:** `aggressive`, `conservative`, `conservative`, `conservative`, `conservative`, `conservative`
+- **Semente:** 42
+- **Pasta:** `data/03_notebook_estresse_1v5/10_aggressive_vs_5_passivos/`
+
 ---
 
 ## 2. Execução Automatizada
