@@ -21,32 +21,29 @@ O dataset experimental consolidado foi gerado através das três seeds definitiv
 
 ---
 
-## 2. Arquitetura dos Modelos Treinados
+## 2. Benchmark Comparativo dos 4 Modelos de Machine Learning (Dados Públicos In-Game)
 
-Foram desenvolvidos e validados dois modelos complementares:
+Para inferir blefes a partir de dados 100% públicos da mesa, foram implementados e submetidos a benchmark comparativo **quatro algoritmos supervisionados de famílias distintas**:
 
-### A. Modelo In-Game / Blind Observer (`bluff_detector_model.joblib`)
-- **Premissa Operacional:** Utiliza **exclusivamente dados públicos da mesa**, sem acesso às cartas fechadas de nenhum adversário. É o modelo utilizado para inferência em tempo real nas partidas.
-- **Atributos de Entrada (100% Públicos):**
-  - `street` (PREFLOP, FLOP, TURN, RIVER)
-  - `action_taken` (BET, RAISE, ALL_IN)
-  - `bettor_profile` (Matemático, Blefador, Híbrido)
-  - `amount` (Valor da aposta atual)
-  - `pot_before` (Tamanho do pote acumulado antes da aposta)
-  - `bet_to_pot_ratio` (Razão entre a aposta e o pote — *Bet Sizing*)
-  - `stack_to_pot_ratio` (Stack restante do vilão em relação ao pote — *SPR*)
-  - `pot_odds` (Odds financeiras oferecidas pela mesa)
-- **Performance no Teste Cego (7.647 Amostras Inéditas):**
-  - **Acurácia Global:** **89,25%**
-  - **Sensibilidade / Recall de Blefe:** **91,76%** *(detecta mais de 9 em cada 10 blefes antes do showdown)*
-  - **Precisão de Blefe:** **84,71%**
-  - **F1-Score:** **0,8809**
-  - **Área sob a Curva ROC (ROC-AUC):** **0,9665** (96,65%)
-  - **Área sob a Curva PR (PR-AUC):** **0,9589** (95,89%)
+1. **HistGradientBoosting Classifier:** Gradient Boosting baseado em histogramas para particionamento contínuo rápido e mapeamento de interações não-lineares.
+2. **Random Forest Classifier:** Ensemble de 150 árvores de decisão independentes (Bagging) com impureza de Gini e paralelização nativa.
+3. **Rede Neural MLP (Multi-Layer Perceptron):** Arquitetura neural profunda com 2 camadas densas (64 e 32 neurônios), ativação ReLU, otimizador Adam e regularização early stopping.
+4. **Regressão Logística com Regularização L2 (Ridge):** Modelo linear estatístico (C=1.0) utilizado para estabelecer a linha de base e testar a hipótese de linearidade das variáveis da mesa.
 
-### B. Modelo XAI Oracle / Auditoria Teórica (`bluff_detector_xai.joblib`)
-- **Premissa Operacional:** Incorpora os atributos cognitivos internos do agente (`raw_equity` via Monte Carlo, `equity_disparity` e `outs_count`).
-- **Performance:** **100,00% de Acurácia** e **1,0000 ROC-AUC**, comprovando matematicamente a consistência sem ruído da função de rotulagem do simulador.
+### Tabela Oficial de Benchmark no Teste Cego Independente (7.647 Amostras Inéditas):
+
+| Algoritmo | Acurácia | Precisão | Recall (Sensibilidade) | F1-Score | ROC-AUC | PR-AUC | Tempo Treino |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **HistGradientBoosting** | **89,43%** | **85,54%** | 91,01% | **0,8819** | **0,9704 (97,0%)** | **0,9635** | 3,31s |
+| **Random Forest (150 Árvores)** | **89,25%** | 84,71% | **91,76%** | 0,8809 | 0,9665 (96,7%) | 0,9589 | **1,09s** |
+| **Rede Neural MLP (64x32)** | 86,86% | 80,60% | **91,76%** | 0,8582 | 0,9499 (95,0%) | 0,9387 | 5,99s |
+| **Regressão Logística (L2)** | 76,00% | 70,67% | 76,28% | 0,7337 | 0,8574 (85,7%) | 0,7866 | **0,15s** |
+
+### Destaques e Discussão dos Resultados:
+- **Árvores de Decisão & Boosting (Campeões):** O HistGradientBoosting e o Random Forest alcançaram a melhor performance geral (~89,4% acurácia e 97,0% ROC-AUC), evidenciando que cortes por limiares numéricos (*Threshold splits*) são ideais para capturar o comportamento de *Bet Sizing* e *Pot Odds*.
+- **Alta Sensibilidade Neural:** A Rede Neural MLP empatou no topo da sensibilidade (91,76% de Recall de Blefe), mostrando grande robustez ao identificar agressores com blefes ativos.
+- **Comprovação de Não-Linearidade:** A queda de desempenho da Regressão Logística para 76,00% comprova que o blefe no Poker é um fenômeno **estritamente não-linear**, governado pela relação multiplicativa entre razão aposta/pote e comprometimento de stack.
+- **Modelo XAI Oracle (Referência Teórica):** Com a inclusão da telemetria cognitiva interna (`raw_equity`, `equity_disparity`, `outs_count`), o classificador atinge **100,00% de acurácia e 1,000 ROC-AUC**, comprovando a ausência de ruído na rotulagem algorítmica do projeto.
 
 ---
 

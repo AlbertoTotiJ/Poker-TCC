@@ -1,6 +1,52 @@
 {
-  "in_game_model": {
-    "type": "RandomForestClassifier",
+  "benchmark_4_models": {
+    "HistGradientBoosting": {
+      "algorithm_type": "Histogram-based Gradient Boosting Classifier",
+      "hyperparameters": "max_iter=150, max_depth=10, learning_rate=0.1",
+      "test_accuracy": 0.8943376487511442,
+      "test_precision": 0.8553601815087918,
+      "test_recall": 0.9100784550392276,
+      "test_f1": 0.8818713450292398,
+      "test_roc_auc": 0.9704199543133698,
+      "test_pr_auc": 0.9634882162322851,
+      "training_time_sec": 3.3146448135375977
+    },
+    "Random Forest": {
+      "algorithm_type": "Random Forest Ensemble (Bagging de 150 Árvores)",
+      "hyperparameters": "n_estimators=150, max_depth=12, criterion=gini",
+      "test_accuracy": 0.8925068654374264,
+      "test_precision": 0.8470752089136491,
+      "test_recall": 0.9176222088111045,
+      "test_f1": 0.8809385863267671,
+      "test_roc_auc": 0.9665212977944592,
+      "test_pr_auc": 0.9588726429676102,
+      "training_time_sec": 1.0867116451263428
+    },
+    "Rede Neural MLP": {
+      "algorithm_type": "Multi-Layer Perceptron (Rede Neural Profunda)",
+      "hyperparameters": "hidden_layers=(64, 32), activation=relu, optimizer=adam, early_stopping=True",
+      "test_accuracy": 0.8685759121224009,
+      "test_precision": 0.805989928438908,
+      "test_recall": 0.9176222088111045,
+      "test_f1": 0.8581910540426132,
+      "test_roc_auc": 0.9499099624347874,
+      "test_pr_auc": 0.9386609899931478,
+      "training_time_sec": 5.986339807510376
+    },
+    "Regressão Logística (L2)": {
+      "algorithm_type": "Modelo Linear Logístico com Regularização Ridge (L2)",
+      "hyperparameters": "penalty=l2, C=1.0, solver=lbfgs, max_iter=1000",
+      "test_accuracy": 0.7600366156662743,
+      "test_precision": 0.7067374895163545,
+      "test_recall": 0.7628243814121907,
+      "test_f1": 0.7337106370628356,
+      "test_roc_auc": 0.8574165423708606,
+      "test_pr_auc": 0.7865806801086729,
+      "training_time_sec": 0.14792275428771973
+    }
+  },
+  "best_in_game_model": {
+    "selected": "Random Forest / HistGradientBoosting",
     "features": [
       "street",
       "action_taken",
@@ -43,5 +89,5 @@
     "test_samples": 7647,
     "bluff_ratio": 0.43336341166777825
   },
-  "timestamp": "2026-11-07T18:11:27Z"
+  "timestamp": "2026-11-07T23:39:00Z"
 }
