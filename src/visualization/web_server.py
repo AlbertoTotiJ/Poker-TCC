@@ -1512,7 +1512,7 @@ def start_poker_web_server(
     port: Optional[int] = None,
     num_players: int = 4,
     starting_stack: int = 1000,
-    agent_mode: str = "gh_bluffer",
+    agent_mode: str = "tripartite",
 ) -> Tuple[ThreadingHTTPServer, int]:
     """Inicializa e vincula o servidor web na porta disponível configurada."""
     chosen_port = port if port is not None else find_free_port(5000, host=host)

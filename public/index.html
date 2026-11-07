@@ -2128,14 +2128,10 @@
       <div class="form-group">
         <label for="configAgentModeSelect">Tipo de Oponentes / Agentes:</label>
         <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
-          <option value="tripartite" selected>🌟 Mesa Tripartite (Matemáticos, Blefadores e Híbridos Definitivos)</option>
-          <option value="hybrid">⚡ Agente Híbrido Definitivo (Matemático + Blefador)</option>
+          <option value="tripartite" selected>🌟 Mesa Tripartite Definitiva (3x3x3 / 2x2x2)</option>
           <option value="math">📐 Agente Matemático Definitivo (Kelly / Monte Carlo / Chen)</option>
           <option value="bluffer">🃏 Agente Blefador Definitivo (Nash GTO / Blockers)</option>
-          <option value="gh_bluffer">🎭 GhBluffer (GTO Blockers & Nash)</option>
-          <option value="gh_math">🧠 GhMath (Implied Odds & Kelly)</option>
-          <option value="trained_bluffer">⭐ Blefador Treinado (Tier S)</option>
-          <option value="trained_math">⭐ Matemático Treinado (Tier S)</option>
+          <option value="hybrid">⚡ Agente Híbrido Definitivo (Matemático + Blefador)</option>
           <option value="custom">⚙️ Personalizado por Cadeira</option>
         </select>
       </div>
@@ -2156,177 +2152,105 @@
     </div>
   </div>
 
-  <!-- Modal Selecionar Agentes -->
+  <!-- Modal Selecionar Agentes (Versão Definitiva TCC) -->
   <div class="modal-overlay" id="agentsModal">
     <div class="modal-card agents-modal-card">
       <button class="modal-close-btn" onclick="closeAgentsModal()">×</button>
-      <div class="modal-header">🤖 Selecionar Agentes da Mesa</div>
+      <div class="modal-header">🤖 Selecionar Agentes da Mesa (Definitivos TCC)</div>
 
-      <!-- Banner de Agentes Treinados via Google Colab -->
+      <!-- Banner de Consolidação Definitiva dos 3 Agentes -->
       <div style="background: linear-gradient(135deg, rgba(21, 101, 192, 0.22), rgba(13, 71, 161, 0.42)); border: 1px solid #42a5f5; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size: 1.8rem;">📥</span>
+          <span style="font-size: 1.8rem;">🌟</span>
           <div>
-            <div style="font-weight: 700; color: #90caf9; font-size: 0.9rem;">Central de Agentes Treinados (Google Colab)</div>
-            <div style="font-size: 0.76rem; color: #b0bec5; margin-top: 2px;">O treinamento genético e calibração de IA são realizados no Colab. Importe o arquivo .json do seu agente treinado para colocá-lo em jogo!</div>
+            <div style="font-weight: 700; color: #90caf9; font-size: 0.9rem;">Versão Definitiva dos 3 Agentes de IA</div>
+            <div style="font-size: 0.76rem; color: #b0bec5; margin-top: 2px;">O ecossistema oficial conta exclusivamente com os 3 arquétipos consolidados: <strong>Matemático</strong> (Chen + Kelly + EV Monte Carlo), <strong>Blefador</strong> (Nash GTO + Nut Blockers) e <strong>Híbrido</strong> (Fusão adaptativa).</div>
           </div>
         </div>
-        <button class="btn-header btn-training" onclick="closeAgentsModal(); openTrainingModal();" style="white-space: nowrap; font-size: 0.82rem; padding: 8px 14px; cursor: pointer; flex-shrink: 0;">Importar Agente 📥</button>
       </div>
 
       <div style="font-size:0.85rem; color:#bbb; line-height:1.4;">
-        Escolha o modelo de inteligência dos oponentes na mesa de poker. Alterne entre os novos agentes de IA desenvolvidos (EV, probabilidade) e os bots heurísticos tradicionais:
+        Escolha o modo de jogo ou selecione o oponente definitivo para enfrentar. Por padrão, a mesa opera no modo tripartite equilibrado (3 de cada em mesas de 9 jogadores; 2 de cada em 6-Max):
       </div>
 
       <div class="agents-options-list">
-        <!-- Opção 1: Blefador Treinado Tier S (Colab) -->
-        <div class="agent-option-card selected" id="cardModeTrained_bluffer" onclick="selectAgentMode('trained_bluffer')">
+        <!-- Opção 1: Mesa Tripartite Definitiva (Oficial TCC) -->
+        <div class="agent-option-card selected" id="cardModeTripartite" onclick="selectAgentMode('tripartite')">
           <div class="agent-option-top">
-            <span class="agent-option-title">⭐ Blefador Treinado (Tier S - Elite)</span>
-            <span class="agent-badge-tag badge-ready" style="background: rgba(255, 215, 0, 0.25); color: #ffd54f; border: 1px solid #ffd54f;">Campeão • 94% Vitórias • +4.976 Fichas</span>
+            <span class="agent-option-title">🌟 Mesa Tripartite Definitiva (Padrão Oficial TCC)</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(255, 215, 0, 0.25); color: #ffd54f; border: 1px solid #ffd54f;">Padrão Oficial • 3x3x3 ou 2x2x2</span>
           </div>
           <div class="agent-option-desc">
-            Agente blefador de elite evoluído no Google Colab com <strong>100.0 pts de Fitness</strong>. Conquistou 94% de aproveitamento (47 de 50 mãos ganhas) usando C-Bet agressivo (89.2%) e fold equity cirúrgica.
+            Distribui os assentos da mesa equitativamente entre os 3 Agentes Definitivos (3 Matemáticos, 3 Blefadores e 3 Híbridos em 9-Max; 2 de cada em 6-Max). Permite testar o equilíbrio e a dinâmica competitiva de alto nível entre todos os estilos.
           </div>
           <div style="margin-top:10px;">
-            <button class="btn-submit" onclick="selectAndApplyAgentMode('trained_bluffer', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #f57f17, #fbc02d); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra Blefador Tier S Agora
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('tripartite', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #f57f17, #fbc02d); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar Mesa Tripartite Definitiva Agora
             </button>
           </div>
         </div>
 
-        <!-- Opção 2: Matemático Treinado Tier S (Colab) -->
-        <div class="agent-option-card" id="cardModeTrained_math" onclick="selectAgentMode('trained_math')">
+        <!-- Opção 2: Agente Matemático Definitivo -->
+        <div class="agent-option-card" id="cardModeMath" onclick="selectAgentMode('math')">
           <div class="agent-option-top">
-            <span class="agent-option-title">⭐ Matemático Treinado (Tier S - Elite)</span>
-            <span class="agent-badge-tag badge-ready" style="background: rgba(0, 230, 118, 0.25); color: #00e676; border: 1px solid #00e676;">Campeão • +14.582 Fichas • 86.2% Showdown</span>
+            <span class="agent-option-title">📐 Agente Matemático Definitivo</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(0, 230, 118, 0.25); color: #00e676; border: 1px solid #00e676;">Kelly Fracionário • Chen Formula • EV Monte Carlo</span>
           </div>
           <div class="agent-option-desc">
-            Agente matemático de alta performance evoluído no Google Colab com <strong>100.0 pts de Fitness</strong>. Lucratividade recorde de +14.582 fichas (+1.458 BB/100) e 86.2% de taxa de vitória em Showdown.
+            Decisões rigorosamente calculadas com base em Expected Value (EV), equidade precisa via simulação Monte Carlo, Implied Odds e dimensionamento ótimo de apostas via Critério de Kelly Fracionário. Elimina folds irracionais pré-flop.
           </div>
           <div style="margin-top:10px;">
-            <button class="btn-submit" onclick="selectAndApplyAgentMode('trained_math', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #00c853, #69f0ae); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra Matemático Tier S Agora
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('math', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #00c853, #69f0ae); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar contra Matemáticos Definitivos
             </button>
           </div>
         </div>
 
-        <!-- Opção 3: Agente Híbrido -->
+        <!-- Opção 3: Agente Blefador Definitivo -->
+        <div class="agent-option-card" id="cardModeBluffer" onclick="selectAgentMode('bluffer')">
+          <div class="agent-option-top">
+            <span class="agent-option-title">🃏 Agente Blefador Definitivo</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(186, 104, 200, 0.25); color: #ba68c8; border: 1px solid #ba68c8;">Nash GTO Indifference • Nut Blockers • Fold Equity</span>
+          </div>
+          <div class="agent-option-desc">
+            Agente tático autônomo baseado na Razão Áurea de Indiferença de Nash (B / (P + 2B)) e motor de remoção de cartas (Nut Flush e Straight Blockers). Executa C-Bets agressivas, semi-blefes e re-aumentos cirúrgicos, eliminando passividade.
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn-submit" onclick="selectAndApplyAgentMode('bluffer', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #ab47bc, #7b1fa2); border:none; color:#fff; font-weight:700; cursor:pointer; border-radius:6px;">
+              ▶️ Jogar contra Blefadores Definitivos
+            </button>
+          </div>
+        </div>
+
+        <!-- Opção 4: Agente Híbrido Definitivo -->
         <div class="agent-option-card" id="cardModeHybrid" onclick="selectAgentMode('hybrid')">
           <div class="agent-option-top">
-            <span class="agent-option-title">⚡ Agente Híbrido (Matemático + Blefador)</span>
-            <span class="agent-badge-tag badge-ready" style="background: rgba(33, 150, 243, 0.25); color: #64b5f6; border: 1px solid #64b5f6;">Novo • Fusão de IAs</span>
+            <span class="agent-option-title">⚡ Agente Híbrido Definitivo</span>
+            <span class="agent-badge-tag badge-ready" style="background: rgba(33, 150, 243, 0.25); color: #64b5f6; border: 1px solid #64b5f6;">Fusão Sinérgica • Slow-play Traps • Adaptativo</span>
           </div>
           <div class="agent-option-desc">
-            Fusão sinérgica que unifica o rigor analítico de Pot Odds e EV Monte Carlo do Matemático com os semi-blefes e roubo de potes do Blefador. Se adapta tanto contra jogadores conservadores quanto ultra-agressivos.
+            Fusão sinérgica que unifica o rigor analítico de EV e Pot Odds com agressividade situacional de blefes e armadilhas calculadas de slow-play contra oponentes agressivos.
           </div>
           <div style="margin-top:10px;">
             <button class="btn-submit" onclick="selectAndApplyAgentMode('hybrid', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #1976d2, #42a5f5); border:none; color:#fff; font-weight:700; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra Agente Híbrido Agora
-            </button>
-          </div>
-        </div>
-        <!-- Opção GhBluffer: GhBlufferAgent (Gustavo) -->
-        <div class="agent-option-card selected" id="cardModeGh_bluffer" onclick="selectAgentMode('gh_bluffer')">
-          <div class="agent-option-top">
-            <span class="agent-option-title">🎭 GhBlufferAgent (Gustavo - GH)</span>
-            <span class="agent-badge-tag badge-ready" style="background: rgba(186, 104, 200, 0.2); color: #ba68c8; border: 1px solid #ba68c8;">Novo • Nash & Nut Blockers</span>
-          </div>
-          <div class="agent-option-desc">
-            Agente blefador inexplorável baseado em Teoria dos Jogos (Libratus e Pluribus). Opera com a Razão Áurea de Indiferença de Nash (B / (P + 2B)), motor de remoção de cartas (Nut Flush e Straight Blockers), semi-blefes agressivos no flop/turn e eliminação total do calling station passivo.
-          </div>
-          <div style="margin-top:10px;">
-            <button class="btn-submit" onclick="selectAndApplyAgentMode('gh_bluffer', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #ab47bc, #7b1fa2); border:none; color:#fff; font-weight:700; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra GhBluffer Agora
+              ▶️ Jogar contra Híbridos Definitivos
             </button>
           </div>
         </div>
 
-        <!-- Opção GhMath: GhMathAgent (Gustavo) -->
-        <div class="agent-option-card" id="cardModeGh_math" onclick="selectAgentMode('gh_math')">
-          <div class="agent-option-top">
-            <span class="agent-option-title">🧠 GhMathAgent (Gustavo - GH)</span>
-            <span class="agent-badge-tag badge-ready" style="background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676;">Novo • Kelly & Implied Odds</span>
-          </div>
-          <div class="agent-option-desc">
-            Agente matemático de segunda geração desenvolvido por Gustavo (GH). Elimina folds irracionais no pré-flop via combinatória e ranges de posição, dimensiona apostas pelo Critério de Kelly Fracionário e gera métricas cognitivas completas (XAI) para a Rede Neural.
-          </div>
-          <div style="margin-top:10px;">
-            <button class="btn-submit" onclick="selectAndApplyAgentMode('gh_math', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #00e676, #00a854); border:none; color:#000; font-weight:700; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra GhMath Agora
-            </button>
-          </div>
-        </div>
-        <!-- Opção 1: Usar Bot (Padrões Anteriores) -->
-        <div class="agent-option-card" id="cardModeBots" onclick="selectAgentMode('bots')">
-          <div class="agent-option-top">
-            <span class="agent-option-title">🤖 Usar Bot (Padrões Anteriores)</span>
-            <span class="agent-badge-tag badge-bot">Bots Tradicionais</span>
-          </div>
-          <div class="agent-option-desc">
-            Comportamentos heurísticos clássicos já existentes na mesa: Agressivo, Conservador e Equilibrado baseados em regras predefinidas.
-          </div>
-        </div>
-
-        <!-- Opção 2: Agente Matemático (Agente Feito) -->
-        <div class="agent-option-card" id="cardModeMath" onclick="selectAgentMode('math')">
-          <div class="agent-option-top">
-            <span class="agent-option-title">📐 Agente Matemático (Agente Feito)</span>
-            <span class="agent-badge-tag badge-ready">IA Concluída & Treinada</span>
-          </div>
-          <div class="agent-option-desc">
-            Agente autônomo baseado em Expected Value (EV), Pot Odds exatas e Equidade Monte Carlo. Calcula racionalmente a margem matemática de lucro a longo prazo antes de cada decisão.
-          </div>
-        </div>
-
-        <!-- Opção: Agente Blefador (Bluff Engine) -->
-        <div class="agent-option-card" id="cardModeBluffer" onclick="selectAgentMode('bluffer')">
-          <div class="agent-option-top">
-            <span class="agent-option-title">🃏 Agente Blefador (Bluff Engine)</span>
-            <span class="agent-badge-tag badge-ready">IA Concluída & Treinada</span>
-          </div>
-          <div class="agent-option-desc">
-            Agente tático autônomo baseado em Fold Equity dinâmica, textura de bordo (dry boards, scare cards), roubo de potes órfãos (C-Bet Steals), semi-blefes e re-aumentos desbalanceados.
-          </div>
-        </div>
-
-        <!-- Opção: Torneio Completo de IAs -->
-        <div class="agent-option-card" id="cardModeAll_ai" onclick="selectAgentMode('all_ai')">
-          <div class="agent-option-top">
-            <span class="agent-option-title">🏆 Torneio Multimodelo de IAs</span>
-            <span class="agent-badge-tag badge-ready">Todas as IAs</span>
-          </div>
-          <div class="agent-option-desc">
-            Distribui as cadeiras da mesa alternando entre os Agentes Matemáticos, Blefadores e Híbridos para enfrentar você em partida de alto nível.
-          </div>
-        </div>
-
-        <!-- Opção 3: Mesa Mista -->
-        <div class="agent-option-card" id="cardModeMixed" onclick="selectAgentMode('mixed')">
-          <div class="agent-option-top">
-            <span class="agent-option-title">⚔️ Mesa Mista (Agentes Feitos vs Bots Padrão)</span>
-            <span class="agent-badge-tag badge-ready">Duelo Comparativo</span>
-          </div>
-          <div class="agent-option-desc">
-            Distribui os assentos alternando entre o novo Agente Matemático e os bots clássicos na mesma mesa para comparar desempenhos lado a lado.
-          </div>
-        </div>
-
-        <!-- Opção 4: Personalizar por Cadeira -->
+        <!-- Opção 5: Personalizar por Cadeira -->
         <div class="agent-option-card" id="cardModeCustom" onclick="selectAgentMode('custom')">
           <div class="agent-option-top">
-            <span class="agent-option-title">⚙️ Personalizar por Cadeira</span>
-            <span class="agent-badge-tag badge-bot">Assento por Assento</span>
+            <span class="agent-option-title">⚙️ Personalizar Assentos da Mesa</span>
+            <span class="agent-badge-tag badge-bot">Cadeira por Cadeira</span>
           </div>
           <div class="agent-option-desc">
-            Configure manualmente qual tipo de IA sentará em cada cadeira da mesa.
+            Escolha manualmente qual dos 3 Agentes Definitivos (Matemático, Blefador ou Híbrido) ocupará cada assento da mesa.
           </div>
           <div id="customSeatsArea" class="custom-seats-container" style="display: none;" onclick="event.stopPropagation()">
             <!-- Populado via JS baseado no número de jogadores -->
           </div>
         </div>
-
-
       </div>
 
       <div style="display:flex; gap:10px; margin-top:16px;">
@@ -2430,29 +2354,11 @@
             <option value="tripartite_6max" data-players="6">🏆 Mesa 6-Max Tripartite: 2 Matemáticos + 2 Blefadores + 2 Híbridos (6 Jogadores)</option>
           </optgroup>
           <optgroup label="⚙️ Configuração Personalizada">
-            <option value="custom" data-players="9">⚙️ Personalizar Configuração da Mesa (2 a 9 Agentes de IA)</option>
-          </optgroup>
-          <optgroup label="🤖 Torneios de IA & Pesquisa Científica (TCC)">
-            <option value="tier_s_duelo" data-players="6">⭐ Duelo dos Campeões Tier S: 3 Blefadores Tier S vs 3 Matemáticos Tier S (6 Jogadores)</option>
-            <option value="hybrid_vs_champions" data-players="6">⚡ Torneio Híbrido vs Tier S: 2 Híbridos, 2 Blefadores Tier S, 2 Matemáticos Tier S (6 Jogadores)</option>
-            <option value="tcc_champions_9" data-players="9">🌟 Grande Torneio TCC 9-Max: 3 Mat Tier S + 3 Blef Tier S + 3 Híbridos (9 Jogadores)</option>
-            <option value="tcc_experiment_9" data-players="9">🎓 Experimento TCC 9-Max: 4 Matemáticos + 5 Blefadores (9 Jogadores)</option>
-            <option value="gh_bluffer_showdown" data-players="6">🎭 Duelo de Blefes: 2 GhBluffer (Gustavo), 2 Blefadores (Alberto), 2 Bots (6 Jogadores)</option>
-            <option value="gh_math_showdown" data-players="6">🧠 Duelo GH vs Alberto: 2 GhMath (Gustavo), 2 Matemáticos (Alberto), 2 Bots (6 Jogadores)</option>
-            <option value="math_vs_bots" data-players="6">📐 Duelo: 3 Matemáticos Reais vs 3 Bots Heurísticos (6 Jogadores)</option>
-            <option value="full_ai_tournament" data-players="6">🏆 Torneio Completo de IAs: 2 Matemáticos, 2 Blefadores, 2 Híbridos (6 Jogadores)</option>
-            <option value="bluff_challenge" data-players="6">🃏 Desafio de Blefe: 2 Blefadores, 2 Matemáticos, 2 Conservadores (6 Jogadores)</option>
-            <option value="hybrid_lab" data-players="6">🧠 Laboratório Híbrido: 3 Agentes Híbridos vs 3 Matemáticos Reais (6 Jogadores)</option>
-            <option value="math_tournament" data-players="6">🔬 Torneio Puro Matemático: 6 Agentes Matemáticos Reais (6 Jogadores)</option>
-            <option value="all_models_9" data-players="9">🌟 Grande Torneio Multimodelo: 3 Matemáticos, 2 Blefadores, 2 Híbridos, 2 Bots (9 Jogadores)</option>
-          </optgroup>
-          <optgroup label="⚖️ Composições Clássicas">
-            <option value="classic_6" data-players="6">6 Jogadores Clássica (2 Matemáticos Reais, 2 Agressivos, 2 Conservadores)</option>
-            <option value="classic_9" data-players="9">9 Jogadores Clássica (3 Matemáticos Reais, 3 Agressivos, 3 Conservadores)</option>
+            <option value="custom" data-players="9">⚙️ Personalizar Assentos da Mesa (2 a 9 Agentes Definitivos)</option>
           </optgroup>
         </select>
         <div id="rosterDescriptionNotice" style="font-size:0.74rem; color:#bbb; margin-top:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-left:3px solid var(--gold-light); padding:6px 10px; border-radius:4px; line-height:1.35;">
-          ⭐ <strong>Duelo dos Campeões Tier S:</strong> Confronto direto entre 3 Agentes Blefadores Treinados (Tier S - 94% win rate) vs 3 Agentes Matemáticos Treinados (Tier S - +14.5k fichas). Ideal para benchmarking de elite.
+          🌟 <strong>Mesa 9-Max Definitiva:</strong> Padrão oficial do TCC com exatamente 3 Agentes Matemáticos Definitivos, 3 Agentes Blefadores Definitivos e 3 Agentes Híbridos Definitivos.
         </div>
       </div>
 
@@ -2610,7 +2516,7 @@
     let gameState = null;
     let botTimer = null;
     let botSpeed = 700; // ms
-    let selectedAgentMode = 'gh_bluffer';
+    let selectedAgentMode = 'tripartite';
     let customAgentsConfig = [];
     let recordCustomAgentsConfig = [];
     const speedModes = [
@@ -2785,13 +2691,8 @@
     }
 
     function syncAgentModeUI(mode) {
-      ['trained_bluffer', 'trained_math', 'hybrid', 'bots', 'gh_bluffer', 'gh_math', 'math', 'bluffer', 'mixed', 'all_ai', 'custom'].forEach(m => {
+      ['tripartite', 'math', 'bluffer', 'hybrid', 'custom'].forEach(m => {
         let cardId = 'cardMode' + m.charAt(0).toUpperCase() + m.slice(1);
-        if (m === 'gh_bluffer') cardId = 'cardModeGh_bluffer';
-        else if (m === 'gh_math') cardId = 'cardModeGh_math';
-        else if (m === 'trained_bluffer') cardId = 'cardModeTrained_bluffer';
-        else if (m === 'trained_math') cardId = 'cardModeTrained_math';
-        else if (m === 'hybrid') cardId = 'cardModeHybrid';
         const card = document.getElementById(cardId);
         if (card) {
           if (m === mode) {
@@ -2819,33 +2720,18 @@
       const numPlayersSelect = document.getElementById('numPlayersSelect');
       const numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || (gameState && gameState.players ? gameState.players.length : 4);
       const botSeatsCount = Math.max(1, numPlayers - 1);
-
-      const customList = (availableTrainedAgents || []).filter(a => a.is_custom);
-      let trainedGroupHtml = '';
-      if (customList.length > 0) {
-        trainedGroupHtml = `<optgroup label="⭐ Novos Agentes Treinados">` +
-          customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name}</option>`).join('') +
-          `</optgroup>`;
-      }
+      const trio = ['math', 'bluffer', 'hybrid'];
 
       let html = '';
       for (let i = 0; i < botSeatsCount; i++) {
-        const defaultVal = customAgentsConfig[i] || (i === 0 ? 'gh_math' : (i % 2 === 0 ? 'math' : 'balanced'));
+        const defaultVal = customAgentsConfig[i] || trio[i % trio.length];
         html += `
           <div class="custom-seat-row">
-            <label for="customSeatSelect_${i}">Cadeira ${i + 1} (Bot):</label>
+            <label for="customSeatSelect_${i}">Cadeira ${i + 1} (Agente IA):</label>
             <select id="customSeatSelect_${i}" onchange="customAgentsConfig[${i}] = this.value">
-              ${trainedGroupHtml}
-              <optgroup label="Modelos Padrão e IAs">
-                <option value="gh_bluffer" ${defaultVal === 'gh_bluffer' ? 'selected' : ''}>🎭 GhBlufferAgent (Gustavo - Nash/Blockers)</option>
-              <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
-              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
-              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>
-              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>🧠 Agente Híbrido</option>
-              <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>🤖 Bot Agressivo</option>
-              <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🤖 Bot Conservador</option>
-              <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>🤖 Bot Equilibrado</option>
-              </optgroup>
+              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático Definitivo</option>
+              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador Definitivo</option>
+              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>⚡ Agente Híbrido Definitivo</option>
             </select>
           </div>
         `;
@@ -3423,14 +3309,13 @@
       if (!container) return;
       const numPlayersSelect = document.getElementById('recordNumPlayersSelect');
       const numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || 9;
+      const trio = ['math', 'bluffer', 'hybrid'];
 
       let html = '';
       for (let i = 0; i < numPlayers; i++) {
         const seatNum = i + 1;
         const isSeat9 = (seatNum === 9);
-        const defaultVal = recordCustomAgentsConfig[i] || (
-          isSeat9 ? 'bluffer' : (i < 4 ? 'math' : (i % 2 === 0 ? 'gh_math' : 'bluffer'))
-        );
+        const defaultVal = recordCustomAgentsConfig[i] || trio[i % trio.length];
 
         const highlightStyle = isSeat9
           ? 'style="border: 1px solid rgba(255, 213, 79, 0.45); background: rgba(255, 213, 79, 0.08); padding: 8px; border-radius: 6px;"'
@@ -3438,22 +3323,15 @@
 
         const labelText = isSeat9
           ? '🌟 <strong style="color: #ffd54f;">Cadeira 9 (9º Agente - No lugar do Jogador Humano):</strong>'
-          : `Cadeira ${seatNum} (Agente de IA):`;
+          : `Cadeira ${seatNum} (Agente Definitivo):`;
 
         html += `
           <div class="custom-seat-row" ${highlightStyle}>
             <label for="recCustomSeatSelect_${i}">${labelText}</label>
             <select id="recCustomSeatSelect_${i}" onchange="recordCustomAgentsConfig[${i}] = this.value">
-              <option value="trained_bluffer" ${defaultVal === 'trained_bluffer' ? 'selected' : ''}>⭐ Blefador Treinado (Tier S - Elite)</option>
-              <option value="trained_math" ${defaultVal === 'trained_math' ? 'selected' : ''}>⭐ Matemático Treinado (Tier S - Elite)</option>
-              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>⚡ Agente Híbrido (Matemático + Blefador)</option>
-              <option value="gh_bluffer" ${defaultVal === 'gh_bluffer' ? 'selected' : ''}>🎭 GhBlufferAgent (Gustavo - Nash/Blockers)</option>
-              <option value="gh_math" ${defaultVal === 'gh_math' ? 'selected' : ''}>🧠 GhMathAgent (Gustavo - Kelly/XAI)</option>
-              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático (Alberto - EV)</option>
-              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador (Bluff Engine)</option>
-              <option value="aggressive" ${defaultVal === 'aggressive' ? 'selected' : ''}>⚔️ Bot Agressivo</option>
-              <option value="conservative" ${defaultVal === 'conservative' ? 'selected' : ''}>🛡️ Bot Conservador</option>
-              <option value="balanced" ${defaultVal === 'balanced' ? 'selected' : ''}>⚖️ Bot Equilibrado</option>
+              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático Definitivo (Kelly/Chen)</option>
+              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador Definitivo (Nash GTO/Blockers)</option>
+              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>⚡ Agente Híbrido Definitivo (Fusão S-Tier)</option>
             </select>
           </div>
         `;
@@ -3478,7 +3356,7 @@
       const code = document.getElementById('recordAuthCode').value.trim();
       const numHands = parseInt(document.getElementById('recordNumHands').value) || 10;
       const rosterSelect = document.getElementById('recordTableFormat');
-      const rosterMode = rosterSelect ? rosterSelect.value : 'classic_6';
+      const rosterMode = rosterSelect ? rosterSelect.value : 'definitive_9max';
       let numPlayers = 6;
       let customSeatsPayload = undefined;
 
