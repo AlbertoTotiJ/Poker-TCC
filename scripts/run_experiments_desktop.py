@@ -112,17 +112,17 @@ def main() -> None:
     out_base = "data/01_desktop_mesas"
     suffix = f"_{args.tag}" if args.tag else ""
 
-    # 1. Mesa 6-Max Heterogênea
+    # 1. Mesa 6-Max Tripartite (2 Matemáticos, 2 Blefadores, 2 Híbridos)
     seats_6max = [
-        "gh_bluffer",
-        "gh_math",
         "math",
         "bluffer",
         "hybrid",
-        "balanced",
+        "math",
+        "bluffer",
+        "hybrid",
     ]
     run_single_exp(
-        name="Experimento 1: Mesa 6-Max Heterogênea",
+        name="Experimento 1: Mesa 6-Max Tripartite (2x2x2)",
         hands=1000,
         custom_seats=seats_6max,
         seed=args.seed,
@@ -130,20 +130,20 @@ def main() -> None:
         output_dir=out_base,
     )
 
-    # 2. Mesa 9-Max Full Ring
+    # 2. Mesa 9-Max Definitiva 3x3x3 (3 Matemáticos, 3 Blefadores, 3 Híbridos)
     seats_9max = [
-        "gh_bluffer",
-        "gh_math",
         "math",
-        "trained_math",
         "bluffer",
-        "trained_bluffer",
         "hybrid",
-        "aggressive",
-        "conservative",
+        "math",
+        "bluffer",
+        "hybrid",
+        "math",
+        "bluffer",
+        "hybrid",
     ]
     run_single_exp(
-        name="Experimento 2: Mesa 9-Max Full Ring Completa",
+        name="Experimento 2: Mesa 9-Max Definitiva (3 Matemáticos, 3 Blefadores, 3 Híbridos)",
         hands=1000,
         custom_seats=seats_9max,
         seed=args.seed,

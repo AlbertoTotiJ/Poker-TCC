@@ -63,8 +63,9 @@ class WebPokerSession:
         small_blind: int = 10,
         big_blind: int = 20,
         human_name: str = "Você (Humano)",
-        agent_mode: str = "gh_bluffer",
+        agent_mode: str = "tripartite",
         custom_agents: Optional[List[str]] = None,
+        record_hands: bool = True,
         rng: Optional[random.Random] = None,
     ) -> None:
         if not (2 <= num_players <= 9):
@@ -75,6 +76,7 @@ class WebPokerSession:
         self.small_blind: int = small_blind
         self.big_blind: int = big_blind
         self.agent_mode: str = agent_mode
+        self.record_hands: bool = record_hands
         self.rng: random.Random = rng if rng is not None else random.Random()
 
         self.players: List[Player] = [
@@ -86,7 +88,10 @@ class WebPokerSession:
         for i in range(num_players - 1):
             bot_id = f"p_bot_{i + 1}"
             agent_type = "bot"
-            if agent_mode == "gh_bluffer":
+            if agent_mode in ("tripartite", "definitive", "3agents", "tcc_definitive", "definitive_trio"):
+                trio = ["math", "bluffer", "hybrid"]
+                agent_type = trio[i % len(trio)]
+            elif agent_mode == "gh_bluffer":
                 agent_type = "gh_bluffer"
             elif agent_mode == "gh_math":
                 agent_type = "gh_math"
@@ -247,6 +252,8 @@ class WebPokerSession:
         self.hand_number += 1
         self.player_last_actions.clear()
         self.event_log.clear()
+        self.current_hand_actions: List[Dict[str, Any]] = []
+        self.stacks_before_hand = {p.player_id: p.stack for p in self.players}
 
         self.table = Table(
             players=active_survivors,
@@ -323,6 +330,30 @@ class WebPokerSession:
             desc = act_type.value
             log_msg = f"{actor.name} agiu com {desc}."
 
+        # Rastreamento de telemetria da ação para gravação de partida
+        act_record = {
+            "street": self.table.street.name,
+            "player_id": actor.player_id,
+            "player_name": actor.name,
+            "profile": self.agent_types.get(actor.player_id, "human"),
+            "action_type": action.action_type.value,
+            "amount": action.amount,
+            "pot_before": self.table.pot_manager.total_pot,
+        }
+        bot = self.bot_agents.get(actor.player_id)
+        if bot and hasattr(bot, "last_decision") and bot.last_decision is not None:
+            dec = bot.last_decision
+            if getattr(dec, "metrics", None) is not None:
+                m = dec.metrics
+                act_record["cognitive_metrics"] = {
+                    "raw_equity": round(getattr(m, "raw_equity", 0.0), 4),
+                    "direct_pot_odds": round(getattr(m, "direct_pot_odds", 0.0), 4),
+                    "tactical_rationale": getattr(m, "tactical_rationale", ""),
+                }
+        if not hasattr(self, "current_hand_actions"):
+            self.current_hand_actions = []
+        self.current_hand_actions.append(act_record)
+
         self.player_last_actions[actor.player_id] = desc
         self.event_log.append(log_msg)
         self.table.apply_action(action)
@@ -384,6 +415,70 @@ class WebPokerSession:
                 f"{', '.join(side_winners)}."
             )
 
+        # Gravação automática da partida (Vercel / Local / Neon)
+        if getattr(self, "record_hands", True):
+            try:
+                from datetime import datetime, timezone
+                import os
+                from src.database.recorder import (
+                    detect_hand_bluffs,
+                    save_hand_to_file,
+                    save_hand_to_neon,
+                )
+                payouts = getattr(t, "last_payouts", {})
+                scores = getattr(t, "last_scores", {})
+                winners_data = []
+                winning_ids = []
+                for p in self.players:
+                    if payouts.get(p.player_id, 0) > 0:
+                        winning_ids.append(p.player_id)
+                        p_comb = (
+                            scores[p.player_id].description
+                            if p.player_id in scores
+                            else "Desistência"
+                        )
+                        winners_data.append({
+                            "player_id": p.player_id,
+                            "name": p.name,
+                            "payout": payouts[p.player_id],
+                            "combination": p_comb,
+                            "is_main_winner": p.player_id in main_award.winning_player_ids,
+                        })
+
+                hand_actions = getattr(self, "current_hand_actions", [])
+                bluffs = detect_hand_bluffs(t, hand_actions, self.agent_types, winning_ids)
+                stacks_before = getattr(self, "stacks_before_hand", {})
+
+                hand_record = {
+                    "hand_index": self.hand_number,
+                    "roster_mode": f"web_{self.agent_mode}",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "pot_total": t.pot_manager.total_pot,
+                    "community_cards": [str(c) for c in t.community_cards],
+                    "winners": winners_data,
+                    "bluffs_count": len(bluffs),
+                    "bluffs_detected": bluffs,
+                    "players": [
+                        {
+                            "player_id": p.player_id,
+                            "name": p.name,
+                            "profile": self.agent_types.get(p.player_id, "human"),
+                            "hole_cards": [str(c) for c in p.hole_cards] if p.hole_cards else [],
+                            "stack_before": stacks_before.get(p.player_id, self.starting_stack),
+                            "stack_after": p.stack,
+                            "net_profit": p.stack - stacks_before.get(p.player_id, self.starting_stack),
+                        }
+                        for p in self.players
+                    ],
+                    "actions": hand_actions,
+                }
+                save_hand_to_file(hand_record)
+                if os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL"):
+                    save_hand_to_neon(hand_record)
+                self.event_log.append("💾 Partida gravada com sucesso!")
+            except Exception:
+                pass
+
     def get_serialized_state(self) -> Dict[str, Any]:
         """Gera o snapshot estruturado do estado da mesa para a interface."""
         if self.table is None:
@@ -428,15 +523,15 @@ class WebPokerSession:
             if is_human:
                 agent_label = "Você (Humano)"
             elif agent_type == "gh_bluffer":
-                agent_label = "🎭 GhBlufferAgent (Gustavo)"
+                agent_label = "🎭 GhBluffer (GTO Blockers)"
             elif agent_type == "gh_math":
-                agent_label = "🧠 GhMathAgent (Gustavo)"
+                agent_label = "🧠 GhMath (Kelly & XAI)"
             elif agent_type == "math":
-                agent_label = "📐 Agente Matemático"
+                agent_label = "📐 Matemático Definitivo"
             elif agent_type == "bluffer":
-                agent_label = "🃏 Agente Blefador"
+                agent_label = "🃏 Blefador Definitivo"
             elif agent_type == "hybrid":
-                agent_label = "🧠 Agente Híbrido"
+                agent_label = "⚡ Híbrido Definitivo"
             elif agent_type == "aggressive":
                 agent_label = "⚔️ Agressivo"
             elif agent_type == "conservative":
@@ -605,6 +700,7 @@ class WebPokerSession:
             "is_hand_finished": is_finished,
             "showdown": showdown_data,
             "champion": champion,
+            "recording_active": getattr(self, "record_hands", True),
         }
 
 
@@ -1324,13 +1420,15 @@ class PokerApiHandler(BaseHTTPRequestHandler):
             if clean_path.endswith("/start_game") or clean_path == "/start_game":
                 num_players = int(data.get("num_players", 4))
                 starting_stack = int(data.get("starting_stack", 1000))
-                agent_mode = str(data.get("agent_mode", "bots"))
+                agent_mode = str(data.get("agent_mode", "tripartite"))
                 custom_agents = data.get("custom_agents", None)
+                record_hands = bool(data.get("record_hands", True))
                 new_session = WebPokerSession(
                     num_players=num_players,
                     starting_stack=starting_stack,
                     agent_mode=agent_mode,
                     custom_agents=custom_agents,
+                    record_hands=record_hands,
                 )
                 _SESSIONS[sid] = new_session
                 PokerApiHandler.session = new_session
@@ -1339,6 +1437,16 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 return
 
             session = self._resolve_session(sid)
+
+            if clean_path.endswith("/toggle_record") or clean_path == "/toggle_record":
+                session.record_hands = not getattr(session, "record_hands", True)
+                state = session.get_serialized_state()
+                self._send_json({
+                    "success": True,
+                    "recording_active": session.record_hands,
+                    "state": state,
+                })
+                return
 
             if clean_path.endswith("/action") or clean_path == "/action":
                 action_type = data.get("action_type", "")

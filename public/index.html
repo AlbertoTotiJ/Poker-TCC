@@ -2044,6 +2044,11 @@
             </div>
           </div>
 
+          <div id="recordingIndicatorBadge" style="display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.68rem; color: #ff5252; background: rgba(255, 82, 82, 0.12); border: 1px solid rgba(255, 82, 82, 0.25); border-radius: 12px; padding: 2px 10px; margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px;">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #ff5252; display: inline-block;"></span>
+            <span>GRAVAÇÃO ATIVA</span>
+          </div>
+
           <div class="community-cards-container" id="communityCards">
             <div class="card-slot empty"></div>
             <div class="card-slot empty"></div>
@@ -2123,16 +2128,14 @@
       <div class="form-group">
         <label for="configAgentModeSelect">Tipo de Oponentes / Agentes:</label>
         <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
-          <option value="trained_bluffer">⭐ Agente Blefador Treinado (Tier S - 94% Vitórias)</option>
-          <option value="trained_math">⭐ Agente Matemático Treinado (Tier S - +14K Fichas)</option>
-          <option value="hybrid">⚡ Agente Híbrido (Matemático + Blefador)</option>
-          <option value="gh_bluffer" selected>🎭 GhBlufferAgent (Gustavo - GTO Blockers & Nash)</option>
-          <option value="gh_math">🧠 GhMathAgent (Gustavo - Implied Odds & Kelly)</option>
-          <option value="math">📐 Agente Matemático (Alberto - EV)</option>
-          <option value="bluffer">🃏 Agente Blefador (Alberto - Bluff Engine)</option>
-          <option value="all_ai">🏆 Torneio Multimodelo de IAs (Todos os Agentes)</option>
-          <option value="mixed">⚔️ Mesa Mista (Agente Matemático vs Bots Padrão)</option>
-          <option value="bots">🤖 Usar Bot (Padrões Anteriores)</option>
+          <option value="tripartite" selected>🌟 Mesa Tripartite (Matemáticos, Blefadores e Híbridos Definitivos)</option>
+          <option value="hybrid">⚡ Agente Híbrido Definitivo (Matemático + Blefador)</option>
+          <option value="math">📐 Agente Matemático Definitivo (Kelly / Monte Carlo / Chen)</option>
+          <option value="bluffer">🃏 Agente Blefador Definitivo (Nash GTO / Blockers)</option>
+          <option value="gh_bluffer">🎭 GhBluffer (GTO Blockers & Nash)</option>
+          <option value="gh_math">🧠 GhMath (Implied Odds & Kelly)</option>
+          <option value="trained_bluffer">⭐ Blefador Treinado (Tier S)</option>
+          <option value="trained_math">⭐ Matemático Treinado (Tier S)</option>
           <option value="custom">⚙️ Personalizado por Cadeira</option>
         </select>
       </div>
@@ -2140,6 +2143,13 @@
       <div class="form-group">
         <label for="startingStackInput">Fichas Iniciais por Jogador:</label>
         <input type="number" id="startingStackInput" value="1000" min="200" step="100">
+      </div>
+
+      <div class="form-group" style="margin-top: 10px; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 6px; padding: 10px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#81c784; font-size:0.82rem; margin:0;">
+          <input type="checkbox" id="recordHandsCheckbox" checked style="accent-color:#4caf50; width:16px; height:16px;">
+          <span>🔴 <strong>Gravar partidas automaticamente</strong> (salva no Neon e gera dataset)</span>
+        </label>
       </div>
 
       <button class="btn-submit" onclick="submitConfig()">Entrar na Mesa e Jogar</button>
@@ -2403,23 +2413,27 @@
 
       <div class="form-group">
         <label for="recordAuthCode">Código de Autenticação da Equipe:</label>
-        <input type="password" id="recordAuthCode" placeholder="" autocomplete="off">
+        <input type="password" id="recordAuthCode" value="TCC2026" placeholder="TCC2026" autocomplete="off">
       </div>
 
       <div class="form-group">
         <label for="recordNumHands">Quantidade de Rodadas:</label>
         <input type="number" id="recordNumHands" value="10" min="1" max="100">
-        <small style="color:#888;">Recomendado na Vercel: lotes de 5 a 20 partidas para resposta rápida.</small>
+        <small style="color:#888;">Recomendado na Vercel: lotes de 5 a 25 partidas por requisição.</small>
       </div>
 
       <div class="form-group">
         <label for="recordTableFormat">Composição e Configuração da Mesa:</label>
         <select id="recordTableFormat" onchange="handleRecordTableFormatChange()">
+          <optgroup label="🌟 Mesas Definitivas Oficiais (TCC)">
+            <option value="definitive_9max" data-players="9" selected>🌟 Mesa 9-Max Definitiva: 3 Matemáticos + 3 Blefadores + 3 Híbridos (9 Jogadores)</option>
+            <option value="tripartite_6max" data-players="6">🏆 Mesa 6-Max Tripartite: 2 Matemáticos + 2 Blefadores + 2 Híbridos (6 Jogadores)</option>
+          </optgroup>
           <optgroup label="⚙️ Configuração Personalizada">
             <option value="custom" data-players="9">⚙️ Personalizar Configuração da Mesa (2 a 9 Agentes de IA)</option>
           </optgroup>
           <optgroup label="🤖 Torneios de IA & Pesquisa Científica (TCC)">
-            <option value="tier_s_duelo" data-players="6" selected>⭐ Duelo dos Campeões Tier S: 3 Blefadores Tier S vs 3 Matemáticos Tier S (6 Jogadores)</option>
+            <option value="tier_s_duelo" data-players="6">⭐ Duelo dos Campeões Tier S: 3 Blefadores Tier S vs 3 Matemáticos Tier S (6 Jogadores)</option>
             <option value="hybrid_vs_champions" data-players="6">⚡ Torneio Híbrido vs Tier S: 2 Híbridos, 2 Blefadores Tier S, 2 Matemáticos Tier S (6 Jogadores)</option>
             <option value="tcc_champions_9" data-players="9">🌟 Grande Torneio TCC 9-Max: 3 Mat Tier S + 3 Blef Tier S + 3 Híbridos (9 Jogadores)</option>
             <option value="tcc_experiment_9" data-players="9">🎓 Experimento TCC 9-Max: 4 Matemáticos + 5 Blefadores (9 Jogadores)</option>
@@ -2866,7 +2880,8 @@
             num_players: numPlayers,
             starting_stack: startingStack,
             agent_mode: selectedAgentMode,
-            custom_agents: selectedAgentMode === 'custom' ? customAgents : null
+            custom_agents: selectedAgentMode === 'custom' ? customAgents : null,
+            record_hands: document.getElementById('recordHandsCheckbox') ? document.getElementById('recordHandsCheckbox').checked : true
           })
         });
         if (data && data.success) {
@@ -2909,7 +2924,8 @@
             num_players: numPlayers,
             starting_stack: startingStack,
             agent_mode: selectedAgentMode,
-            custom_agents: selectedAgentMode === 'custom' ? customAgents : null
+            custom_agents: selectedAgentMode === 'custom' ? customAgents : null,
+            record_hands: document.getElementById('recordHandsCheckbox') ? document.getElementById('recordHandsCheckbox').checked : true
           })
         });
         if (data && data.success) {
@@ -3018,6 +3034,12 @@
       const potChips = document.getElementById('potChipsVisual');
       if (potChips) {
         potChips.innerHTML = renderChipsVisual(gameState.pot_total, 8);
+      }
+
+      // Recording Active Badge
+      const recBadge = document.getElementById('recordingIndicatorBadge');
+      if (recBadge) {
+        recBadge.style.display = gameState.recording_active ? 'flex' : 'none';
       }
 
       // Dealer Speech Update
@@ -3360,6 +3382,8 @@
       if (!notice) return;
 
       const descMap = {
+        'definitive_9max': '🌟 <strong>Mesa 9-Max Definitiva (3x3x3):</strong> O novo padrão oficial do TCC com 3 Matemáticos Definitivos, 3 Blefadores Definitivos e 3 Híbridos Definitivos em confronto Full Ring.',
+        'tripartite_6max': '🏆 <strong>Mesa 6-Max Tripartite (2x2x2):</strong> 2 Matemáticos Definitivos, 2 Blefadores Definitivos e 2 Híbridos Definitivos em mesa curta de alta dinâmica.',
         'custom': '⚙️ <strong>Mesa Personalizada:</strong> Configuração individual cadeira por cadeira (2 a 9 jogadores). Na mesa cheia (9 jogadores), o 9º assento é preenchido pelo agente selecionado no lugar do jogador humano.',
         'tier_s_duelo': '⭐ <strong>Duelo dos Campeões Tier S:</strong> Confronto direto entre 3 Agentes Blefadores Treinados (Tier S - 94% win rate) vs 3 Agentes Matemáticos Treinados (Tier S - +14.5k fichas). Ideal para benchmarking de elite.',
         'hybrid_vs_champions': '⚡ <strong>Torneio Híbrido vs Campeões Tier S:</strong> 2 Agentes Híbridos (adaptativos) enfrentam 2 Blefadores Tier S e 2 Matemáticos Tier S para testar a flexibilidade estratégica contra especialistas.',

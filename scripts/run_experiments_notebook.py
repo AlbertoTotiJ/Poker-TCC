@@ -118,146 +118,122 @@ def main() -> None:
     stress_base = "data/03_notebook_estresse_1v5"
     headsup_base = "data/02_notebook_headsup"
 
-    if not args.stress_extra:
-        # ---------------------------------------------------------
-        # PARTE 1: DUELOS HEADS-UP 1v1 (data/02_notebook_headsup)
-        # ---------------------------------------------------------
-        run_single_exp(
-            name="Duelo Heads-Up 1: GhBluffer (GTO Nash) vs Matemático (Baseline)",
-            hands=500,
-            custom_seats=["gh_bluffer", "math"],
-            seed=args.seed if args.seed != 42 else 101,
-            test_id=f"duel_ghbluffer_vs_matematico{suffix}",
-            output_dir=headsup_base,
-        )
+    # ---------------------------------------------------------
+    # PARTE 1: DUELOS HEADS-UP 1v1 (data/02_notebook_headsup)
+    # Todos os duelos possíveis entre os 3 agentes definitivos
+    # ---------------------------------------------------------
+    run_single_exp(
+        name="Duelo Heads-Up 1: Blefador vs Matemático",
+        hands=500,
+        custom_seats=["bluffer", "math"],
+        seed=args.seed,
+        test_id=f"duel_bluffer_vs_matematico{suffix}",
+        output_dir=headsup_base,
+    )
 
-        run_single_exp(
-            name="Duelo Heads-Up 2: Híbrido (Evolutivo) vs GhMath (Kelly/XAI)",
-            hands=500,
-            custom_seats=["hybrid", "gh_math"],
-            seed=args.seed if args.seed != 42 else 102,
-            test_id=f"duel_hibrido_vs_ghmath{suffix}",
-            output_dir=headsup_base,
-        )
+    run_single_exp(
+        name="Duelo Heads-Up 2: Híbrido vs Matemático",
+        hands=500,
+        custom_seats=["hybrid", "math"],
+        seed=args.seed,
+        test_id=f"duel_hibrido_vs_matematico{suffix}",
+        output_dir=headsup_base,
+    )
 
-        run_single_exp(
-            name="Duelo Heads-Up 3: Blefador (Heurístico) vs Matemático (Baseline)",
-            hands=500,
-            custom_seats=["bluffer", "math"],
-            seed=args.seed if args.seed != 42 else 103,
-            test_id=f"duel_bluffer_vs_matematico{suffix}",
-            output_dir=headsup_base,
-        )
-
-        # ---------------------------------------------------------
-        # PARTE 2: MESAS DE ESTRESSE 1v5 INICIAIS (01 a 03)
-        # ---------------------------------------------------------
-        run_single_exp(
-            name="Estresse 1: 1 Matemático vs 5 Blefadores Maníacos",
-            hands=500,
-            custom_seats=["math", "bluffer", "bluffer", "bluffer", "bluffer", "bluffer"],
-            seed=args.seed if args.seed != 42 else 201,
-            test_id=f"01_math_vs_5_bluffers{suffix}",
-            output_dir=stress_base,
-        )
-
-        run_single_exp(
-            name="Estresse 2: 1 GhBluffer vs 5 Conservadores Passivos (NITs)",
-            hands=500,
-            custom_seats=[
-                "gh_bluffer",
-                "conservative",
-                "conservative",
-                "conservative",
-                "conservative",
-                "conservative",
-            ],
-            seed=args.seed if args.seed != 42 else 202,
-            test_id=f"02_ghbluffer_vs_5_passivos{suffix}",
-            output_dir=stress_base,
-        )
-
-        run_single_exp(
-            name="Estresse 3: 1 Híbrido Mestre vs 5 Agressivos Descontrolados (LAGs)",
-            hands=500,
-            custom_seats=[
-                "hybrid",
-                "aggressive",
-                "aggressive",
-                "aggressive",
-                "aggressive",
-                "aggressive",
-            ],
-            seed=args.seed if args.seed != 42 else 203,
-            test_id=f"03_hibrido_vs_5_agressivos{suffix}",
-            output_dir=stress_base,
-        )
+    run_single_exp(
+        name="Duelo Heads-Up 3: Híbrido vs Blefador",
+        hands=500,
+        custom_seats=["hybrid", "bluffer"],
+        seed=args.seed,
+        test_id=f"duel_hibrido_vs_bluffer{suffix}",
+        output_dir=headsup_base,
+    )
 
     # ---------------------------------------------------------
-    # PARTE 3: MESAS DE ESTRESSE 1v5 DOS OUTROS AGENTES (04 a 10)
+    # PARTE 2: MESAS DE ESTRESSE 1v5 (data/03_notebook_estresse_1v5)
+    # Todas as possibilidades com os 3 agentes definitivos
     # ---------------------------------------------------------
-    seed_s = args.seed
-
+    # 1. Matemático como "1"
     run_single_exp(
-        name="Estresse 4: 1 GhMath (Gustavo) vs 5 Blefadores Maníacos",
+        name="Estresse 1: 1 Matemático vs 5 Blefadores",
         hands=500,
-        custom_seats=["gh_math", "bluffer", "bluffer", "bluffer", "bluffer", "bluffer"],
-        seed=seed_s,
-        test_id=f"04_ghmath_vs_5_bluffers{suffix}",
+        custom_seats=["math", "bluffer", "bluffer", "bluffer", "bluffer", "bluffer"],
+        seed=args.seed,
+        test_id=f"01_math_vs_5_bluffers{suffix}",
         output_dir=stress_base,
     )
 
     run_single_exp(
-        name="Estresse 5: 1 Matemático Treinado (Tier S) vs 5 Blefadores Maníacos",
+        name="Estresse 2: 1 Matemático vs 5 Híbridos",
         hands=500,
-        custom_seats=["trained_math", "bluffer", "bluffer", "bluffer", "bluffer", "bluffer"],
-        seed=seed_s,
-        test_id=f"05_trained_math_vs_5_bluffers{suffix}",
+        custom_seats=["math", "hybrid", "hybrid", "hybrid", "hybrid", "hybrid"],
+        seed=args.seed,
+        test_id=f"02_math_vs_5_hybrids{suffix}",
         output_dir=stress_base,
     )
 
     run_single_exp(
-        name="Estresse 6: 1 Blefador Treinado (Tier S) vs 5 Conservadores Passivos (NITs)",
+        name="Estresse 3: 1 Matemático vs 5 Mistos (3 Blefadores + 2 Híbridos)",
         hands=500,
-        custom_seats=["trained_bluffer", "conservative", "conservative", "conservative", "conservative", "conservative"],
-        seed=seed_s,
-        test_id=f"06_trained_bluffer_vs_5_passivos{suffix}",
+        custom_seats=["math", "bluffer", "bluffer", "bluffer", "hybrid", "hybrid"],
+        seed=args.seed,
+        test_id=f"03_math_vs_5_mistos{suffix}",
         output_dir=stress_base,
     )
 
+    # 2. Blefador como "1"
     run_single_exp(
-        name="Estresse 7: 1 Blefador Heurístico vs 5 Matemáticos Baseline",
+        name="Estresse 4: 1 Blefador vs 5 Matemáticos",
         hands=500,
         custom_seats=["bluffer", "math", "math", "math", "math", "math"],
-        seed=seed_s,
-        test_id=f"07_bluffer_vs_5_matematicos{suffix}",
+        seed=args.seed,
+        test_id=f"04_bluffer_vs_5_maths{suffix}",
         output_dir=stress_base,
     )
 
     run_single_exp(
-        name="Estresse 8: 1 Equilibrado (TAG) vs 5 Blefadores Maníacos",
+        name="Estresse 5: 1 Blefador vs 5 Híbridos",
         hands=500,
-        custom_seats=["balanced", "bluffer", "bluffer", "bluffer", "bluffer", "bluffer"],
-        seed=seed_s,
-        test_id=f"08_balanced_vs_5_bluffers{suffix}",
+        custom_seats=["bluffer", "hybrid", "hybrid", "hybrid", "hybrid", "hybrid"],
+        seed=args.seed,
+        test_id=f"05_bluffer_vs_5_hybrids{suffix}",
         output_dir=stress_base,
     )
 
     run_single_exp(
-        name="Estresse 9: 1 Conservador (NIT) vs 5 Agressivos Descontrolados (LAGs)",
+        name="Estresse 6: 1 Blefador vs 5 Mistos (3 Matemáticos + 2 Híbridos)",
         hands=500,
-        custom_seats=["conservative", "aggressive", "aggressive", "aggressive", "aggressive", "aggressive"],
-        seed=seed_s,
-        test_id=f"09_conservative_vs_5_agressivos{suffix}",
+        custom_seats=["bluffer", "math", "math", "math", "hybrid", "hybrid"],
+        seed=args.seed,
+        test_id=f"06_bluffer_vs_5_mistos{suffix}",
+        output_dir=stress_base,
+    )
+
+    # 3. Híbrido como "1"
+    run_single_exp(
+        name="Estresse 7: 1 Híbrido vs 5 Matemáticos",
+        hands=500,
+        custom_seats=["hybrid", "math", "math", "math", "math", "math"],
+        seed=args.seed,
+        test_id=f"07_hybrid_vs_5_maths{suffix}",
         output_dir=stress_base,
     )
 
     run_single_exp(
-        name="Estresse 10: 1 Agressivo (LAG) vs 5 Conservadores Passivos (NITs)",
+        name="Estresse 8: 1 Híbrido vs 5 Blefadores",
         hands=500,
-        custom_seats=["aggressive", "conservative", "conservative", "conservative", "conservative", "conservative"],
-        seed=seed_s,
-        test_id=f"10_aggressive_vs_5_passivos{suffix}",
+        custom_seats=["hybrid", "bluffer", "bluffer", "bluffer", "bluffer", "bluffer"],
+        seed=args.seed,
+        test_id=f"08_hybrid_vs_5_bluffers{suffix}",
+        output_dir=stress_base,
+    )
+
+    run_single_exp(
+        name="Estresse 9: 1 Híbrido vs 5 Mistos (3 Matemáticos + 2 Blefadores)",
+        hands=500,
+        custom_seats=["hybrid", "math", "math", "math", "bluffer", "bluffer"],
+        seed=args.seed,
+        test_id=f"09_hybrid_vs_5_mistos{suffix}",
         output_dir=stress_base,
     )
 

@@ -260,6 +260,20 @@ def save_hand_to_file(hand_data: Dict[str, Any]) -> bool:
 
 
 ROSTER_CONFIGS: Dict[str, Dict[str, Any]] = {
+    "definitive_9max": {
+        "name": "🌟 Mesa 9-Max Definitiva (3x3x3: 3 Mat, 3 Blef, 3 Híbridos)",
+        "description": (
+            "3 Matemáticos, 3 Blefadores e 3 Híbridos Definitivos (9 Jogadores)"
+        ),
+        "num_players": 9,
+    },
+    "tripartite_6max": {
+        "name": "🏆 Mesa 6-Max Tripartite (2x2x2: 2 Mat, 2 Blef, 2 Híbridos)",
+        "description": (
+            "2 Matemáticos, 2 Blefadores e 2 Híbridos Definitivos (6 Jogadores)"
+        ),
+        "num_players": 6,
+    },
     "tier_s_trio": {
         "name": "⭐ Trio de Elite Tier S (1 Mat, 1 Blef, 1 Híbrido)",
         "description": (
@@ -534,6 +548,92 @@ def build_research_roster(
 
             _add_player(pid, pname, agent, profile)
 
+        return players, agents, profile_labels
+
+    if roster_mode in ("definitive_9max", "tcc_definitive_9", "tcc_9max_definitivo"):
+        for i in range(1, 4):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        for i in range(1, 4):
+            pid = f"bot_blf_{i}"
+            pname = f"Blefador {i}"
+            _add_player(
+                pid,
+                pname,
+                BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador",
+            )
+        for i in range(1, 4):
+            pid = f"bot_hyb_{i}"
+            pname = f"Híbrido {i}"
+            _add_player(
+                pid,
+                pname,
+                HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Híbrido",
+            )
+        local_rng.shuffle(players)
+        return players, agents, profile_labels
+
+    if roster_mode in ("tripartite_6max", "tcc_tripartite_6"):
+        for i in range(1, 3):
+            pid = f"bot_mat_{i}"
+            pname = f"Matemático {i}"
+            _add_player(
+                pid,
+                pname,
+                MathematicalAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Matemático",
+            )
+        for i in range(1, 3):
+            pid = f"bot_blf_{i}"
+            pname = f"Blefador {i}"
+            _add_player(
+                pid,
+                pname,
+                BlufferAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Blefador",
+            )
+        for i in range(1, 3):
+            pid = f"bot_hyb_{i}"
+            pname = f"Híbrido {i}"
+            _add_player(
+                pid,
+                pname,
+                HybridAgent(
+                    player_id=pid,
+                    name=pname,
+                    rng=random.Random(local_rng.randint(1, 1000000)),
+                ),
+                "Híbrido",
+            )
+        local_rng.shuffle(players)
         return players, agents, profile_labels
 
     if roster_mode in ("tier_s_trio", "trio_champions_3"):
@@ -1301,7 +1401,7 @@ def run_recording_batch(
             }
             if hasattr(bot, "last_decision") and bot.last_decision is not None:
                 dec = bot.last_decision
-                if hasattr(dec, "metrics"):
+                if getattr(dec, "metrics", None) is not None:
                     m = dec.metrics
                     action_data["cognitive_metrics"] = {
                         "raw_equity": round(m.raw_equity, 4),

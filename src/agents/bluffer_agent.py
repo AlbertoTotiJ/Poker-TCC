@@ -1,11 +1,18 @@
-"""Agente de Poker baseado em dinâmica de blefes, pressão e exploração de mesa.
+"""Agente Blefador Definitivo para Texas Hold'em.
 
-Este módulo implementa o BlufferAgent conforme a especificação do Módulo de
-Estratégia de Blefe (Bluff Engine). O agente é desacoplado e possui arquitetura
-independente, permitindo execução isolada, calibragem de hiperparâmetros
-e treinamento futuro por algoritmos de reforço ou busca heurística.
+Unifica e aprimora a versão tática/exploratória clássica (Alberto) e a versão
+baseada em Teoria dos Jogos GTO e Remoção de Cartas (Gustavo - GH):
+1. Razão Áurea GTO entre Valor e Blefe pelo Princípio da Indiferença: B / (P + 2B).
+2. Motor de Remoção de Cartas (Nut Blocker & Card Removal Engine).
+3. Dinâmica avançada de Fold Equity (textura de bordo, scare cards, posição e multiway).
+4. Arsenal tático completo: C-Bet Steal, Semi-Bluff com Outs, Polarized River Bluff,
+   Nut Blocker Bluff, Scare Card Barrel, Preflop 3-Bet Bluff e Float Call.
+5. Eliminação definitiva de vícios: fold disciplinado contra apostas pesadas sem odds,
+   evitando completamente o leak clássico de "Calling Station" ou blefes suicidas.
+6. Payload explicativo e auditável (XAI) para Quartz e telemetria de pesquisa.
 """
 
+from collections import Counter
 from dataclasses import asdict, dataclass
 from enum import Enum
 import json
@@ -14,17 +21,16 @@ import random
 import sys
 from typing import Any, Dict, Optional, Sequence, Tuple
 
-# Garante resolução de 'src' ao executar o script diretamente
+# Garante resolução dos módulos a partir da raiz do repositório
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
-
 from src.agents.base import BaseAgent  # noqa: E402
 from src.engine.deck import Card, Rank  # noqa: E402
 from src.engine.equity import (  # noqa: E402
+    calculate_pot_odds,
+    estimate_hand_equity,
     has_flush_draw,
     has_overcards,
     has_straight_draw,
@@ -34,7 +40,7 @@ from src.engine.table import Action, ActionType, Street, Table  # noqa: E402
 
 
 class BluffTactic(str, Enum):
-    """Classificação tática das manobras executadas pelo agente."""
+    """Classificação tática clássica das manobras executadas pelo agente."""
 
     CBET_STEAL = "C-Bet Steal"
     SEMI_BLUFF = "Semi-Bluff"
@@ -51,9 +57,69 @@ class BluffTactic(str, Enum):
     CONTINGENCY = "Contingency"
 
 
+class GhBluffTactic(str, Enum):
+    """Classificação formal GTO das manobras executadas pelo GhBlufferAgent."""
+
+    POLARIZED_RIVER_BLUFF = "Polarized River Bluff (GTO Blocker)"
+    NUT_BLOCKER_BLUFF = "Nut Blocker Bluff"
+    SEMI_BLUFF_DRAW = "Semi-Bluff Draw (Outs Pressure)"
+    CBET_STEAL = "C-Bet Steal (Dry Board Float)"
+    PREFLOP_3BET_BLUFF = "Preflop Polarized 3-Bet Bluff"
+    VALUE_PLAY = "Value Play (Range Protection)"
+    FREE_CHECK = "Free Check (Pot Control)"
+    DISCIPLINED_FOLD = "Disciplined Fold (Anti-Leak)"
+    PROBE_DEFEND = "Pot-Odds Defend (Implied Call)"
+    CONTINGENCY = "Contingency Fallback"
+
+
+@dataclass(frozen=True)
+class GhBluffMetrics:
+    """Payload cognitivo explicável para inspeção de IA e apresentação do TCC."""
+
+    raw_equity: float
+    adjusted_equity: float
+    pot_odds: float
+    gto_bluff_threshold: float
+    random_roll: float
+    blocker_score: float
+    semi_bluff_outs: int
+    is_bluff: bool
+    tactic: str
+    tactical_rationale: str
+    formula_reference: str
+
+    @property
+    def direct_pot_odds(self) -> float:
+        return self.pot_odds
+
+    @property
+    def implied_odds(self) -> float:
+        return self.pot_odds
+
+    @property
+    def expected_value_call(self) -> float:
+        return 0.0
+
+    @property
+    def expected_value_raise(self) -> float:
+        return 0.0
+
+    @property
+    def kelly_fraction(self) -> float:
+        return 0.0
+
+    @property
+    def outs_count(self) -> int:
+        return self.semi_bluff_outs
+
+    @property
+    def position_name(self) -> str:
+        return "Middle"
+
+
 @dataclass(frozen=True)
 class BluffDecision:
-    """Estrutura analítica contendo a fundamentação estratégica do blefe."""
+    """Estrutura formal e imutável da decisão tática tomada pelo agente."""
 
     action_type: ActionType
     amount: int
@@ -62,11 +128,19 @@ class BluffDecision:
     fold_equity: float
     reason: str
     semi_bluff_outs: int = 0
+    equity: float = 0.0
+    pot_odds: float = 0.0
+    expected_value: float = 0.0
+    metrics: Optional[GhBluffMetrics] = None
+
+
+# Alias para 100% de compatibilidade com o ecossistema GH
+GhBluffDecision = BluffDecision
 
 
 @dataclass
 class BlufferParameters:
-    """Hiperparâmetros calibráveis que regem as decisões táticas do agente."""
+    """Hiperparâmetros calibráveis que regem as decisões táticas e GTO do agente."""
 
     bluff_frequency: float = 0.40
     semi_bluff_frequency: float = 0.70
@@ -77,36 +151,41 @@ class BlufferParameters:
     scare_card_weight: float = 0.15
     dry_board_bonus: float = 0.10
     bet_sizing_factor: float = 0.40
+    min_blocker_threshold: float = 0.30
+    gto_balance_factor: float = 1.0
+    num_simulations: int = 250
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> Dict[str, Any]:
         """Converte hiperparâmetros em dicionário serializável."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "BlufferParameters":
-        """Instancia hiperparâmetros a partir de dicionário."""
+        """Instancia hiperparâmetros a partir de dicionário com validação e clamping."""
         valid_keys = {f for f in cls.__dataclass_fields__}
-        filtered = {k: float(v) for k, v in data.items() if k in valid_keys}
+        filtered: Dict[str, Any] = {}
+        for k, v in data.items():
+            if k == "bluff_aggression":
+                filtered["aggression_multiplier"] = float(v)
+            elif k in valid_keys:
+                filtered[k] = int(v) if k == "num_simulations" else float(v)
         return cls(**filtered)
 
 
-class BlufferAgent(BaseAgent):
-    """Agente autônomo focado no Módulo de Estratégia de Blefe (Bluff Engine).
+GhBlufferParameters = BlufferParameters
 
-    Opera de forma desacoplada com base em:
-    1. Fold Equity estimada dinâmica (número de adversários, streets e custos).
-    2. Estratégia ativa de Pré-Flop para ver o Flop e roubar blinds.
-    3. Análise de textura do bordo (dry boards, scare cards, flush draws).
-    4. Semi-blefes com equidade oculta de evolução (outs no Flop e Turn).
-    5. Blefes de continuação (C-Bet Steals) em potes abandonados.
-    6. Re-aumentos desbalanceados (Bluff Raises) contra apostas de sondagem.
-    7. Suporte completo a salvamento, carregamento e calibração de hiperparâmetros.
+
+class BlufferAgent(BaseAgent):
+    """Agente Blefador Definitivo.
+
+    Integra o motor de Fold Equity e táticas dinâmicas de Alberto com a indiferença
+    de Nash Libratus/Pluribus e a remoção de cartas (Blockers) de Gustavo (GH).
     """
 
     def __init__(
         self,
         player_id: str,
-        name: str = "Agente Blefador",
+        name: str = "Agente Blefador Definitivo",
         bluff_frequency: float = 0.40,
         semi_bluff_frequency: float = 0.70,
         fold_equity_threshold: float = 0.40,
@@ -116,19 +195,27 @@ class BlufferAgent(BaseAgent):
         scare_card_weight: float = 0.15,
         dry_board_bonus: float = 0.10,
         bet_sizing_factor: float = 0.40,
+        bluff_aggression: Optional[float] = None,
+        gto_balance_factor: float = 1.0,
+        min_blocker_threshold: float = 0.30,
+        num_simulations: int = 250,
         rng: Optional[random.Random] = None,
     ) -> None:
         super().__init__(player_id=player_id, name=name)
+        eff_agg = bluff_aggression if bluff_aggression is not None else aggression_multiplier
         self.params = BlufferParameters(
-            bluff_frequency=max(0.05, min(0.95, bluff_frequency)),
-            semi_bluff_frequency=max(0.10, min(1.0, semi_bluff_frequency)),
-            fold_equity_threshold=max(0.10, min(0.90, fold_equity_threshold)),
-            cbet_frequency=max(0.10, min(1.0, cbet_frequency)),
-            bluff_raise_frequency=max(0.05, min(0.90, bluff_raise_frequency)),
-            aggression_multiplier=max(0.50, min(2.50, aggression_multiplier)),
-            scare_card_weight=max(0.00, min(0.40, scare_card_weight)),
-            dry_board_bonus=max(0.00, min(0.30, dry_board_bonus)),
-            bet_sizing_factor=max(0.25, min(1.20, bet_sizing_factor)),
+            bluff_frequency=max(0.05, min(0.95, float(bluff_frequency))),
+            semi_bluff_frequency=max(0.10, min(1.0, float(semi_bluff_frequency))),
+            fold_equity_threshold=max(0.10, min(0.90, float(fold_equity_threshold))),
+            cbet_frequency=max(0.10, min(1.0, float(cbet_frequency))),
+            bluff_raise_frequency=max(0.05, min(0.90, float(bluff_raise_frequency))),
+            aggression_multiplier=max(0.50, min(2.0, float(eff_agg))),
+            scare_card_weight=max(0.00, min(0.40, float(scare_card_weight))),
+            dry_board_bonus=max(0.00, min(0.30, float(dry_board_bonus))),
+            bet_sizing_factor=max(0.25, min(1.20, float(bet_sizing_factor))),
+            min_blocker_threshold=max(0.10, min(0.70, float(min_blocker_threshold))),
+            gto_balance_factor=max(0.50, min(1.80, float(gto_balance_factor))),
+            num_simulations=max(100, min(1000, int(num_simulations))),
         )
         self.rng: random.Random = rng if rng is not None else random.Random()
 
@@ -139,11 +226,13 @@ class BlufferAgent(BaseAgent):
         self.semi_bluffs: int = 0
         self.cbet_steals: int = 0
         self.bluff_raises: int = 0
+        self.value_bets: int = 0
         self.vpip_actions: int = 0
         self.pfr_actions: int = 0
         self.bets_and_raises: int = 0
         self.calls: int = 0
         self.folds: int = 0
+        self.checks: int = 0
         self.last_decision: Optional[BluffDecision] = None
 
     # Propriedades de compatibilidade e acesso direto
@@ -164,8 +253,40 @@ class BlufferAgent(BaseAgent):
         self.params.aggression_multiplier = max(0.50, min(2.50, float(value)))
 
     @property
+    def bluff_aggression(self) -> float:
+        return self.params.aggression_multiplier
+
+    @bluff_aggression.setter
+    def bluff_aggression(self, value: float) -> None:
+        self.params.aggression_multiplier = max(0.50, min(2.0, float(value)))
+
+    @property
+    def gto_balance_factor(self) -> float:
+        return self.params.gto_balance_factor
+
+    @gto_balance_factor.setter
+    def gto_balance_factor(self, value: float) -> None:
+        self.params.gto_balance_factor = max(0.50, min(1.80, float(value)))
+
+    @property
+    def min_blocker_threshold(self) -> float:
+        return self.params.min_blocker_threshold
+
+    @min_blocker_threshold.setter
+    def min_blocker_threshold(self, value: float) -> None:
+        self.params.min_blocker_threshold = max(0.10, min(0.70, float(value)))
+
+    @property
+    def num_simulations(self) -> int:
+        return self.params.num_simulations
+
+    @num_simulations.setter
+    def num_simulations(self, value: int) -> None:
+        self.params.num_simulations = max(100, min(1000, int(value)))
+
+    @property
     def aggression_factor(self) -> float:
-        """Razão clássica entre ações agressivas e passivas."""
+        """Razão clássica entre ações agressivas (bets/raises) e passivas (calls)."""
         if self.calls == 0:
             return float(self.bets_and_raises)
         return round(self.bets_and_raises / self.calls, 2)
@@ -177,7 +298,7 @@ class BlufferAgent(BaseAgent):
             return 0.0
         return round((self.bluffs_attempted / self.bets_and_raises) * 100.0, 1)
 
-    def export_parameters(self) -> Dict[str, float]:
+    def export_parameters(self) -> Dict[str, Any]:
         """Exporta os hiperparâmetros atuais do agente para calibração/treino."""
         return self.params.to_dict()
 
@@ -244,6 +365,336 @@ class BlufferAgent(BaseAgent):
             amount=decision.amount,
         )
 
+    def evaluate_cognitive_state(self, table: Table) -> BluffDecision:
+        """Endpoint para interface visual Quartz (XAI Micro Vision)."""
+        self.decide_action(table)
+        assert self.last_decision is not None
+        return self.last_decision
+
+    def analyze_board_texture(
+        self, community_cards: Sequence[Card]
+    ) -> Tuple[bool, bool, bool]:
+        """Classifica as propriedades estruturais da mesa (Board Texture).
+
+        Retorna:
+            (is_dry, is_wet, has_scare)
+        """
+        if len(community_cards) < 3:
+            return False, False, False
+
+        ranks = [c.rank.value for c in community_cards]
+        suits = [c.suit for c in community_cards]
+        max_suit_count = max(Counter(suits).values()) if suits else 0
+
+        unique_ranks = sorted(set(ranks))
+        has_connector = False
+        for i in range(len(unique_ranks) - 1):
+            if unique_ranks[i + 1] - unique_ranks[i] == 1:
+                has_connector = True
+                break
+
+        # Wet Board: 3 cartas do mesmo naipe ou conectores broadway
+        is_wet = max_suit_count >= 3 or (
+            has_connector and len(unique_ranks) >= 3 and (max(unique_ranks) - min(unique_ranks) <= 4)
+        )
+
+        # Dry Board: desconexo, sem pares no flop, no máximo 2 do mesmo naipe
+        is_dry = (
+            (max_suit_count <= 2)
+            and (not has_connector)
+            and (len(unique_ranks) == len(community_cards))
+        )
+
+        # Scare Card: presença de Ás, Rei ou cartas de coringa de borda
+        has_scare = (
+            (Rank.ACE.value in ranks)
+            or (Rank.KING.value in ranks)
+            or (max_suit_count >= 4)
+        )
+
+        return is_dry, is_wet, has_scare
+
+    def evaluate_blockers(
+        self,
+        hole_cards: Sequence[Card],
+        community_cards: Sequence[Card],
+    ) -> float:
+        """Avalia o Efeito de Remoção de Cartas (Card Removal / Blocker Score)."""
+        if not community_cards:
+            h_ranks = [c.rank.value for c in hole_cards]
+            score = 0.0
+            if Rank.ACE.value in h_ranks:
+                score += 0.35
+            if Rank.KING.value in h_ranks:
+                score += 0.20
+            return min(1.0, score)
+
+        score = 0.0
+        board_suits = [c.suit for c in community_cards]
+        suit_counts = Counter(board_suits)
+        board_ranks = [c.rank.value for c in community_cards]
+
+        # 1. Nut Flush Blocker
+        for suit, count in suit_counts.items():
+            if count >= 3:
+                has_ace_of_suit = any(c.rank == Rank.ACE and c.suit == suit for c in hole_cards)
+                has_king_of_suit = any(c.rank == Rank.KING and c.suit == suit for c in hole_cards)
+                if has_ace_of_suit:
+                    score += 0.50
+                elif has_king_of_suit and Rank.ACE.value in board_ranks:
+                    score += 0.35
+
+        # 2. Straight Blockers
+        unique_board_ranks = sorted(set(board_ranks))
+        h_ranks = [c.rank.value for c in hole_cards]
+        for hr in h_ranks:
+            for br in unique_board_ranks:
+                if abs(hr - br) in (1, 2):
+                    score += 0.10
+
+        # 3. Top Pair / Set Blocker
+        max_board_rank = max(board_ranks)
+        if max_board_rank >= Rank.KING.value:
+            if any(c.rank.value == max_board_rank for c in hole_cards):
+                score += 0.25
+
+        return min(1.0, score)
+
+    def detect_draw_outs(
+        self,
+        hole_cards: Sequence[Card],
+        community_cards: Sequence[Card],
+    ) -> int:
+        """Calcula o número de outs que completam o jogo."""
+        if len(community_cards) < 3 or len(hole_cards) < 2:
+            return 0
+
+        combined = list(hole_cards) + list(community_cards)
+        outs = 0
+
+        if has_flush_draw(combined):
+            outs += 9
+
+        if has_straight_draw(combined):
+            ranks = sorted({c.rank.value for c in combined})
+            if 14 in ranks:
+                ranks = [1] + ranks
+
+            is_open_ended = False
+            for i in range(len(ranks) - 3):
+                window = ranks[i : i + 4]
+                if window[3] - window[0] == 3:
+                    is_open_ended = True
+                    break
+
+            outs += 8 if is_open_ended else 4
+
+        if outs == 0 and has_overcards((hole_cards[0], hole_cards[1]), community_cards):
+            outs += 6
+
+        return min(15, outs)
+
+    def calculate_gto_bluff_ratio(self, bet_amount: int, pot_size: int) -> float:
+        """Calcula a proporção ideal de blefe segundo o Teorema da Indiferença de Nash: B / (P + 2B)."""
+        if bet_amount <= 0 or pot_size <= 0:
+            return 0.20
+        ratio = bet_amount / (pot_size + 2 * bet_amount)
+        return max(0.15, min(0.40, ratio))
+
+    def estimate_fold_equity(
+        self,
+        num_opponents: int,
+        is_dry: bool,
+        has_scare: bool,
+        street: Street,
+        pot_size: int,
+        bet_size: int,
+        to_call: int = 0,
+    ) -> float:
+        """Estima a probabilidade do oponente desistir baseada no contexto e dimensionamento."""
+        # Base clássica de Fold Equity
+        base_fe = max(0.12, 0.82 - (num_opponents * 0.15))
+
+        if is_dry:
+            base_fe += self.params.dry_board_bonus + 0.05
+
+        if has_scare and street in (Street.TURN, Street.RIVER):
+            base_fe += self.params.scare_card_weight + 0.05
+
+        # Bet Sizing: apostas maiores aumentam fold equity
+        if pot_size > 0 and bet_size > 0:
+            ratio = bet_size / pot_size
+            if ratio >= 0.70:
+                base_fe += 0.08
+            elif ratio <= 0.35:
+                base_fe -= 0.08
+
+        # Adversário demonstrando agressão pesada reduz a fold equity
+        if to_call > 0 and pot_size > 0:
+            bet_pot_ratio = to_call / pot_size
+            if bet_pot_ratio > 0.50:
+                base_fe -= 0.20
+
+        return max(0.05, min(0.92, base_fe))
+
+    def _decide_value_play(
+        self,
+        pot_size: int,
+        to_call: int,
+        player_stack: int,
+        player_current_bet: int,
+        current_highest_bet: int,
+        min_raise: int,
+        big_blind: int,
+        legal_actions: Sequence[ActionType],
+        equity: float,
+        street: Street,
+        comb_desc: str = "",
+        hand_desc: str = "",
+    ) -> BluffDecision:
+        """Executa aposta ou aumento por valor legítimo para balancear o range."""
+        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
+        can_bet = ActionType.BET in legal_actions and player_stack > 0
+
+        target_fraction = 0.75 if street in (Street.TURN, Street.RIVER) else 0.65
+        bet_amt = int(max(big_blind, pot_size * target_fraction))
+        bet_amt = min(player_stack, bet_amt)
+
+        desc = f" ({comb_desc or hand_desc})" if (comb_desc or hand_desc) else ""
+
+        if to_call == 0 and can_bet and bet_amt > 0:
+            metrics = GhBluffMetrics(
+                raw_equity=equity,
+                adjusted_equity=equity,
+                pot_odds=0.0,
+                gto_bluff_threshold=0.0,
+                random_roll=0.0,
+                blocker_score=0.0,
+                semi_bluff_outs=0,
+                is_bluff=False,
+                tactic=GhBluffTactic.VALUE_PLAY.value,
+                tactical_rationale=f"Aposta por valor para proteção de range{desc}",
+                formula_reference="Value Bet: Sizing = 0.65-0.75 * Pot",
+            )
+            return BluffDecision(
+                action_type=ActionType.BET,
+                amount=bet_amt,
+                is_bluff=False,
+                tactic=BluffTactic.VALUE_PLAY.value,
+                fold_equity=0.10,
+                reason=f"Aposta de valor legítimo{desc} com equidade sólida de {equity:.1%}",
+                semi_bluff_outs=0,
+                equity=equity,
+                pot_odds=0.0,
+                expected_value=equity * pot_size,
+                metrics=metrics,
+            )
+
+        if to_call > 0 and can_raise and equity >= 0.70:
+            raise_amt = current_highest_bet + max(min_raise, int(to_call * 2.5))
+            max_pos = player_current_bet + player_stack
+            raise_amt = min(max_pos, raise_amt)
+            if raise_amt > current_highest_bet:
+                metrics = GhBluffMetrics(
+                    raw_equity=equity,
+                    adjusted_equity=equity,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    gto_bluff_threshold=0.0,
+                    random_roll=0.0,
+                    blocker_score=0.0,
+                    semi_bluff_outs=0,
+                    is_bluff=False,
+                    tactic=GhBluffTactic.VALUE_PLAY.value,
+                    tactical_rationale=f"Re-aumento de valor para punir apostas adversárias{desc}",
+                    formula_reference="Value 3-Bet/Raise: Equity >= 0.70",
+                )
+                return BluffDecision(
+                    action_type=ActionType.RAISE,
+                    amount=raise_amt,
+                    is_bluff=False,
+                    tactic=BluffTactic.VALUE_PLAY.value,
+                    fold_equity=0.15,
+                    reason=f"Re-aumento de valor dominante{desc} ({equity:.1%})",
+                    semi_bluff_outs=0,
+                    equity=equity,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    expected_value=(equity * (pot_size + to_call)) - to_call,
+                    metrics=metrics,
+                )
+
+        can_pay = ActionType.CALL in legal_actions or ActionType.ALL_IN in legal_actions
+        if to_call > 0 and can_pay:
+            pay_act = ActionType.CALL if ActionType.CALL in legal_actions else ActionType.ALL_IN
+            gh_m = GhBluffMetrics(
+                raw_equity=equity,
+                adjusted_equity=equity,
+                pot_odds=to_call / max(1, pot_size + to_call),
+                gto_bluff_threshold=0.0,
+                random_roll=0.0,
+                blocker_score=0.0,
+                semi_bluff_outs=0,
+                is_bluff=False,
+                tactic=GhBluffTactic.PROBE_DEFEND.value,
+                tactical_rationale=f"Call de valor para showdown seguro{desc}",
+                formula_reference="Showdown Value Call",
+            )
+            return BluffDecision(
+                action_type=pay_act,
+                amount=to_call if pay_act == ActionType.CALL else player_stack,
+                is_bluff=False,
+                tactic=BluffTactic.VALUE_PLAY.value,
+                fold_equity=0.05,
+                reason=f"Call de valor para showdown seguro{desc}",
+                semi_bluff_outs=0,
+                equity=equity,
+                pot_odds=to_call / max(1, pot_size + to_call),
+                expected_value=(equity * (pot_size + to_call)) - to_call,
+                metrics=gh_m,
+            )
+
+        if ActionType.CHECK in legal_actions:
+            gh_m = GhBluffMetrics(
+                raw_equity=equity,
+                adjusted_equity=equity,
+                pot_odds=0.0,
+                gto_bluff_threshold=0.0,
+                random_roll=0.0,
+                blocker_score=0.0,
+                semi_bluff_outs=0,
+                is_bluff=False,
+                tactic=GhBluffTactic.FREE_CHECK.value,
+                tactical_rationale=f"Check de controle de valor{desc}",
+                formula_reference="Value Pot Control",
+            )
+            return BluffDecision(
+                action_type=ActionType.CHECK,
+                amount=0,
+                is_bluff=False,
+                tactic=BluffTactic.FREE_CHECK.value,
+                fold_equity=0.0,
+                reason=f"Check de controle de valor{desc}",
+                semi_bluff_outs=0,
+                equity=equity,
+                pot_odds=0.0,
+                expected_value=0.0,
+                metrics=gh_m,
+            )
+
+        # Fallback de segurança FOLD
+        return BluffDecision(
+            action_type=ActionType.FOLD,
+            amount=0,
+            is_bluff=False,
+            tactic=BluffTactic.PRUDENT_FOLD.value,
+            fold_equity=0.0,
+            reason="Fold de segurança",
+            semi_bluff_outs=0,
+            equity=equity,
+            pot_odds=0.0,
+            expected_value=0.0,
+            metrics=None,
+        )
+
     def _evaluate_preflop(
         self,
         hole_cards: Sequence[Card],
@@ -257,11 +708,7 @@ class BlufferAgent(BaseAgent):
         num_opponents: int,
         legal_actions: Sequence[ActionType],
     ) -> BluffDecision:
-        """Avalia e decide a ação tática no Pré-Flop para o Agente Blefador.
-
-        Garante que o blefador nunca desista de mãos jogáveis com custo baixo
-        para ver o Flop e possa roubar blinds ou aplicar 3-bets pré-flop.
-        """
+        """Determina a ação tática no Pré-Flop para o Agente Blefador."""
         c1, c2 = hole_cards[0], hole_cards[1]
         is_pair = c1.rank.value == c2.rank.value
         is_suited = c1.suit == c2.suit
@@ -269,13 +716,16 @@ class BlufferAgent(BaseAgent):
         low_rank = min(c1.rank.value, c2.rank.value)
         gap = high_rank - low_rank
 
+        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
+        can_call = ActionType.CALL in legal_actions
+        can_check = ActionType.CHECK in legal_actions
+
         # 1. Mãos Premium (TT+, AJ+, KQ) -> Valor legítimo pré-flop
         is_premium = (
             (is_pair and high_rank >= 10)
             or (high_rank == Rank.ACE.value and low_rank >= 11)
             or (high_rank == Rank.KING.value and low_rank == Rank.QUEEN.value)
         )
-
         if is_premium:
             return self._decide_value_play(
                 pot_size=pot_size,
@@ -286,41 +736,72 @@ class BlufferAgent(BaseAgent):
                 min_raise=min_raise,
                 big_blind=big_blind,
                 legal_actions=legal_actions,
-                hand_desc=f"{c1.rank.symbol}{c2.rank.symbol}",
+                equity=0.82,
+                street=Street.PREFLOP,
+                comb_desc=f"{c1.rank.symbol}{c2.rank.symbol}",
             )
 
-        # 2. Mãos Especulativas com alto potencial de blefe pós-flop
-        # (Pares 22-99, cartas naipadas, conectores, broadways)
+        # 2. Mãos Especulativas (Pares 22-99, cartas naipadas, conectores, broadways)
         is_speculative = (
             is_pair
             or is_suited
             or (gap <= 2 and low_rank >= 4)
             or (high_rank >= 10 and low_rank >= 8)
         )
+        is_wheel_ace = is_suited and high_rank == Rank.ACE.value and low_rank in (2, 3, 4, 5)
 
         roll = self.rng.random()
-        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
 
-        # Cenário A: Custo Zero ou Limp / Cobrir o Big Blind (to_call <= big_blind)
+        # =========================================================================
+        # Cenário A: Custo Zero ou Cobrir Big Blind (to_call <= big_blind)
         # O blefador NUNCA dá fold para ver o flop por um BB!
+        # =========================================================================
         if to_call <= big_blind:
-            # Roubo de Blinds pré-flop pontual (8%) para maximizar idas ao Flop
+            # Roubo de Blinds pré-flop pontual (8%) se em posição para roubar
             wants_steal = roll < 0.08
-            if can_raise and wants_steal:
-                raise_amt = current_highest_bet + max(min_raise, big_blind * 2)
-                max_pos = player_current_bet + player_stack
-                raise_amt = min(max_pos, raise_amt)
-                if raise_amt > current_highest_bet:
-                    return BluffDecision(
-                        action_type=ActionType.RAISE,
-                        amount=raise_amt,
-                        is_bluff=True,
-                        tactic=BluffTactic.PREFLOP_STEAL.value,
-                        fold_equity=0.55,
-                        reason="Roubo de blinds pré-flop explorando mesa barata",
-                    )
+            if can_raise and wants_steal and to_call == 0:
+                steal_amt = min(player_stack, current_highest_bet + max(min_raise, big_blind * 2))
+                metrics = GhBluffMetrics(
+                    raw_equity=0.38,
+                    adjusted_equity=0.40,
+                    pot_odds=0.0,
+                    gto_bluff_threshold=0.10,
+                    random_roll=roll,
+                    blocker_score=0.25,
+                    semi_bluff_outs=0,
+                    is_bluff=True,
+                    tactic=GhBluffTactic.CBET_STEAL.value,
+                    tactical_rationale="Roubo tático de blinds pré-flop",
+                    formula_reference="Preflop Blind Steal",
+                )
+                return BluffDecision(
+                    action_type=ActionType.RAISE,
+                    amount=steal_amt,
+                    is_bluff=True,
+                    tactic=BluffTactic.PREFLOP_STEAL.value,
+                    fold_equity=0.55,
+                    reason="Roubo de blinds pré-flop explorando mesa barata",
+                    semi_bluff_outs=0,
+                    equity=0.38,
+                    pot_odds=0.0,
+                    expected_value=float(big_blind),
+                    metrics=metrics,
+                )
 
-            if to_call == 0 and ActionType.CHECK in legal_actions:
+            if to_call == 0 and can_check:
+                metrics = GhBluffMetrics(
+                    raw_equity=0.30,
+                    adjusted_equity=0.30,
+                    pot_odds=0.0,
+                    gto_bluff_threshold=0.0,
+                    random_roll=roll,
+                    blocker_score=0.0,
+                    semi_bluff_outs=0,
+                    is_bluff=False,
+                    tactic=GhBluffTactic.FREE_CHECK.value,
+                    tactical_rationale="Check gratuito no Big Blind para ver o Flop",
+                    formula_reference="Free Check Preflop",
+                )
                 return BluffDecision(
                     action_type=ActionType.CHECK,
                     amount=0,
@@ -328,54 +809,167 @@ class BlufferAgent(BaseAgent):
                     tactic=BluffTactic.FREE_CHECK.value,
                     fold_equity=0.40,
                     reason="Check gratuito no Big Blind para ver o Flop",
+                    semi_bluff_outs=0,
+                    equity=0.30,
+                    pot_odds=0.0,
+                    expected_value=0.0,
+                    metrics=metrics,
                 )
 
-            # Cobrir ou completar o Big Blind pré-flop (to_call <= big_blind):
-            # O blefador defende para ver o Flop barato e explorar pós-flop
-            if ActionType.CALL in legal_actions:
+            # Cobrir ou completar o Big Blind pré-flop: SEMPRE defende
+            if can_call:
+                metrics = GhBluffMetrics(
+                    raw_equity=0.35,
+                    adjusted_equity=0.35,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    gto_bluff_threshold=0.0,
+                    random_roll=roll,
+                    blocker_score=0.15,
+                    semi_bluff_outs=0,
+                    is_bluff=False,
+                    tactic=GhBluffTactic.PROBE_DEFEND.value,
+                    tactical_rationale="Pagamento do Big Blind para disputar o Flop em posição",
+                    formula_reference="Preflop Big Blind Defense",
+                )
                 return BluffDecision(
                     action_type=ActionType.CALL,
-                    amount=0,
+                    amount=to_call,
                     is_bluff=False,
                     tactic=BluffTactic.PREFLOP_DEFEND.value,
                     fold_equity=0.45,
                     reason="Pagamento do Big Blind para disputar o Flop em posição",
+                    semi_bluff_outs=0,
+                    equity=0.35,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    expected_value=5.0,
+                    metrics=metrics,
                 )
 
-        # Cenário B: Enfrentando aumento padrão pré-flop (to_call entre 1 e 3.5 BBs)
-        is_standard_raise = to_call <= big_blind * 3.5
-        if is_standard_raise:
-            # Defesa com mão especulativa para disputar o Flop; folda lixo desconectado
-            if is_speculative and ActionType.CALL in legal_actions:
-                return BluffDecision(
-                    action_type=ActionType.CALL,
-                    amount=0,
-                    is_bluff=False,
-                    tactic=BluffTactic.PREFLOP_DEFEND.value,
-                    fold_equity=0.45,
-                    reason="Defesa pré-flop pagando aumento para disputar o Flop",
-                )
-
-        # Cenário C: Aumento pesado / 4-Bet / All-In (to_call > 3.5 BBs)
-        # Desiste prudentemente se não tiver mão premium
-        if ActionType.FOLD in legal_actions:
+        # =========================================================================
+        # Cenário B: Enfrentando aumento pré-flop (to_call > big_blind)
+        # =========================================================================
+        # 3-Bet Polarizada de Blefe com Wheel Aces (A5s/A4s)
+        threshold_3bet = 0.35 * self.params.aggression_multiplier
+        if can_raise and is_wheel_ace and to_call > 0 and roll < threshold_3bet:
+            raise_target = current_highest_bet + max(min_raise, int(to_call * 2.8))
+            max_pos = player_current_bet + player_stack
+            raise_amount = min(max_pos, max(current_highest_bet + min_raise, raise_target))
+            metrics = GhBluffMetrics(
+                raw_equity=0.42,
+                adjusted_equity=0.45,
+                pot_odds=to_call / max(1, pot_size + to_call),
+                gto_bluff_threshold=threshold_3bet,
+                random_roll=roll,
+                blocker_score=0.40,
+                semi_bluff_outs=0,
+                is_bluff=True,
+                tactic=GhBluffTactic.PREFLOP_3BET_BLUFF.value,
+                tactical_rationale="3-Bet de blefe polarizada pré-flop com Ás do naipe",
+                formula_reference="Polarized Preflop 3-Bet: Blocker + Fold Equity",
+            )
             return BluffDecision(
-                action_type=ActionType.FOLD,
-                amount=0,
-                is_bluff=False,
-                tactic=BluffTactic.PRUDENT_FOLD.value,
-                fold_equity=0.20,
-                reason="Desistência prudente pré-flop contra aposta massiva",
+                action_type=ActionType.RAISE,
+                amount=raise_amount,
+                is_bluff=True,
+                tactic=BluffTactic.PREFLOP_3BET.value,
+                fold_equity=0.55,
+                reason="Preflop 3-Bet Polarized Bluff com Ás bloqueador",
+                semi_bluff_outs=0,
+                equity=0.42,
+                pot_odds=to_call / max(1, pot_size + to_call),
+                expected_value=15.0,
+                metrics=metrics,
             )
 
-        fallback = legal_actions[0] if legal_actions else ActionType.FOLD
+        # Aumento padrão pré-flop (to_call <= big_blind * 3.5)
+        is_standard_raise = to_call <= big_blind * 3.5
+        if is_standard_raise and is_speculative:
+            wants_3bet = can_raise and (roll < 0.20 * self.params.aggression_multiplier)
+            if wants_3bet:
+                raise_target = current_highest_bet + max(min_raise, int(to_call * 2.5))
+                max_pos = player_current_bet + player_stack
+                raise_amount = min(max_pos, max(current_highest_bet + min_raise, raise_target))
+                metrics = GhBluffMetrics(
+                    raw_equity=0.40,
+                    adjusted_equity=0.42,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    gto_bluff_threshold=0.20,
+                    random_roll=roll,
+                    blocker_score=0.25,
+                    semi_bluff_outs=0,
+                    is_bluff=True,
+                    tactic=GhBluffTactic.PREFLOP_3BET_BLUFF.value,
+                    tactical_rationale="Re-aumento de blefe tático pré-flop com mão especulativa",
+                    formula_reference="Preflop Speculative 3-Bet",
+                )
+                return BluffDecision(
+                    action_type=ActionType.RAISE,
+                    amount=raise_amount,
+                    is_bluff=True,
+                    tactic=BluffTactic.PREFLOP_3BET.value,
+                    fold_equity=0.50,
+                    reason="Re-aumento de blefe tático pré-flop com mão especulativa",
+                    semi_bluff_outs=0,
+                    equity=0.40,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    expected_value=10.0,
+                    metrics=metrics,
+                )
+
+            if can_call:
+                metrics = GhBluffMetrics(
+                    raw_equity=0.38,
+                    adjusted_equity=0.40,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    gto_bluff_threshold=0.0,
+                    random_roll=roll,
+                    blocker_score=0.20,
+                    semi_bluff_outs=0,
+                    is_bluff=False,
+                    tactic=GhBluffTactic.PROBE_DEFEND.value,
+                    tactical_rationale="Defesa pré-flop com mão especulativa para disputar o Flop",
+                    formula_reference="Preflop Speculative Defend",
+                )
+                return BluffDecision(
+                    action_type=ActionType.CALL,
+                    amount=to_call,
+                    is_bluff=False,
+                    tactic=BluffTactic.PREFLOP_DEFEND.value,
+                    fold_equity=0.35,
+                    reason="Defesa pré-flop com mão especulativa para disputar o Flop",
+                    semi_bluff_outs=0,
+                    equity=0.38,
+                    pot_odds=to_call / max(1, pot_size + to_call),
+                    expected_value=8.0,
+                    metrics=metrics,
+                )
+
+        # Se não for especulativo ou enfrentar overbet absurda: FOLD DISCIPLINADO
+        metrics = GhBluffMetrics(
+            raw_equity=0.20,
+            adjusted_equity=0.20,
+            pot_odds=to_call / max(1, pot_size + to_call),
+            gto_bluff_threshold=0.0,
+            random_roll=roll,
+            blocker_score=0.0,
+            semi_bluff_outs=0,
+            is_bluff=False,
+            tactic=GhBluffTactic.DISCIPLINED_FOLD.value,
+            tactical_rationale="Desistência disciplinada pré-flop sem pot odds",
+            formula_reference="Disciplined Fold Preflop",
+        )
         return BluffDecision(
-            action_type=fallback,
+            action_type=ActionType.FOLD,
             amount=0,
             is_bluff=False,
-            tactic=BluffTactic.CONTINGENCY.value,
-            fold_equity=0.20,
-            reason="Ação de contingência pré-flop",
+            tactic=BluffTactic.PRUDENT_FOLD.value,
+            fold_equity=0.0,
+            reason="Fold pré-flop disciplinado sem odds",
+            semi_bluff_outs=0,
+            equity=0.20,
+            pot_odds=to_call / max(1, pot_size + to_call),
+            expected_value=-float(to_call),
+            metrics=metrics,
         )
 
     def evaluate_state(
@@ -391,15 +985,20 @@ class BlufferAgent(BaseAgent):
         big_blind: int,
         num_opponents: int,
         legal_actions: Sequence[ActionType],
-        street: Street = Street.PREFLOP,
+        street: Optional[Street] = None,
+        **kwargs: Any,
     ) -> BluffDecision:
-        """Avalia de forma isolada e desacoplada o estado de mesa.
+        """Determina e dimensiona o blefe ótimo ou aposta de valor com base em GTO e Blockers."""
+        actual_street = street if street is not None else (
+            Street.PREFLOP if not community_cards else (
+                Street.FLOP if len(community_cards) == 3 else (
+                    Street.TURN if len(community_cards) == 4 else Street.RIVER
+                )
+            )
+        )
 
-        Retorna a decisão ótima fundamentada no Bluff Engine, sem depender
-        de infraestrutura ou conexões externas.
-        """
-        # Estratégia dedicada e ativa para o Pré-Flop (nunca dá fold por um BB)
-        if street == Street.PREFLOP or len(community_cards) == 0:
+        # Rota de Pré-Flop
+        if actual_street == Street.PREFLOP or not community_cards:
             return self._evaluate_preflop(
                 hole_cards=hole_cards,
                 pot_size=pot_size,
@@ -413,27 +1012,24 @@ class BlufferAgent(BaseAgent):
                 legal_actions=legal_actions,
             )
 
+        can_check = ActionType.CHECK in legal_actions
+        can_bet = ActionType.BET in legal_actions
+        can_raise = ActionType.RAISE in legal_actions
+        can_call = ActionType.CALL in legal_actions
+
+        # Textura do bordo, blockers e outs
+        is_dry, is_wet, has_scare = self.analyze_board_texture(community_cards)
+        blocker_score = self.evaluate_blockers(hole_cards, community_cards)
+        outs = self.detect_draw_outs(hole_cards, community_cards)
+
+        # Avaliação de jogo formado
         all_cards = list(hole_cards) + list(community_cards)
-        is_strong, hand_desc, hand_rank_val = self._classify_hand_strength(hole_cards, all_cards)
+        score = evaluate_hand(all_cards) if len(all_cards) >= 5 else None
+        hand_rank_val = score.hand_rank.value if score else 1
+        comb_desc = score.description if score else ""
 
-        # Análise das propriedades de textura da mesa
-        is_dry, is_wet, is_scare = self.analyze_board_texture(community_cards)
-
-        # Cálculo de Fold Equity esperada
-        fold_equity = self.estimate_fold_equity(
-            num_opponents=num_opponents,
-            is_dry=is_dry,
-            has_scare=is_scare,
-            street=street,
-            to_call=to_call,
-            pot_size=pot_size,
-        )
-
-        # Identificação de potencial para semi-blefe (outs de evolução)
-        semi_outs = self.detect_draw_outs(hole_cards, community_cards)
-
-        # 1. Se possuir jogo consolidado: aposta por valor para balancear o range
-        if is_strong:
+        # Mãos Fortes (Dois pares, Trinca, Sequência, Full House) -> Valor Puro
+        if hand_rank_val >= 3:
             return self._decide_value_play(
                 pot_size=pot_size,
                 to_call=to_call,
@@ -443,630 +1039,311 @@ class BlufferAgent(BaseAgent):
                 min_raise=min_raise,
                 big_blind=big_blind,
                 legal_actions=legal_actions,
-                hand_desc=hand_desc,
-                street=street,
-                num_opponents=num_opponents,
-                hand_rank_val=hand_rank_val,
+                equity=0.85,
+                street=actual_street,
+                comb_desc=comb_desc,
             )
 
-        # 2. Oportunidade de Semi-Blefe (draws no Flop e Turn)
-        if semi_outs >= 4 and street in (Street.FLOP, Street.TURN):
-            semi_decision = self._evaluate_semi_bluff(
-                semi_outs=semi_outs,
-                fold_equity=fold_equity,
-                pot_size=pot_size,
-                to_call=to_call,
-                player_stack=player_stack,
-                player_current_bet=player_current_bet,
-                current_highest_bet=current_highest_bet,
-                min_raise=min_raise,
-                big_blind=big_blind,
-                legal_actions=legal_actions,
-                num_opponents=num_opponents,
-            )
-            if semi_decision is not None:
-                return semi_decision
+        # Dimensionamento de aposta/blefe base
+        target_bet = int(pot_size * self.params.bet_sizing_factor * self.params.aggression_multiplier)
+        bet_amount = min(player_stack, max(big_blind, min_raise, target_bet))
 
-        # 3. Blefes Puros e Exploração de Fraqueza
-        roll = self.rng.random()
-        bluff_eligible = fold_equity >= self.params.fold_equity_threshold
-        multiway_penalty = 0.40 if num_opponents >= 2 else 1.0
-        if street == Street.RIVER and num_opponents >= 2:
-            multiway_penalty = 0.0
-        wants_bluff = roll < (
-            self.params.bluff_frequency
-            * (fold_equity / 0.50)
-            * multiway_penalty
+        # Fold Equity estimada dinâmica
+        fold_equity = self.estimate_fold_equity(
+            num_opponents=num_opponents,
+            is_dry=is_dry,
+            has_scare=has_scare,
+            street=actual_street,
+            pot_size=pot_size,
+            bet_size=bet_amount,
+            to_call=to_call,
         )
 
-        # Cenário A: Mesa em Check (to_call == 0) -> C-Bet Steal / Pote Órfão
+        # Teorema da Indiferença GTO de Nash: B / (P + 2B)
+        gto_bluff_threshold = self.calculate_gto_bluff_ratio(bet_amount, pot_size) * self.params.gto_balance_factor
+        roll = self.rng.random()
+
+        # =========================================================================
+        # CENÁRIO 1: CUSTO ZERO (to_call == 0) -> Avalia C-Bet, Semi-Blefe ou River Bluff
+        # =========================================================================
         if to_call == 0:
-            can_bet = (
-                ActionType.BET in legal_actions
-                or ActionType.RAISE in legal_actions
-            )
-            # Em multiway no river, blefe puro tem fold equity zero;
-            # check para ver cartas no showdown
-            if street == Street.RIVER and num_opponents >= 2:
-                wants_bluff = False
-            elif num_opponents >= 2 and street in (Street.FLOP, Street.TURN):
-                wants_bluff = wants_bluff and (roll < 0.15)
-
-            if wants_bluff and bluff_eligible and can_bet:
-                sizing = (
-                    pot_size
-                    * self.params.bet_sizing_factor
-                    * self.params.aggression_multiplier
-                )
-                target_bet = int(sizing)
-                target_bet = max(big_blind, target_bet)
-                target_bet = min(player_stack, target_bet)
-
-                tactic_name = (
-                    BluffTactic.SCARE_CARD_BARREL.value
-                    if is_scare and street in (Street.TURN, Street.RIVER)
-                    else (
-                        BluffTactic.RIVER_BLUFF.value
-                        if street == Street.RIVER
-                        else BluffTactic.CBET_STEAL.value
+            # 1A. Semi-Blefe no Flop ou Turn com Outs (>= 8 outs)
+            if outs >= 8 and actual_street in (Street.FLOP, Street.TURN) and can_bet and bet_amount > 0:
+                roll_semi = self.rng.random()
+                if roll_semi <= self.params.semi_bluff_frequency:
+                    metrics = GhBluffMetrics(
+                        raw_equity=0.45,
+                        adjusted_equity=0.55,
+                        pot_odds=0.0,
+                        gto_bluff_threshold=gto_bluff_threshold,
+                        random_roll=roll_semi,
+                        blocker_score=blocker_score,
+                        semi_bluff_outs=outs,
+                        is_bluff=True,
+                        tactic=GhBluffTactic.SEMI_BLUFF_DRAW.value,
+                        tactical_rationale=f"Semi-blefe agressivo com {outs} outs de evolução",
+                        formula_reference="Semi-Bluff Draw Pressure: Outs >= 8",
                     )
-                )
-
-                if ActionType.BET in legal_actions and target_bet > 0:
-                    fe_desc = f"FE={fold_equity:.2f}"
                     return BluffDecision(
                         action_type=ActionType.BET,
-                        amount=target_bet,
+                        amount=bet_amount,
                         is_bluff=True,
-                        tactic=tactic_name,
+                        tactic=BluffTactic.SEMI_BLUFF.value,
                         fold_equity=fold_equity,
-                        reason=f"Agressão tática explorando passividade ({fe_desc})",
-                        semi_bluff_outs=semi_outs,
+                        reason=f"Semi-blefe agressivo ({outs} outs) com fold equity de {fold_equity:.0%}",
+                        semi_bluff_outs=outs,
+                        equity=0.45,
+                        pot_odds=0.0,
+                        expected_value=25.0,
+                        metrics=metrics,
                     )
 
-            if ActionType.CHECK in legal_actions:
-                return BluffDecision(
-                    action_type=ActionType.CHECK,
-                    amount=0,
-                    is_bluff=False,
-                    tactic=BluffTactic.FREE_CHECK.value,
-                    fold_equity=fold_equity,
-                    reason="Controle de pote sem investimento de fichas",
-                    semi_bluff_outs=semi_outs,
-                )
-
-        # Cenário B: Enfrentando aposta (to_call > 0) -> Bluff Raise ou Float
-        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
-        is_probe_bet = to_call <= max(big_blind * 2, int(pot_size * 0.35))
-
-        if (
-            num_opponents == 1
-            and wants_bluff
-            and can_raise
-            and (is_probe_bet or is_scare)
-            and roll < self.params.bluff_raise_frequency
-        ):
-            raise_amount = current_highest_bet + max(
-                min_raise,
-                int(to_call * 2.3 * self.params.aggression_multiplier),
-            )
-            max_possible = player_current_bet + player_stack
-            raise_amount = min(max_possible, raise_amount)
-
-            if raise_amount > current_highest_bet:
-                raise_reason = (
-                    f"Re-aumento contra aposta de sondagem fraca "
-                    f"(FE={fold_equity:.2f})"
-                )
-                return BluffDecision(
-                    action_type=ActionType.RAISE,
-                    amount=raise_amount,
-                    is_bluff=True,
-                    tactic=BluffTactic.BLUFF_RAISE.value,
-                    fold_equity=fold_equity,
-                    reason=raise_reason,
-                    semi_bluff_outs=semi_outs,
-                )
-
-        # Pagar aposta acessível com draws consistentes ou pot odds justificadas
-        can_call = ActionType.CALL in legal_actions
-        is_massive_overbet = to_call > pot_size * 1.2
-        is_mod_bet = to_call <= max(big_blind * 2, int(pot_size * 0.35))
-        wants_call = (
-            not is_massive_overbet
-            and (semi_outs >= 4 or (is_mod_bet and semi_outs >= 2 and roll < 0.35))
-        )
-
-        if can_call and wants_call:
-            return BluffDecision(
-                action_type=ActionType.CALL,
-                amount=0,
-                is_bluff=False,
-                tactic=BluffTactic.FLOAT_CALL.value,
-                fold_equity=fold_equity,
-                reason="Call de flutuação e defesa com perspectiva de showdown",
-                semi_bluff_outs=semi_outs,
-            )
-
-        # Desistência Prudente (Prudent Fold) contra pressão alta sem valor
-        if ActionType.FOLD in legal_actions:
-            return BluffDecision(
-                action_type=ActionType.FOLD,
-                amount=0,
-                is_bluff=False,
-                tactic=BluffTactic.PRUDENT_FOLD.value,
-                fold_equity=fold_equity,
-                reason=(
-                    "Desistência prudente preservando bankroll contra aposta adversária"
-                ),
-                semi_bluff_outs=semi_outs,
-            )
-
-        # Fallback defensivo seguro
-        fallback = legal_actions[0] if legal_actions else ActionType.FOLD
-        return BluffDecision(
-            action_type=fallback,
-            amount=0,
-            is_bluff=False,
-            tactic=BluffTactic.CONTINGENCY.value,
-            fold_equity=fold_equity,
-            reason="Ação de contingência das regras de mesa",
-            semi_bluff_outs=semi_outs,
-        )
-
-    def analyze_board_texture(
-        self, community_cards: Sequence[Card]
-    ) -> Tuple[bool, bool, bool]:
-        """Classifica características fundamentais da textura da mesa.
-
-        Returns:
-            Tupla (is_dry_board, is_wet_board, has_scare_card).
-        """
-        if len(community_cards) < 3:
-            return False, False, False
-
-        suits = [c.suit for c in community_cards]
-        ranks = sorted([c.rank.value for c in community_cards])
-
-        # Board Monótono ou Coordenado (Wet)
-        suit_counts: Dict[Any, int] = {}
-        for s in suits:
-            suit_counts[s] = suit_counts.get(s, 0) + 1
-        max_suit_repetition = max(suit_counts.values())
-        has_flush_texture = max_suit_repetition >= 3
-
-        # Conectividade de sequência
-        connected_count = 0
-        for i in range(len(ranks) - 1):
-            if ranks[i + 1] - ranks[i] <= 2:
-                connected_count += 1
-        is_wet = has_flush_texture or connected_count >= 2
-
-        # Board Seco (Dry): Rainbow e desconectado
-        is_rainbow = len(set(suits[:3])) == 3
-        gap = ranks[-1] - ranks[0] if len(ranks) >= 3 else 0
-        is_dry = is_rainbow and gap >= 5 and not is_wet
-
-        # Scare Cards (Presença de Ás, Rei ou cartas de perigo evidente)
-        has_scare = any(c.rank in (Rank.ACE, Rank.KING) for c in community_cards)
-        has_scare = has_scare or has_flush_texture
-
-        return is_dry, is_wet, has_scare
-
-    def estimate_fold_equity(
-        self,
-        num_opponents: int,
-        is_dry: bool,
-        has_scare: bool,
-        street: Street,
-        to_call: int,
-        pot_size: int,
-    ) -> float:
-        """Estima a probabilidade acumulada dos adversários desistirem (Fold Equity)."""
-        # Base decresce exponencialmente com cada jogador ativo adicional
-        base_fe = max(0.12, 0.82 - (num_opponents * 0.15))
-
-        if is_dry:
-            base_fe += self.params.dry_board_bonus
-        if has_scare and street in (Street.TURN, Street.RIVER):
-            base_fe += self.params.scare_card_weight
-
-        # Adversário demonstrando agressão pesada reduz drasticamente a fold equity
-        if to_call > 0 and pot_size > 0:
-            bet_pot_ratio = to_call / pot_size
-            if bet_pot_ratio > 0.50:
-                base_fe -= 0.20
-
-        return max(0.05, min(0.92, base_fe))
-
-    def detect_draw_outs(
-        self, hole_cards: Sequence[Card], community_cards: Sequence[Card]
-    ) -> int:
-        """Detecta outs de evolução para compor oportunidades de semi-blefe."""
-        if len(community_cards) < 3 or len(hole_cards) < 2:
-            return 0
-
-        combined = list(hole_cards) + list(community_cards)
-        outs = 0
-
-        if has_flush_draw(combined):
-            outs += 9
-        if has_straight_draw(combined):
-            outs += 8
-
-        h_tuple = (hole_cards[0], hole_cards[1])
-        if has_overcards(h_tuple, community_cards):
-            outs += 4
-
-        return outs
-
-    def _classify_hand_strength(
-        self, hole_cards: Sequence[Card], all_cards: Sequence[Card]
-    ) -> Tuple[bool, str, int]:
-        """Classifica se a mão atual possui valor intrínseco consolidado."""
-        if len(all_cards) >= 5:
-            score = evaluate_hand(all_cards)
-            # Qualquer par ou melhor é tratado como jogo formado legítimo para showdown
-            is_strong = score.hand_rank.value >= 2
-            return is_strong, score.description, score.hand_rank.value
-
-        if len(hole_cards) >= 2:
-            c1, c2 = hole_cards[0], hole_cards[1]
-            is_pair = c1.rank.value == c2.rank.value
-            high_rank = max(c1.rank.value, c2.rank.value)
-            is_strong = (is_pair and high_rank >= 10) or (
-                high_rank == Rank.ACE.value and min(c1.rank.value, c2.rank.value) >= 11
-            )
-            rank_val = 2 if is_pair else 1
-            return is_strong, f"Par/Carta Alta ({c1.rank.symbol}{c2.rank.symbol})", rank_val
-
-        return False, "Desconhecida", 1
-
-    def _evaluate_semi_bluff(
-        self,
-        semi_outs: int,
-        fold_equity: float,
-        pot_size: int,
-        to_call: int,
-        player_stack: int,
-        player_current_bet: int,
-        current_highest_bet: int,
-        min_raise: int,
-        big_blind: int,
-        legal_actions: Sequence[ActionType],
-        num_opponents: int = 1,
-    ) -> Optional[BluffDecision]:
-        """Avalia e formata manobra de semi-blefe combinando equidade e FE."""
-        if self.rng.random() >= self.params.semi_bluff_frequency:
-            return None
-
-        # Em multiway (>= 2 oponentes): controle de pote para ver cartas
-        if num_opponents >= 2:
-            if to_call == 0 and ActionType.CHECK in legal_actions:
-                return BluffDecision(
-                    action_type=ActionType.CHECK,
-                    amount=0,
-                    is_bluff=False,
-                    tactic=BluffTactic.FREE_CHECK.value,
-                    fold_equity=fold_equity,
-                    reason=f"Check de pot control multiway com draw ({semi_outs} outs)",
-                    semi_bluff_outs=semi_outs,
-                )
-            if (
-                to_call > 0
-                and ActionType.CALL in legal_actions
-                and to_call <= max(big_blind * 3, int(pot_size * 0.40))
-            ):
-                return BluffDecision(
-                    action_type=ActionType.CALL,
-                    amount=0,
-                    is_bluff=False,
-                    tactic=BluffTactic.FLOAT_CALL.value,
-                    fold_equity=fold_equity,
-                    reason=f"Call com draw em pote multiway ({semi_outs} outs)",
-                    semi_bluff_outs=semi_outs,
-                )
-            return None
-
-        # Aposta de semi-blefe quando mesa der check (Heads-up)
-        if to_call == 0 and ActionType.BET in legal_actions:
-            target_bet = int(pot_size * 0.65 * self.params.aggression_multiplier)
-            target_bet = max(big_blind, min(player_stack, target_bet))
-            if target_bet > 0:
-                return BluffDecision(
-                    action_type=ActionType.BET,
-                    amount=target_bet,
-                    is_bluff=True,
-                    tactic=BluffTactic.SEMI_BLUFF.value,
-                    fold_equity=fold_equity,
-                    reason=f"Semi-blefe agressivo com {semi_outs} outs de evolução",
-                    semi_bluff_outs=semi_outs,
-                )
-
-        # Semi-blefe de re-aumento contra aposta moderada (Heads-up)
-        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
-        if to_call > 0 and can_raise and to_call <= pot_size * 0.40:
-            raise_val = current_highest_bet + max(min_raise, int(to_call * 2.2))
-            max_pos = player_current_bet + player_stack
-            raise_val = min(max_pos, raise_val)
-            if raise_val > current_highest_bet:
-                return BluffDecision(
-                    action_type=ActionType.RAISE,
-                    amount=raise_val,
-                    is_bluff=True,
-                    tactic=BluffTactic.SEMI_BLUFF.value,
-                    fold_equity=fold_equity,
-                    reason=f"Semi-blefe raise aproveitando draws ({semi_outs} outs)",
-                    semi_bluff_outs=semi_outs,
-                )
-
-        return None
-
-    def _decide_value_play(
-        self,
-        pot_size: int,
-        to_call: int,
-        player_stack: int,
-        player_current_bet: int,
-        current_highest_bet: int,
-        min_raise: int,
-        big_blind: int,
-        legal_actions: Sequence[ActionType],
-        hand_desc: str,
-        street: Optional[Street] = None,
-        num_opponents: int = 1,
-        hand_rank_val: int = 1,
-    ) -> BluffDecision:
-        """Executa aposta legítima por valor ao deter mão forte."""
-        can_raise = ActionType.RAISE in legal_actions and player_stack > to_call
-        if to_call > 0 and can_raise:
-            is_monster = hand_rank_val >= 3 or any(
-                term in hand_desc.lower()
-                for term in [
-                    "trinca", "three", "straight", "sequência", "flush",
-                    "full house", "quadra", "four", "royal", "dois pares",
-                    "two pair", "aa", "kk", "qq", "jj", "ak"
-                ]
-            )
-            # Re-aumento legítimo com Top Pair / Par Alto contra apostas moderadas
-            if not is_monster and hand_rank_val == 2:
-                has_high_pair = any(
-                    h in hand_desc.lower()
-                    for h in ["par de ás", "par de rei", "par de dama", "par de valete", "par de dez"]
-                )
-                if has_high_pair and to_call <= big_blind * 3:
-                    is_monster = self.rng.random() < 0.45
-
-            if is_monster:
-                raise_amount = current_highest_bet + max(
-                    min_raise,
-                    int(to_call * 2.5),
-                    int(pot_size * self.params.bet_sizing_factor),
-                )
-                max_pos = player_current_bet + player_stack
-                raise_amount = min(max_pos, raise_amount)
-                if raise_amount >= current_highest_bet + min_raise:
+            # 1B. Blefe de River Polarizado com Nut Blocker
+            if actual_street == Street.RIVER and can_bet and num_opponents <= 2 and bet_amount > 0:
+                has_nut_blocker = blocker_score >= self.params.min_blocker_threshold
+                if has_nut_blocker and (roll <= gto_bluff_threshold or roll < self.params.bluff_frequency):
+                    polarized_bet = min(player_stack, max(min_raise, int(pot_size * 0.70)))
+                    metrics = GhBluffMetrics(
+                        raw_equity=0.20,
+                        adjusted_equity=0.20,
+                        pot_odds=0.0,
+                        gto_bluff_threshold=gto_bluff_threshold,
+                        random_roll=roll,
+                        blocker_score=blocker_score,
+                        semi_bluff_outs=0,
+                        is_bluff=True,
+                        tactic=GhBluffTactic.NUT_BLOCKER_BLUFF.value,
+                        tactical_rationale="Blefe polarizado no river sustentado por Nut Blocker",
+                        formula_reference="GTO Nash Indifference Polarized Bluff: B / (P + 2B)",
+                    )
                     return BluffDecision(
-                        action_type=ActionType.RAISE,
-                        amount=raise_amount,
-                        is_bluff=False,
-                        tactic=BluffTactic.VALUE_PLAY.value,
-                        fold_equity=0.20,
-                        reason=f"Re-aumento por valor com mão forte ({hand_desc})",
+                        action_type=ActionType.BET,
+                        amount=polarized_bet,
+                        is_bluff=True,
+                        tactic=BluffTactic.RIVER_BLUFF.value,
+                        fold_equity=fold_equity + 0.15,
+                        reason="Blefe polarizado no river sustentado por Nut Blocker",
+                        semi_bluff_outs=0,
+                        equity=0.20,
+                        pot_odds=0.0,
+                        expected_value=20.0,
+                        metrics=metrics,
                     )
 
-        if to_call > 0 and ActionType.CALL in legal_actions:
-            return BluffDecision(
-                action_type=ActionType.CALL,
-                amount=0,
+            # 1C. Agressão em Scare Card no Turn/River ou C-Bet Steal em Bordo Seco
+            if can_bet and bet_amount > 0 and num_opponents <= 2:
+                cbet_eligible = (is_dry or has_scare or fold_equity >= self.params.fold_equity_threshold)
+                if cbet_eligible and (roll <= self.params.cbet_frequency or roll <= self.params.bluff_frequency):
+                    if has_scare and actual_street in (Street.TURN, Street.RIVER):
+                        tactic_str = BluffTactic.SCARE_CARD_BARREL.value
+                        gh_tactic_str = GhBluffTactic.CBET_STEAL.value
+                        rationale = "Agressão em Scare Card no Turn/River explorando range favorável"
+                    elif actual_street == Street.RIVER:
+                        tactic_str = BluffTactic.RIVER_BLUFF.value
+                        gh_tactic_str = GhBluffTactic.POLARIZED_RIVER_BLUFF.value
+                        rationale = "Blefe no River explorando mesa abandonada"
+                    else:
+                        tactic_str = BluffTactic.CBET_STEAL.value
+                        gh_tactic_str = GhBluffTactic.CBET_STEAL.value
+                        rationale = "C-Bet Steal em bordo seco explorando fraqueza"
+
+                    metrics = GhBluffMetrics(
+                        raw_equity=0.30,
+                        adjusted_equity=0.35,
+                        pot_odds=0.0,
+                        gto_bluff_threshold=gto_bluff_threshold,
+                        random_roll=roll,
+                        blocker_score=blocker_score,
+                        semi_bluff_outs=outs,
+                        is_bluff=True,
+                        tactic=gh_tactic_str,
+                        tactical_rationale=rationale,
+                        formula_reference="C-Bet Steal / Scare Barrel",
+                    )
+                    return BluffDecision(
+                        action_type=ActionType.BET,
+                        amount=bet_amount,
+                        is_bluff=True,
+                        tactic=tactic_str,
+                        fold_equity=fold_equity,
+                        reason=f"{tactic_str} (FE={fold_equity:.2f})",
+                        semi_bluff_outs=outs,
+                        equity=0.30,
+                        pot_odds=0.0,
+                        expected_value=18.0,
+                        metrics=metrics,
+                    )
+
+            # 1D. Check Gratuito (Preservação de Fichas)
+            metrics = GhBluffMetrics(
+                raw_equity=0.30,
+                adjusted_equity=0.30,
+                pot_odds=0.0,
+                gto_bluff_threshold=gto_bluff_threshold,
+                random_roll=roll,
+                blocker_score=blocker_score,
+                semi_bluff_outs=outs,
                 is_bluff=False,
-                tactic=BluffTactic.VALUE_PLAY.value,
-                fold_equity=0.20,
-                reason=f"Call de valor para showdown com jogo formado ({hand_desc})",
+                tactic=GhBluffTactic.FREE_CHECK.value,
+                tactical_rationale="Check gratuito para controle de pote",
+                formula_reference="Free Check: Pot Control",
             )
-
-        # Em mesa multiway (>= 2 oponentes): preferência de pot control para showdown
-        is_multiway = num_opponents >= 2
-        roll = self.rng.random()
-        wants_bet = True
-        if is_multiway:
-            if street == Street.RIVER:
-                wants_bet = roll < 0.10
-            else:
-                wants_bet = roll < 0.20
-
-        if wants_bet and ActionType.BET in legal_actions and player_stack > 0:
-            bet_val = max(big_blind, int(pot_size * 0.30))
-            bet_val = min(player_stack, bet_val)
-            return BluffDecision(
-                action_type=ActionType.BET,
-                amount=bet_val,
-                is_bluff=False,
-                tactic=BluffTactic.VALUE_PLAY.value,
-                fold_equity=0.25,
-                reason=f"Abertura por valor legítimo ({hand_desc})",
-            )
-
-        if ActionType.CHECK in legal_actions:
             return BluffDecision(
                 action_type=ActionType.CHECK,
                 amount=0,
                 is_bluff=False,
                 tactic=BluffTactic.FREE_CHECK.value,
-                fold_equity=0.30,
-                reason=f"Check de controle de pote para showdown ({hand_desc})",
+                fold_equity=fold_equity,
+                reason="Check gratuito para controle de pote",
+                semi_bluff_outs=outs,
+                equity=0.30,
+                pot_odds=0.0,
+                expected_value=0.0,
+                metrics=metrics,
             )
 
-        fallback = legal_actions[0] if legal_actions else ActionType.FOLD
+        # =========================================================================
+        # CENÁRIO 2: ENFRENTANDO APOSTA (to_call > 0)
+        # =========================================================================
+        pot_odds = to_call / max(1, pot_size + to_call)
+
+        # 2A. Semi-Blefe Raise com Alto Draw (>= 8 outs)
+        if outs >= 8 and actual_street in (Street.FLOP, Street.TURN) and can_raise:
+            raise_target = current_highest_bet + max(min_raise, int(to_call * 2.2))
+            max_pos = player_current_bet + player_stack
+            raise_amount = min(max_pos, max(current_highest_bet + min_raise, raise_target))
+            metrics = GhBluffMetrics(
+                raw_equity=0.45,
+                adjusted_equity=0.55,
+                pot_odds=pot_odds,
+                gto_bluff_threshold=gto_bluff_threshold,
+                random_roll=roll,
+                blocker_score=blocker_score,
+                semi_bluff_outs=outs,
+                is_bluff=True,
+                tactic=GhBluffTactic.SEMI_BLUFF_DRAW.value,
+                tactical_rationale=f"Semi-blefe raise contra aposta com {outs} outs",
+                formula_reference="Semi-Bluff Raise Pressure",
+            )
+            return BluffDecision(
+                action_type=ActionType.RAISE,
+                amount=raise_amount,
+                is_bluff=True,
+                tactic=BluffTactic.SEMI_BLUFF.value,
+                fold_equity=fold_equity,
+                reason=f"Semi-blefe raise agressivo com {outs} outs",
+                semi_bluff_outs=outs,
+                equity=0.45,
+                pot_odds=pot_odds,
+                expected_value=22.0,
+                metrics=metrics,
+            )
+
+        # 2B. Call de Defesa / Implied Odds com Draw
+        if outs >= 8 and can_call and to_call <= max(big_blind * 4, int(pot_size * 0.45)):
+            metrics = GhBluffMetrics(
+                raw_equity=0.40,
+                adjusted_equity=0.48,
+                pot_odds=pot_odds,
+                gto_bluff_threshold=gto_bluff_threshold,
+                random_roll=roll,
+                blocker_score=blocker_score,
+                semi_bluff_outs=outs,
+                is_bluff=False,
+                tactic=GhBluffTactic.PROBE_DEFEND.value,
+                tactical_rationale=f"Call por implied odds com {outs} outs para o draw",
+                formula_reference="Implied Draw Call",
+            )
+            return BluffDecision(
+                action_type=ActionType.CALL,
+                amount=to_call,
+                is_bluff=False,
+                tactic=BluffTactic.FLOAT_CALL.value,
+                fold_equity=fold_equity,
+                reason=f"Call com {outs} outs sustentado por odds implícitas",
+                semi_bluff_outs=outs,
+                equity=0.40,
+                pot_odds=pot_odds,
+                expected_value=10.0,
+                metrics=metrics,
+            )
+
+        # 2C. Fallback Check se legal
+        if can_check:
+            metrics = GhBluffMetrics(
+                raw_equity=0.25,
+                adjusted_equity=0.25,
+                pot_odds=pot_odds,
+                gto_bluff_threshold=gto_bluff_threshold,
+                random_roll=roll,
+                blocker_score=blocker_score,
+                semi_bluff_outs=outs,
+                is_bluff=False,
+                tactic=GhBluffTactic.FREE_CHECK.value,
+                tactical_rationale="Check de segurança legal",
+                formula_reference="Fallback Check",
+            )
+            return BluffDecision(
+                action_type=ActionType.CHECK,
+                amount=0,
+                is_bluff=False,
+                tactic=BluffTactic.FREE_CHECK.value,
+                fold_equity=fold_equity,
+                reason="Check de segurança legal",
+                semi_bluff_outs=outs,
+                equity=0.25,
+                pot_odds=pot_odds,
+                expected_value=0.0,
+                metrics=metrics,
+            )
+
+        # 2D. Desistência Disciplinada (ANTI-CALLING-STATION LEAK-FIX)
+        metrics = GhBluffMetrics(
+            raw_equity=0.20,
+            adjusted_equity=0.20,
+            pot_odds=pot_odds,
+            gto_bluff_threshold=gto_bluff_threshold,
+            random_roll=roll,
+            blocker_score=blocker_score,
+            semi_bluff_outs=outs,
+            is_bluff=False,
+            tactic=GhBluffTactic.DISCIPLINED_FOLD.value,
+            tactical_rationale="Desistência disciplinada contra aposta sem odds nem blockers",
+            formula_reference="Anti-Leak Disciplined Fold: No Equity, No Blockers",
+        )
         return BluffDecision(
-            action_type=fallback,
+            action_type=ActionType.FOLD,
             amount=0,
             is_bluff=False,
-            tactic=BluffTactic.VALUE_PLAY.value,
-            fold_equity=0.25,
-            reason=f"Ação de valor ({hand_desc})",
+            tactic=BluffTactic.PRUDENT_FOLD.value,
+            fold_equity=0.0,
+            reason="Fold prudente disciplinado contra aposta sem odds",
+            semi_bluff_outs=outs,
+            equity=0.20,
+            pot_odds=pot_odds,
+            expected_value=-float(to_call),
+            metrics=metrics,
         )
 
     def _track_decision_telemetry(self, decision: BluffDecision) -> None:
-        """Atualiza a telemetria interna do agente."""
-        if decision.is_bluff:
-            self.bluffs_attempted += 1
-            if decision.tactic == BluffTactic.SEMI_BLUFF.value:
-                self.semi_bluffs += 1
-            elif decision.tactic in (
-                BluffTactic.CBET_STEAL.value,
-                BluffTactic.PREFLOP_STEAL.value,
-            ):
-                self.cbet_steals += 1
-            elif decision.tactic in (
-                BluffTactic.BLUFF_RAISE.value,
-                BluffTactic.PREFLOP_3BET.value,
-            ):
-                self.bluff_raises += 1
-            else:
-                self.pure_bluffs += 1
-
+        """Atualiza telemetria de tomada de decisão do agente."""
+        self.hands_played += 1
         if decision.action_type in (ActionType.BET, ActionType.RAISE):
             self.bets_and_raises += 1
-            self.vpip_actions += 1
-            self.pfr_actions += 1
+            if decision.is_bluff:
+                self.bluffs_attempted += 1
+                if decision.semi_bluff_outs > 0:
+                    self.semi_bluffs += 1
+                else:
+                    self.pure_bluffs += 1
+            else:
+                self.value_bets += 1
         elif decision.action_type == ActionType.CALL:
             self.calls += 1
-            self.vpip_actions += 1
+        elif decision.action_type == ActionType.CHECK:
+            self.checks += 1
         elif decision.action_type == ActionType.FOLD:
             self.folds += 1
 
 
-def run_isolated_demo() -> None:
-    """Demonstração de execução isolada do Agente Blefador em cenários canônicos."""
-    agent = BlufferAgent(
-        player_id="bluffer_demo",
-        name="Agente Blefador (Isolado)",
-        bluff_frequency=0.80,
-        semi_bluff_frequency=0.90,
-        rng=random.Random(42),
-    )
-
-    print("=" * 75)
-    print("DEMONSTRAÇÃO DE EXECUÇÃO ISOLADA: AGENTE BLEFADOR (BLUFF ENGINE)")
-    print("=" * 75)
-
-    scenarios = [
-        (
-            "Cenário 0: Pré-Flop Defesa do Big Blind com Mão Especulativa (9s 8s)",
-            (Card.from_str("9s"), Card.from_str("8s")),
-            [],
-            30,
-            10,
-            1000,
-            3,
-            [ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
-            Street.PREFLOP,
-        ),
-        (
-            "Cenário 1: C-Bet Steal no Flop em Mesa Seca (7d 2c em Ah 8s 3c)",
-            (Card.from_str("7d"), Card.from_str("2c")),
-            [Card.from_str("Ah"), Card.from_str("8s"), Card.from_str("3c")],
-            100,
-            0,
-            1000,
-            1,
-            [ActionType.CHECK, ActionType.BET],
-            Street.FLOP,
-        ),
-        (
-            "Cenário 2: Semi-Blefe no Turn com Flush Draw (Kh Qh em Ah 8h 2c 4s)",
-            (Card.from_str("Kh"), Card.from_str("Qh")),
-            [
-                Card.from_str("Ah"),
-                Card.from_str("8h"),
-                Card.from_str("2c"),
-                Card.from_str("4s"),
-            ],
-            120,
-            25,
-            1000,
-            1,
-            [ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
-            Street.TURN,
-        ),
-        (
-            "Cenário 3: River Scare Barrel com Mão Fraca (Jd 10c em 2h 5d 8c Ks As)",
-            (Card.from_str("Jd"), Card.from_str("10c")),
-            [
-                Card.from_str("2h"),
-                Card.from_str("5d"),
-                Card.from_str("8c"),
-                Card.from_str("Ks"),
-                Card.from_str("As"),
-            ],
-            150,
-            0,
-            1000,
-            1,
-            [ActionType.CHECK, ActionType.BET],
-            Street.RIVER,
-        ),
-        (
-            "Cenário 4: Bluff Raise contra aposta de sondagem fraca no Flop",
-            (Card.from_str("6c"), Card.from_str("5c")),
-            [Card.from_str("Kd"), Card.from_str("9s"), Card.from_str("2h")],
-            120,
-            20,
-            1000,
-            1,
-            [ActionType.FOLD, ActionType.CALL, ActionType.RAISE],
-            Street.FLOP,
-        ),
-        (
-            "Cenário 5: Desistência Prudente contra All-In Gigante sem equidade",
-            (Card.from_str("4d"), Card.from_str("3s")),
-            [
-                Card.from_str("Kd"),
-                Card.from_str("Qc"),
-                Card.from_str("Js"),
-                Card.from_str("10h"),
-            ],
-            200,
-            600,
-            1000,
-            2,
-            [ActionType.FOLD, ActionType.CALL],
-            Street.TURN,
-        ),
-    ]
-
-    for title, hole, board, pot, to_call, stack, opps, legals, street in scenarios:
-        board_str = " ".join(str(c) for c in board) if board else "(Pré-Flop)"
-        print(f"\n> {title}")
-        print(
-            f"  Mão: {hole[0]} {hole[1]} | Bordo: [{board_str}] | "
-            f"Pote: {pot} | A pagar: {to_call}"
-        )
-
-        decision = agent.evaluate_state(
-            hole_cards=hole,
-            community_cards=board,
-            pot_size=pot,
-            to_call=to_call,
-            player_stack=stack,
-            player_current_bet=0,
-            current_highest_bet=to_call,
-            min_raise=20,
-            big_blind=20,
-            num_opponents=opps,
-            legal_actions=legals,
-            street=street,
-        )
-
-        amt_str = f" (Valor: {decision.amount})" if decision.amount > 0 else ""
-        print(f"  -> Ação Decidida: {decision.action_type.name}{amt_str}")
-        print(
-            f"  -> Blefe?: {decision.is_bluff} | Tática: {decision.tactic} | "
-            f"Fold Equity: {decision.fold_equity:.1%}"
-        )
-        print(f"  -> Motivação Estratégica: {decision.reason}")
-
-
-if __name__ == "__main__":
-    run_isolated_demo()
+GhBlufferAgent = BlufferAgent

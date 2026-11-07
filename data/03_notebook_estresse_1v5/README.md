@@ -1,102 +1,48 @@
-# 03 - Experimentos no Notebook: Mesas de Estresse Homogêneas (1 vs 5)
+# 03 - Experimentos no Notebook: Mesas de Estresse (1 vs 5)
 
-Este diretório armazena os testes de estresse projetados para avaliar a robustez de um agente colocado em um ecossistema extremo (1 agente isolado contra 5 oponentes de perfil agressivo, passivo ou blefador).
+Este diretório armazena os testes de estresse projetados para avaliar a robustez de cada um dos 3 agentes definitivos colocado em um ecossistema hostil (1 agente isolado contra 5 oponentes de outro perfil ou perfil misto).
 
 ---
 
-## 1. Cenários de Estresse Configurados (500 Mãos por Cenário)
+## 1. Cenários de Estresse Configurados (500 Mãos por Cenário - Seed 101)
 
-### Cenário 1: 1 Matemático vs 5 Blefadores Maníacos
-- **Objetivo:** Testar se a baseline estritamente matemática (+EV) resiste à pressão de roubo de potes contínua ou se é explorada por over-folding.
-- **Assentos:** `math`, `bluffer`, `bluffer`, `bluffer`, `bluffer`, `bluffer`
-- **Semente:** 201
-- **Pasta:** `data/03_notebook_estresse_1v5/01_math_vs_5_bluffers/`
-- **Comando Manual:**
-  ```powershell
-  .venv\Scripts\python.exe scripts/generate_decision_telemetry.py `
-      --hands 500 `
-      --custom-seats math bluffer bluffer bluffer bluffer bluffer `
-      --seed 201 `
-      --test-id 01_math_vs_5_bluffers `
-      --output-dir data/03_notebook_estresse_1v5
-  ```
+### Bloco 1: O Matemático como "1"
+- **Cenário 1: 1 Matemático vs 5 Blefadores** (`01_math_vs_5_bluffers`)
+  - **Assentos:** `math, bluffer, bluffer, bluffer, bluffer, bluffer`
+  - **Objetivo:** Medir se a baseline matemática sobrevive e pune uma mesa inteira de blefadores contínuos.
+- **Cenário 2: 1 Matemático vs 5 Híbridos** (`02_math_vs_5_hybrids`)
+  - **Assentos:** `math, hybrid, hybrid, hybrid, hybrid, hybrid`
+  - **Objetivo:** Testar se o cálculo rígido de odds consegue neutralizar as armadilhas (*slow-plays*) e semi-blefes de múltiplos agentes adaptativos.
+- **Cenário 3: 1 Matemático vs 5 Mistos** (`03_math_vs_5_mistos`)
+  - **Assentos:** `math, bluffer, bluffer, bluffer, hybrid, hybrid`
+  - **Objetivo:** Avaliar o isolamento do matemático contra um ambiente heterogêneo hostil de 3 blefadores e 2 híbridos.
 
-### Cenário 2: 1 GhBluffer (GTO Nash) vs 5 Conservadores Passivos (NITs)
-- **Objetivo:** Avaliar a capacidade de extração de fold equity do modelo GTO com blockers contra uma mesa que recusa confrontos e só joga mãos premium.
-- **Assentos:** `gh_bluffer`, `conservative`, `conservative`, `conservative`, `conservative`, `conservative`
-- **Semente:** 202
-- **Pasta:** `data/03_notebook_estresse_1v5/02_ghbluffer_vs_5_passivos/`
-- **Comando Manual:**
-  ```powershell
-  .venv\Scripts\python.exe scripts/generate_decision_telemetry.py `
-      --hands 500 `
-      --custom-seats gh_bluffer conservative conservative conservative conservative conservative `
-      --seed 202 `
-      --test-id 02_ghbluffer_vs_5_passivos `
-      --output-dir data/03_notebook_estresse_1v5
-  ```
+### Bloco 2: O Blefador como "1"
+- **Cenário 4: 1 Blefador vs 5 Matemáticos** (`04_bluffer_vs_5_maths`)
+  - **Assentos:** `bluffer, math, math, math, math, math`
+  - **Objetivo:** Testar a viabilidade da teoria dos jogos e blockers quando 5 oponentes calculam odds friamente e não caem em blefes banais.
+- **Cenário 5: 1 Blefador vs 5 Híbridos** (`05_bluffer_vs_5_hybrids`)
+  - **Assentos:** `bluffer, hybrid, hybrid, hybrid, hybrid, hybrid`
+  - **Objetivo:** Medir a rentabilidade de blefes contra adversários que também sabem blefar e contra-atacar.
+- **Cenário 6: 1 Blefador vs 5 Mistos** (`06_bluffer_vs_5_mistos`)
+  - **Assentos:** `bluffer, math, math, math, hybrid, hybrid`
+  - **Objetivo:** Avaliar o blefador isolado contra 3 matemáticos sólidos e 2 híbridos dinâmicos.
 
-### Cenário 3: 1 Híbrido Mestre vs 5 Agressivos Descontrolados (LAGs)
-- **Objetivo:** Avaliar como a alternância entre valor e camuflagem do híbrido se comporta contra um field altamente volátil que infla todos os potes.
-- **Assentos:** `hybrid`, `aggressive`, `aggressive`, `aggressive`, `aggressive`, `aggressive`
-- **Semente:** 203
-- **Pasta:** `data/03_notebook_estresse_1v5/03_hibrido_vs_5_agressivos/`
-- **Comando Manual:**
-  ```powershell
-  .venv\Scripts\python.exe scripts/generate_decision_telemetry.py `
-      --hands 500 `
-      --custom-seats hybrid aggressive aggressive aggressive aggressive aggressive `
-      --seed 203 `
-      --test-id 03_hibrido_vs_5_agressivos `
-      --output-dir data/03_notebook_estresse_1v5
-  ```
-
-### Cenário 4: 1 GhMath (Gustavo) vs 5 Blefadores Maníacos
-- **Objetivo:** Avaliar a precisão bayesiana e o dimensionamento de Kelly do GhMath ao caçar blefes constantes de 5 oponentes irracionais.
-- **Assentos:** `gh_math`, `bluffer`, `bluffer`, `bluffer`, `bluffer`, `bluffer`
-- **Semente:** 42
-- **Pasta:** `data/03_notebook_estresse_1v5/04_ghmath_vs_5_bluffers/`
-
-### Cenário 5: 1 Matemático Treinado (Tier S) vs 5 Blefadores Maníacos
-- **Objetivo:** Avaliar a política por reforço (DQN/RL) do Matemático Treinado contra blefes contínuos.
-- **Assentos:** `trained_math`, `bluffer`, `bluffer`, `bluffer`, `bluffer`, `bluffer`
-- **Semente:** 42
-- **Pasta:** `data/03_notebook_estresse_1v5/05_trained_math_vs_5_bluffers/`
-
-### Cenário 6: 1 Blefador Treinado (Tier S) vs 5 Conservadores Passivos (NITs)
-- **Objetivo:** Avaliar como a rede de blefe treinada explora jogadores super passivos.
-- **Assentos:** `trained_bluffer`, `conservative`, `conservative`, `conservative`, `conservative`, `conservative`
-- **Semente:** 42
-- **Pasta:** `data/03_notebook_estresse_1v5/06_trained_bluffer_vs_5_passivos/`
-
-### Cenário 7: 1 Blefador Heurístico vs 5 Matemáticos Baseline
-- **Objetivo:** Testar o que acontece com um blefador contínuo quando a mesa inteira calcula Pot Odds friamente.
-- **Assentos:** `bluffer`, `math`, `math`, `math`, `math`, `math`
-- **Semente:** 42
-- **Pasta:** `data/03_notebook_estresse_1v5/07_bluffer_vs_5_matematicos/`
-
-### Cenário 8: 1 Equilibrado (TAG) vs 5 Blefadores Maníacos
-- **Objetivo:** Avaliar a disciplina de uma estratégia Tight-Aggressive padrão contra maníacos.
-- **Assentos:** `balanced`, `bluffer`, `bluffer`, `bluffer`, `bluffer`, `bluffer`
-- **Semente:** 42
-- **Pasta:** `data/03_notebook_estresse_1v5/08_balanced_vs_5_bluffers/`
-
-### Cenário 9: 1 Conservador (NIT) vs 5 Agressivos Descontrolados (LAGs)
-- **Objetivo:** Testar a capacidade de sobrevivência e punição de um jogador ultra-tight contra LAGs.
-- **Assentos:** `conservative`, `aggressive`, `aggressive`, `aggressive`, `aggressive`, `aggressive`
-- **Semente:** 42
-- **Pasta:** `data/03_notebook_estresse_1v5/09_conservative_vs_5_agressivos/`
-
-### Cenário 10: 1 Agressivo (LAG) vs 5 Conservadores Passivos (NITs)
-- **Objetivo:** Medir a taxa de roubo de potes incontestados de um jogador agressivo contra passivos.
-- **Assentos:** `aggressive`, `conservative`, `conservative`, `conservative`, `conservative`, `conservative`
-- **Semente:** 42
-- **Pasta:** `data/03_notebook_estresse_1v5/10_aggressive_vs_5_passivos/`
+### Bloco 3: O Híbrido como "1"
+- **Cenário 7: 1 Híbrido vs 5 Matemáticos** (`07_hybrid_vs_5_maths`)
+  - **Assentos:** `hybrid, math, math, math, math, math`
+  - **Objetivo:** Avaliar a extração de fichas e armadilhas do híbrido contra uma mesa estritamente conservadora em odds.
+- **Cenário 8: 1 Híbrido vs 5 Blefadores** (`08_hybrid_vs_5_bluffers`)
+  - **Assentos:** `hybrid, bluffer, bluffer, bluffer, bluffer, bluffer`
+  - **Objetivo:** Avaliar como o híbrido pune blefadores excessivos explorando suas fraquezas no turn e river.
+- **Cenário 9: 1 Híbrido vs 5 Mistos** (`09_hybrid_vs_5_mistos`)
+  - **Assentos:** `hybrid, math, math, math, bluffer, bluffer`
+  - **Objetivo:** Testar a adaptabilidade completa do híbrido isolado em um ecossistema equilibrado de 3 matemáticos e 2 blefadores.
 
 ---
 
 ## 2. Execução Automatizada
-Execute no terminal do notebook:
+Execute no terminal:
 ```powershell
-.venv\Scripts\python.exe scripts/run_experiments_notebook.py
+python scripts/run_experiments_notebook.py --seed 101 --tag seed101
 ```

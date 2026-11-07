@@ -49,6 +49,7 @@ class HybridDecision:
     outs: int = 0
     is_bluff: bool = False
     tactic: str = ""
+    metrics: Optional[Any] = None
 
     def __post_init__(self) -> None:
         if self.is_deceptive and self.mode in ("SEMI_BLUFF", "PURE_BLUFF"):
@@ -129,7 +130,7 @@ class HybridAgent(BaseAgent):
     def __init__(
         self,
         player_id: str,
-        name: str = "Agente Híbrido",
+        name: str = "Agente Híbrido Definitivo",
         math_weight: float = 0.50,
         raise_equity_threshold: float = 0.60,
         call_ev_margin: float = 0.02,
@@ -500,25 +501,28 @@ class HybridAgent(BaseAgent):
 
             # Proteção de ranges e defesa pré-flop contra apostas padrão
             if is_preflop:
-                # 1. Defesa barata (<= 1 BB) com mãos jogáveis
-                if (
-                    to_call <= big_blind
-                    and (preflop_score >= 0.35 or equity >= 0.28)
-                    and ActionType.CALL in legal_actions
-                ):
-                    return HybridDecision(
-                        action_type=ActionType.CALL,
-                        amount=0,
-                        mode="BLIND_DEFEND",
-                        equity=equity,
-                        pot_odds=pot_odds,
-                        is_deceptive=False,
-                        reason="Defesa pré-flop de custo baixo com mão jogável",
+                # 1. Defesa barata (<= 1 BB) com mãos jogáveis/especulativas
+                if to_call <= big_blind:
+                    is_playable = (
+                        preflop_score >= 0.42
+                        or is_pair
+                        or is_suited
+                        or (high_r >= 10 and low_r >= 8)
                     )
+                    if is_playable and ActionType.CALL in legal_actions:
+                        return HybridDecision(
+                            action_type=ActionType.CALL,
+                            amount=to_call,
+                            mode="BLIND_DEFEND",
+                            equity=equity,
+                            pot_odds=pot_odds,
+                            is_deceptive=False,
+                            reason="Defesa pré-flop de custo baixo com mão jogável",
+                        )
                 # 2. Defesa contra aumento padrão (<= 3.5 BBs) com cartas fortes/especulativas
-                if to_call <= big_blind * 3.5:
+                elif to_call <= big_blind * 3.5:
                     if (
-                        preflop_score >= 0.72
+                        preflop_score >= 0.70
                         and ActionType.RAISE in legal_actions
                         and player_stack > to_call
                     ):
@@ -535,10 +539,11 @@ class HybridAgent(BaseAgent):
                                 is_deceptive=False,
                                 reason=f"3-bet por valor pré-flop com mão premium (score={preflop_score:.2f})",
                             )
-                    if (preflop_score >= 0.48 or equity >= 0.34) and ActionType.CALL in legal_actions:
+                    has_odds = equity >= (pot_odds - self.params.call_ev_margin)
+                    if (preflop_score >= 0.52 and has_odds) and ActionType.CALL in legal_actions:
                         return HybridDecision(
                             action_type=ActionType.CALL,
-                            amount=0,
+                            amount=to_call,
                             mode="PREFLOP_CALL",
                             equity=equity,
                             pot_odds=pot_odds,
