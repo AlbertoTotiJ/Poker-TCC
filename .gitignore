@@ -21,6 +21,7 @@ htmlcov/
 # Dados e Modelos
 data/**/*.csv
 data/**/*.jsonl
+data/**/*.joblib
 data/**/summary.json
 data/**/plots/
 data/*_tcc_*
@@ -35,6 +36,7 @@ data/backups/
 !data/03_notebook_estresse_1v5/README.md
 !data/04_ml_sprint4_consolidado/
 !data/04_ml_sprint4_consolidado/README.md
+!data/04_ml_sprint4_consolidado/model_metrics.json
 models/*
 !models/*.json
 models/*_trained_*.json

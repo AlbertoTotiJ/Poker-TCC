@@ -1,0 +1,47 @@
+{
+  "in_game_model": {
+    "type": "RandomForestClassifier",
+    "features": [
+      "street",
+      "action_taken",
+      "bettor_profile",
+      "amount",
+      "pot_before",
+      "bet_to_pot_ratio",
+      "stack_to_pot_ratio",
+      "pot_odds"
+    ],
+    "test_accuracy": 0.8925068654374264,
+    "test_precision": 0.8470752089136491,
+    "test_recall": 0.9176222088111045,
+    "test_f1": 0.8809385863267671,
+    "test_roc_auc": 0.9665212977944592,
+    "test_pr_auc": 0.9588726429676102
+  },
+  "xai_oracle_model": {
+    "type": "RandomForestClassifier",
+    "features": [
+      "street",
+      "action_taken",
+      "bettor_profile",
+      "amount",
+      "pot_before",
+      "bet_to_pot_ratio",
+      "stack_to_pot_ratio",
+      "pot_odds",
+      "outs_count",
+      "raw_equity",
+      "equity_disparity"
+    ],
+    "test_accuracy": 1.0,
+    "test_roc_auc": 1.0
+  },
+  "dataset_split": {
+    "total_samples": 50978,
+    "train_samples": 35684,
+    "val_samples": 7647,
+    "test_samples": 7647,
+    "bluff_ratio": 0.43336341166777825
+  },
+  "timestamp": "2026-11-07T18:11:27Z"
+}

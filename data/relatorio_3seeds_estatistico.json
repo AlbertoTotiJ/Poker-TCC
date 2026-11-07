@@ -1,0 +1,373 @@
+{
+  "desktop_agg": [
+    {
+      "format": "6-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 1579.6666666666667,
+      "win_rate": 0.17600000000000002,
+      "vpip": 0.40549999999999997,
+      "pfr": 0.0425,
+      "bluff_att": 311.5,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "format": "6-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -14240.166666666666,
+      "win_rate": 0.13816666666666666,
+      "vpip": 0.226,
+      "pfr": 0.09183333333333334,
+      "bluff_att": 194.16666666666666,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "format": "6-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 11884.666666666666,
+      "win_rate": 0.13333333333333333,
+      "vpip": 0.1235,
+      "pfr": 0.007,
+      "bluff_att": 6.666666666666667,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "format": "9-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -303.3333333333333,
+      "win_rate": 0.10788888888888888,
+      "vpip": 0.29266666666666663,
+      "pfr": 0.034,
+      "bluff_att": 174.0,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "format": "9-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -7497.111111111111,
+      "win_rate": 0.08755555555555555,
+      "vpip": 0.1791111111111111,
+      "pfr": 0.06944444444444445,
+      "bluff_att": 133.88888888888889,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "format": "9-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 7076.111111111111,
+      "win_rate": 0.09188888888888888,
+      "vpip": 0.10688888888888888,
+      "pfr": 0.0067777777777777775,
+      "bluff_att": 6.333333333333333,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    }
+  ],
+  "desktop_seed": [
+    {
+      "seed": "seed101",
+      "format": "6-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -822.0,
+      "win_rate": 0.20650000000000002,
+      "bluff_att": 322.5,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed101",
+      "format": "6-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -17178.5,
+      "win_rate": 0.1215,
+      "bluff_att": 182.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed101",
+      "format": "6-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 17322.5,
+      "win_rate": 0.1295,
+      "bluff_att": 5.5,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed101",
+      "format": "9-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -4582.333333333333,
+      "win_rate": 0.10933333333333334,
+      "bluff_att": 167.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed101",
+      "format": "9-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -9267.0,
+      "win_rate": 0.08600000000000001,
+      "bluff_att": 135.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed101",
+      "format": "9-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 13038.0,
+      "win_rate": 0.08833333333333333,
+      "bluff_att": 7.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed144",
+      "format": "6-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -1378.0,
+      "win_rate": 0.173,
+      "bluff_att": 344.5,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed144",
+      "format": "6-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -8282.5,
+      "win_rate": 0.14500000000000002,
+      "bluff_att": 195.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed144",
+      "format": "6-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 8907.5,
+      "win_rate": 0.1365,
+      "bluff_att": 8.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed144",
+      "format": "9-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -2571.6666666666665,
+      "win_rate": 0.08633333333333333,
+      "bluff_att": 140.33333333333334,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed144",
+      "format": "9-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -2180.3333333333335,
+      "win_rate": 0.10166666666666667,
+      "bluff_att": 153.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed144",
+      "format": "9-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 3940.3333333333335,
+      "win_rate": 0.09100000000000001,
+      "bluff_att": 5.666666666666667,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed99",
+      "format": "6-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 6939.0,
+      "win_rate": 0.14850000000000002,
+      "bluff_att": 267.5,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed99",
+      "format": "6-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -17259.5,
+      "win_rate": 0.148,
+      "bluff_att": 205.5,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed99",
+      "format": "6-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 9424.0,
+      "win_rate": 0.134,
+      "bluff_att": 6.5,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed99",
+      "format": "9-Max",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 6244.0,
+      "win_rate": 0.128,
+      "bluff_att": 214.66666666666666,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed99",
+      "format": "9-Max",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -11044.0,
+      "win_rate": 0.075,
+      "bluff_att": 113.66666666666667,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "seed": "seed99",
+      "format": "9-Max",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 4250.0,
+      "win_rate": 0.09633333333333333,
+      "bluff_att": 6.333333333333333,
+      "bluff_suc_rate": 0.0
+    }
+  ],
+  "heads_up_agg": [
+    {
+      "duel": "duel_bluffer_vs_matematico",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 1390.6666666666667,
+      "win_rate": 0.31266666666666665,
+      "bluff_att": 323.6666666666667,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "duel": "duel_bluffer_vs_matematico",
+      "clean_profile": "Matemático Definitivo",
+      "profit": -3066.0,
+      "win_rate": 0.39200000000000007,
+      "bluff_att": 14.666666666666666,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "duel": "duel_hibrido_vs_bluffer",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 566.0,
+      "win_rate": 0.298,
+      "bluff_att": 334.3333333333333,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "duel": "duel_hibrido_vs_bluffer",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -632.3333333333334,
+      "win_rate": 0.7106666666666667,
+      "bluff_att": 329.0,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "duel": "duel_hibrido_vs_matematico",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -10490.0,
+      "win_rate": 0.4106666666666667,
+      "bluff_att": 233.66666666666666,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    },
+    {
+      "duel": "duel_hibrido_vs_matematico",
+      "clean_profile": "Matemático Definitivo",
+      "profit": 8774.333333333334,
+      "win_rate": 0.2833333333333333,
+      "bluff_att": 5.333333333333333,
+      "bluff_suc_rate": 0.0,
+      "sd_win_rate": 0.0
+    }
+  ],
+  "stress_agg": [
+    {
+      "scenario": "01_math_vs_5_bluffers",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -319.6666666666667,
+      "win_rate": 0.18400000000000002,
+      "opp_avg_profit": -8.933333333333318,
+      "bluff_att": 121.33333333333333,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "02_math_vs_5_hybrids",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -1987.3333333333333,
+      "win_rate": 0.11066666666666668,
+      "opp_avg_profit": 194.19999999999996,
+      "bluff_att": 116.66666666666667,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "03_math_vs_5_mistos",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -3869.3333333333335,
+      "win_rate": 0.19399999999999998,
+      "opp_avg_profit": 699.9333333333334,
+      "bluff_att": 145.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "04_bluffer_vs_5_maths",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 192.33333333333334,
+      "win_rate": 0.12533333333333332,
+      "opp_avg_profit": -440.4666666666667,
+      "bluff_att": 144.66666666666666,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "05_bluffer_vs_5_hybrids",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 4682.0,
+      "win_rate": 0.18200000000000002,
+      "opp_avg_profit": -937.0,
+      "bluff_att": 215.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "06_bluffer_vs_5_mistos",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 6098.666666666667,
+      "win_rate": 0.18666666666666668,
+      "opp_avg_profit": -1446.3999999999999,
+      "bluff_att": 189.66666666666666,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "07_hybrid_vs_5_maths",
+      "clean_profile": "Híbrido Definitivo",
+      "profit": -5869.666666666667,
+      "win_rate": 0.132,
+      "opp_avg_profit": 738.2666666666668,
+      "bluff_att": 98.66666666666667,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "08_hybrid_vs_5_bluffers",
+      "clean_profile": "Blefador Definitivo",
+      "profit": -1224.3333333333333,
+      "win_rate": 0.146,
+      "opp_avg_profit": 250.20000000000005,
+      "bluff_att": 85.0,
+      "bluff_suc_rate": 0.0
+    },
+    {
+      "scenario": "09_hybrid_vs_5_mistos",
+      "clean_profile": "Blefador Definitivo",
+      "profit": 1765.3333333333333,
+      "win_rate": 0.142,
+      "opp_avg_profit": -606.0666666666667,
+      "bluff_att": 131.33333333333334,
+      "bluff_suc_rate": 0.0
+    }
+  ]
+}
