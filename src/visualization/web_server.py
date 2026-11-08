@@ -65,7 +65,7 @@ class WebPokerSession:
         human_name: str = "Você (Humano)",
         agent_mode: str = "tripartite",
         custom_agents: Optional[List[str]] = None,
-        record_hands: bool = True,
+        record_hands: bool = False,
         rng: Optional[random.Random] = None,
     ) -> None:
         if not (2 <= num_players <= 9):
@@ -415,8 +415,8 @@ class WebPokerSession:
                 f"{', '.join(side_winners)}."
             )
 
-        # Gravação automática da partida (Vercel / Local / Neon)
-        if getattr(self, "record_hands", True):
+        # Gravação de partidas desativada (Neon não grava mais)
+        if getattr(self, "record_hands", False):
             try:
                 from datetime import datetime, timezone
                 import os
@@ -700,7 +700,7 @@ class WebPokerSession:
             "is_hand_finished": is_finished,
             "showdown": showdown_data,
             "champion": champion,
-            "recording_active": getattr(self, "record_hands", True),
+            "recording_active": False,
         }
 
 
@@ -1444,7 +1444,7 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 starting_stack = int(data.get("starting_stack", 1000))
                 agent_mode = str(data.get("agent_mode", "tripartite"))
                 custom_agents = data.get("custom_agents", None)
-                record_hands = bool(data.get("record_hands", True))
+                record_hands = False
                 new_session = WebPokerSession(
                     num_players=num_players,
                     starting_stack=starting_stack,
