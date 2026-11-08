@@ -1977,10 +1977,7 @@
 
     <div class="header-controls">
       <button class="btn-header btn-xai-tab" onclick="openXaiWorkspace()" title="Grafo Cognitivo XAI: Exploração em Rede Neural e Trilha da Vitória">🧠 Grafo Cognitivo (XAI)</button>
-      <button class="btn-header btn-agents" onclick="openAgentsModal()" title="Escolha entre os Agentes Feitos de IA e os Bots Padrão">🤖 Selecionar Agentes</button>
-      <button class="btn-header btn-record" onclick="openRecordModal()" title="Gravar rodadas da equipe com código de autenticação">🔴 Gravar Partidas</button>
-      <button class="btn-header" onclick="openConfigModal()">⚙️ Configurar Mesa</button>
-      <button class="btn-header" id="speedBtn" onclick="toggleSpeed()">Velocidade: Normal</button>
+      <button class="btn-header btn-config-main" onclick="openConfigModal()" style="background: linear-gradient(135deg, #1976d2, #1565c0); border: 1px solid #64b5f6; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">⚙️ Configurar Mesa</button>
     </div>
   </header>
 
@@ -2107,8 +2104,9 @@
 
   <!-- Setup Modal -->
   <div class="modal-overlay" id="configModal">
-    <div class="modal-card">
-      <div class="modal-header">Configurar Nova Partida</div>
+    <div class="modal-card" style="max-width: 500px;">
+      <button class="modal-close-btn" onclick="closeConfigModal()">×</button>
+      <div class="modal-header">⚙️ Configurar Partida da Mesa</div>
 
       <div class="form-group">
         <label for="numPlayersSelect">Quantidade de Jogadores na Mesa (2 a 9):</label>
@@ -2125,13 +2123,34 @@
       </div>
 
       <div class="form-group">
-        <label for="configAgentModeSelect">Tipo de Oponentes / Agentes:</label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <label for="configAgentModeSelect" style="margin:0;">Tipo de Oponentes / Agentes:</label>
+          <button type="button" onclick="openAgentsModal()" style="background:transparent; border:none; color:#64b5f6; cursor:pointer; font-size:0.75rem; text-decoration:underline;">Ver Painel Detalhado ↗</button>
+        </div>
         <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
           <option value="tripartite" selected>🌟 Mesa Tripartite Definitiva (3x3x3 / 2x2x2)</option>
           <option value="math">📐 Agente Matemático Definitivo (Kelly / Monte Carlo / Chen)</option>
           <option value="bluffer">🃏 Agente Blefador Definitivo (Nash GTO / Blockers)</option>
           <option value="hybrid">⚡ Agente Híbrido Definitivo (Matemático + Blefador)</option>
-          <option value="custom">⚙️ Personalizado por Cadeira</option>
+          <option value="custom">⚙️ Personalizado por Cadeira (3 Agentes Definitivos)</option>
+        </select>
+      </div>
+
+      <!-- Botão Selecionar Agentes Definitivos TCC -->
+      <div style="margin-bottom: 14px;">
+        <button type="button" class="btn-header" onclick="openAgentsModal()" style="width:100%; background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(21, 101, 192, 0.25)); border: 1px solid #42a5f5; color: #90caf9; padding: 10px 14px; font-weight: 700; font-size: 0.85rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          🤖 Selecionar Agentes (Painel dos 3 Definitivos TCC)
+        </button>
+      </div>
+
+      <!-- Seletor de Velocidade dentro de Configurar Mesa -->
+      <div class="form-group">
+        <label for="configSpeedSelect">⚡ Velocidade das Jogadas:</label>
+        <select id="configSpeedSelect" onchange="changeSpeedFromConfig(this.value)">
+          <option value="0">Normal (700ms)</option>
+          <option value="1">Rápido (250ms)</option>
+          <option value="2">Instantâneo (0ms)</option>
+          <option value="3">Didático / Lento (1500ms)</option>
         </select>
       </div>
 
@@ -2140,14 +2159,10 @@
         <input type="number" id="startingStackInput" value="1000" min="200" step="100">
       </div>
 
-      <div class="form-group" style="margin-top: 10px; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 6px; padding: 10px;">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#81c784; font-size:0.82rem; margin:0;">
-          <input type="checkbox" id="recordHandsCheckbox" checked style="accent-color:#4caf50; width:16px; height:16px;">
-          <span>🔴 <strong>Gravar partidas automaticamente</strong> (salva no Neon e gera dataset)</span>
-        </label>
+      <div style="display:flex; gap:10px; margin-top: 14px;">
+        <button class="btn-submit" onclick="submitConfig()" style="flex:1;">Entrar na Mesa e Jogar</button>
+        <button class="btn-header" onclick="closeConfigModal()" style="padding:10px 16px;">Cancelar</button>
       </div>
-
-      <button class="btn-submit" onclick="submitConfig()">Entrar na Mesa e Jogar</button>
     </div>
   </div>
 
@@ -2521,7 +2536,8 @@
     const speedModes = [
       { label: "Normal (700ms)", delay: 700 },
       { label: "Rápido (250ms)", delay: 250 },
-      { label: "Instantâneo", delay: 0 }
+      { label: "Instantâneo (0ms)", delay: 0 },
+      { label: "Didático / Lento (1500ms)", delay: 1500 }
     ];
     let speedIndex = 0;
 
@@ -2649,16 +2665,36 @@
       return layouts[index] || { x: 50, y: 50, pos: 'bottom' };
     }
 
+    function changeSpeedFromConfig(idx) {
+      speedIndex = parseInt(idx) || 0;
+      botSpeed = speedModes[speedIndex].delay;
+      const speedBtn = document.getElementById('speedBtn');
+      if (speedBtn) {
+        speedBtn.innerText = `Velocidade: ${speedModes[speedIndex].label}`;
+      }
+    }
+
     function toggleSpeed() {
       speedIndex = (speedIndex + 1) % speedModes.length;
       botSpeed = speedModes[speedIndex].delay;
-      document.getElementById('speedBtn').innerText = `Velocidade: ${speedModes[speedIndex].label}`;
+      const speedBtn = document.getElementById('speedBtn');
+      if (speedBtn) {
+        speedBtn.innerText = `Velocidade: ${speedModes[speedIndex].label}`;
+      }
+      const speedSelect = document.getElementById('configSpeedSelect');
+      if (speedSelect) {
+        speedSelect.value = speedIndex;
+      }
     }
 
     function openConfigModal() {
       const configSelect = document.getElementById('configAgentModeSelect');
       if (configSelect) {
         configSelect.value = selectedAgentMode;
+      }
+      const speedSelect = document.getElementById('configSpeedSelect');
+      if (speedSelect) {
+        speedSelect.value = speedIndex;
       }
       document.getElementById('configModal').classList.add('active');
     }
@@ -2766,7 +2802,7 @@
             starting_stack: startingStack,
             agent_mode: selectedAgentMode,
             custom_agents: selectedAgentMode === 'custom' ? customAgents : null,
-            record_hands: document.getElementById('recordHandsCheckbox') ? document.getElementById('recordHandsCheckbox').checked : true
+            record_hands: document.getElementById('recordHandsCheckbox') ? document.getElementById('recordHandsCheckbox').checked : false
           })
         });
         if (data && data.success) {
@@ -2810,7 +2846,7 @@
             starting_stack: startingStack,
             agent_mode: selectedAgentMode,
             custom_agents: selectedAgentMode === 'custom' ? customAgents : null,
-            record_hands: document.getElementById('recordHandsCheckbox') ? document.getElementById('recordHandsCheckbox').checked : true
+            record_hands: document.getElementById('recordHandsCheckbox') ? document.getElementById('recordHandsCheckbox').checked : false
           })
         });
         if (data && data.success) {
