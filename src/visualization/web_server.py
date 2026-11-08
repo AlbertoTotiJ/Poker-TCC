@@ -1028,6 +1028,20 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 return
 
             if (
+                clean_path.endswith("/xai/global_graph")
+                or clean_path == "/xai/global_graph"
+                or clean_path.endswith("xai%2Fglobal_graph")
+            ):
+                from urllib.parse import parse_qs
+                from src.visualization.xai_graph_service import build_global_process_mining_graph
+                params = parse_qs(parsed.query) if parsed.query else {}
+                profile = params.get("profile", ["ALL"])[0]
+                seed = params.get("seed", [None])[0] or params.get("test_id", [None])[0]
+                res = build_global_process_mining_graph(profile_filter=profile, seed_filter=seed)
+                self._send_json(res)
+                return
+
+            if (
                 clean_path.endswith("/xai/emblematic_hands")
                 or clean_path == "/xai/emblematic_hands"
                 or clean_path.endswith("xai%2Femblematic_hands")
@@ -1282,6 +1296,20 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                     "neon_saved": neon_saved,
                     "neon_message": neon_msg,
                 })
+                return
+
+            if (
+                clean_path.endswith("/xai/global_graph")
+                or clean_path == "/xai/global_graph"
+                or clean_path.endswith("xai%2Fglobal_graph")
+            ):
+                from urllib.parse import parse_qs
+                from src.visualization.xai_graph_service import build_global_process_mining_graph
+                params = parse_qs(parsed.query) if parsed.query else {}
+                profile = params.get("profile", ["ALL"])[0]
+                seed = params.get("seed", [None])[0] or params.get("test_id", [None])[0]
+                res = build_global_process_mining_graph(profile_filter=profile, seed_filter=seed)
+                self._send_json(res)
                 return
 
             if (

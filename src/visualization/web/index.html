@@ -2587,11 +2587,24 @@
 
       <!-- Controls & Hand Selector -->
       <div class="xai-toolbar">
-        <button class="btn-xai-emblematic" onclick="openEmblematicCasesModal()" title="Explorar 5 Casos Emblemáticos Selecionados para Apresentação e Defesa">
+        <button class="btn-xai-emblematic" id="btnXaiEmblematic" onclick="openEmblematicCasesModal()" title="Explorar 5 Casos Emblemáticos Selecionados para Apresentação e Defesa">
           ⭐ Casos de Estudo
         </button>
 
-        <div class="xai-control-group">
+        <div class="xai-control-group" id="xaiSeedSelectGroup" title="Filtrar por Seed / Torneio do Benchmark">
+          <label for="xaiSeedSelect">Seed:</label>
+          <select id="xaiSeedSelect" onchange="onXaiSeedChange(this.value)">
+            <option value="6max_heterogeneo_1000m_seed101">🌱 Seed 101 (6-Max Principal)</option>
+            <option value="6max_heterogeneo_1000m_seed144">🌱 Seed 144 (6-Max Agressivo)</option>
+            <option value="6max_heterogeneo_1000m_seed99">🌱 Seed 99 (6-Max Variância)</option>
+            <option value="9max_full_ring_1000m_seed101">🏛️ Seed 101 (9-Max Full Ring)</option>
+            <option value="9max_full_ring_1000m_seed144">🏛️ Seed 144 (9-Max Full Ring)</option>
+            <option value="9max_full_ring_1000m_seed99">🏛️ Seed 99 (9-Max Full Ring)</option>
+            <option value="">🌟 Todos os Torneios</option>
+          </select>
+        </div>
+
+        <div class="xai-control-group" id="xaiHandSelectGroup">
           <label for="xaiHandSelect">Mão:</label>
           <button class="btn-xai-nav" onclick="navXaiHand(-1)" title="Mão Anterior">◀</button>
           <select id="xaiHandSelect" onchange="onXaiHandChange(this.value)">
@@ -2600,10 +2613,20 @@
           <button class="btn-xai-nav" onclick="navXaiHand(1)" title="Próxima Mão">▶</button>
         </div>
 
-        <div class="xai-control-group" title="Pular diretamente para o número da rodada (mão)">
+        <div class="xai-control-group" id="xaiQuickJumpGroup" title="Pular diretamente para o número da rodada (mão)">
           <label for="xaiQuickHandInput">Ir p/:</label>
           <input type="number" id="xaiQuickHandInput" min="1" max="1000" placeholder="ex: 491" style="width: 48px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 2px 4px; font-size: 0.78rem;" onkeydown="if(event.key==='Enter') jumpToQuickHand()">
           <button class="btn-xai-nav" onclick="jumpToQuickHand()" title="Abrir Mão">🔍</button>
+        </div>
+
+        <div class="xai-control-group" id="xaiGlobalProfileGroup" style="display: none;" title="Filtrar Grafo Global de Process Mining por Perfil de Agente">
+          <label for="xaiGlobalProfileSelect">Agente:</label>
+          <select id="xaiGlobalProfileSelect" onchange="loadGlobalGraph(this.value)">
+            <option value="ALL">🌟 Todos os Agentes (181.083 Decisões)</option>
+            <option value="Matemático">📐 Apenas Matemáticos (Tier S)</option>
+            <option value="Blefador">🎭 Apenas Blefadores (GTO)</option>
+            <option value="Híbrido">🧬 Apenas Híbridos (Adaptativos)</option>
+          </select>
         </div>
 
         <button class="btn-xai-filter" id="btnXaiOnlyBluffs" onclick="toggleXaiBluffFilter()">
@@ -2616,6 +2639,9 @@
           </button>
           <button class="btn-xai-mode" id="btnModeMicro" onclick="switchXaiView('micro')" title="Clique em uma ação no grafo Macro para abrir a visão Micro">
             🔬 Visão MICRO (Rede Neural)
+          </button>
+          <button class="btn-xai-mode" id="btnModeGlobal" onclick="switchXaiView('global')" title="Visão GLOBAL: Grafo de Transição de Estados (Process Mining sobre 181.083 Decisões)">
+            🌐 Visão GLOBAL (Process Mining)
           </button>
         </div>
 
@@ -4219,7 +4245,7 @@
     /* ===================================================================== */
     let xaiNetwork = null;
     let xaiCurrentHandId = null;
-    let xaiCurrentTestId = null;
+    let xaiCurrentTestId = '6max_heterogeneo_1000m_seed101';
     let xaiCurrentActionId = null;
     let xaiCurrentView = 'macro';
     let xaiOnlyBluffs = false;
@@ -4227,6 +4253,8 @@
     let xaiSelectedNodeData = null;
     let xaiMacroNodesMap = {};
     let xaiMicroNodesMap = {};
+    let xaiGlobalNodesMap = {};
+    let xaiCurrentGlobalProfile = 'ALL';
     let emblematicCasesCache = null;
 
     function openXaiWorkspace() {
@@ -4259,17 +4287,36 @@
       reloadXaiHands();
     }
 
+    function onXaiSeedChange(seedVal) {
+      xaiCurrentTestId = seedVal || null;
+      if (xaiCurrentView === 'global') {
+        const profSelect = document.getElementById('xaiGlobalProfileSelect');
+        const profile = profSelect ? profSelect.value : 'ALL';
+        loadGlobalGraph(profile, seedVal);
+      } else {
+        xaiCurrentHandId = null;
+        reloadXaiHands();
+      }
+    }
+
     async function reloadXaiHands() {
       const select = document.getElementById('xaiHandSelect');
       if (select) {
         select.innerHTML = '<option value="">⏳ Conectando ao Neon PostgreSQL...</option>';
       }
 
+      const seedSelect = document.getElementById('xaiSeedSelect');
+      const selectedSeed = seedSelect ? seedSelect.value : (xaiCurrentTestId || '6max_heterogeneo_1000m_seed101');
+      if (selectedSeed) {
+        xaiCurrentTestId = selectedSeed;
+      }
+
       try {
-        const resp = await safeFetchJson(`/api/xai/hands?only_bluffs=${xaiOnlyBluffs}&limit=60`);
+        const seedParam = selectedSeed ? `&test_id=${encodeURIComponent(selectedSeed)}` : '';
+        const resp = await safeFetchJson(`/api/xai/hands?only_bluffs=${xaiOnlyBluffs}&limit=60${seedParam}`);
         if (!resp || !resp.success || !resp.hands || resp.hands.length === 0) {
           if (select) {
-            select.innerHTML = '<option value="">Nenhuma mão encontrada no banco</option>';
+            select.innerHTML = '<option value="">Nenhuma mão encontrada neste Seed</option>';
           }
           return;
         }
@@ -4335,9 +4382,11 @@
         alert('Por favor digite um número de rodada válido (ex: 491).');
         return;
       }
+      const seedSelect = document.getElementById('xaiSeedSelect');
+      const selectedSeed = seedSelect ? seedSelect.value : xaiCurrentTestId;
       xaiCurrentHandId = hid;
-      xaiCurrentTestId = null;
-      loadMacroGraph(hid, null);
+      xaiCurrentTestId = selectedSeed || null;
+      loadMacroGraph(hid, xaiCurrentTestId);
     }
 
     async function openEmblematicCasesModal() {
@@ -4425,7 +4474,15 @@
       if (inspectorFooter) inspectorFooter.style.display = 'none';
 
       if (breadcrumb) {
-        breadcrumb.innerHTML = `🔭 Visão MACRO · Trilha da Vitória (Mão #${handId})`;
+        let seedLabel = '';
+        const effTest = testId || xaiCurrentTestId;
+        if (effTest) {
+          if (effTest.includes('seed101')) seedLabel = ' · Seed 101';
+          else if (effTest.includes('seed144')) seedLabel = ' · Seed 144';
+          else if (effTest.includes('seed99')) seedLabel = ' · Seed 99';
+          else seedLabel = ` · ${effTest}`;
+        }
+        breadcrumb.innerHTML = `🔭 Visão MACRO · Trilha da Vitória (Mão #${handId}${seedLabel})`;
       }
       if (hintText) {
         hintText.innerHTML = `Visão MACRO ativa. A <strong>Trilha da Vitória</strong> está destacada em dourado. <strong>Dê um clique</strong> em qualquer nó de ação para inspecionar, ou <strong>clique duplo</strong> para abrir a <strong>Visão MICRO (Rede Neural)</strong>!`;
@@ -4555,6 +4612,24 @@
             <span class="leg-item" title="Aresta com espessura proporcional à causalidade (Fold Equity / Blocker)"><span class="leg-color" style="background:#f59e0b; border:1px solid #fde047; box-shadow:0 0 6px rgba(245,158,11,0.6);"></span> ⚡ Aresta Causal</span>
           </div>
         `;
+      } else if (viewMode === 'global') {
+        const titleText = isCollapsed ? '🌐 Legenda (GLOBAL)' : '🌐 LEGENDA · PROCESS MINING GLOBAL (181.083 DECISÕES)';
+        box.innerHTML = `
+          <div class="legend-title" style="color: #38bdf8;" onclick="if(xaiLegendCollapsed) toggleXaiLegendCollapse(event)">
+            <span>${titleText}</span>
+            <button class="btn-legend-toggle" onclick="toggleXaiLegendCollapse(event)" title="${toggleTitle}">${toggleIcon}</button>
+          </div>
+          <div class="legend-items" style="${isCollapsed ? 'display:none;' : ''}">
+            <span class="leg-item" title="Nó Raiz: Distribuição de cartas pré-flop e início da mão"><span class="leg-color" style="background:#1e3a8a; border:1px solid #38bdf8;"></span> 🃏 Início / Pré-Flop</span>
+            <span class="leg-item" title="Percepção do Bordo: Textura Seca vs Molhada"><span class="leg-color" style="background:#0369a1; border:1px solid #38bdf8;"></span> 🌊 Textura do Bordo</span>
+            <span class="leg-item" title="Camada Cognitiva: Monte Carlo, Kelly e Blocker"><span class="leg-color" style="background:#581c87; border:1px solid #c084fc;"></span> 🧠 Ponderação Cognitiva</span>
+            <span class="leg-item" title="Decisão de Aposta de Valor (+EV Kelly: 77.0% Win Rate)"><span class="leg-color" style="background:#065f46; border:1px solid #34d399;"></span> 💎 Aposta de Valor</span>
+            <span class="leg-item" title="Decisão de Blefe Puro ou Semiblefe (Fold Equity + Blocker)"><span class="leg-color" style="background:#991b1b; border:1px solid #f87171;"></span> 🎭 Blefes & Semiblefes</span>
+            <span class="leg-item" title="Fold Disciplinado diante de equidade insuficiente"><span class="leg-color" style="background:#374151; border:1px solid #9ca3af;"></span> 🛡️ Fold Disciplinado</span>
+            <span class="leg-item" title="Encerramento: Pote Coletado no Showdown ou por Fold"><span class="leg-color" style="background:#854d0e; border:1px solid #fbbf24; box-shadow:0 0 6px rgba(251,191,36,0.6);"></span> 👑 Pote Coletado</span>
+            <span class="leg-item" title="Aresta com espessura proporcional ao fluxo empírico de transição"><span class="leg-color" style="background:#38bdf8; border:1px solid #7dd3fc;"></span> ⚡ Aresta: Probabilidade (%)</span>
+          </div>
+        `;
       } else {
         const titleText = isCollapsed ? '🔭 Legenda (MACRO)' : '🔭 LEGENDA · FLUXO DA PARTIDA (MACRO)';
         box.innerHTML = `
@@ -4575,16 +4650,118 @@
     }
 
     function switchXaiView(mode) {
+      const handGroup = document.getElementById('xaiHandSelectGroup');
+      const jumpGroup = document.getElementById('xaiQuickJumpGroup');
+      const bluffsBtn = document.getElementById('btnXaiOnlyBluffs');
+      const emblemBtn = document.getElementById('btnXaiEmblematic');
+      const globalGroup = document.getElementById('xaiGlobalProfileGroup');
+
+      const btnMacro = document.getElementById('btnModeMacro');
+      const btnMicro = document.getElementById('btnModeMicro');
+      const btnGlobal = document.getElementById('btnModeGlobal');
+
       if (mode === 'macro') {
+        if (handGroup) handGroup.style.display = 'flex';
+        if (jumpGroup) jumpGroup.style.display = 'flex';
+        if (bluffsBtn) bluffsBtn.style.display = 'inline-block';
+        if (emblemBtn) emblemBtn.style.display = 'inline-block';
+        if (globalGroup) globalGroup.style.display = 'none';
+
+        if (btnMacro) btnMacro.classList.add('active');
+        if (btnMicro) btnMicro.classList.remove('active');
+        if (btnGlobal) btnGlobal.classList.remove('active');
+
         if (xaiCurrentHandId) {
-          loadMacroGraph(xaiCurrentHandId);
+          loadMacroGraph(xaiCurrentHandId, xaiCurrentTestId);
+        } else {
+          reloadXaiHands();
         }
       } else if (mode === 'micro') {
         if (xaiCurrentActionId) {
+          if (handGroup) handGroup.style.display = 'flex';
+          if (jumpGroup) jumpGroup.style.display = 'flex';
+          if (bluffsBtn) bluffsBtn.style.display = 'none';
+          if (emblemBtn) emblemBtn.style.display = 'none';
+          if (globalGroup) globalGroup.style.display = 'none';
+
+          if (btnMacro) btnMacro.classList.remove('active');
+          if (btnMicro) btnMicro.classList.add('active');
+          if (btnGlobal) btnGlobal.classList.remove('active');
+
           loadMicroGraph(xaiCurrentActionId);
         } else {
           alert('Por favor, dê um clique duplo em qualquer nó de ação no Grafo Macro para abrir a Visão Micro daquela jogada!');
         }
+      } else if (mode === 'global') {
+        if (handGroup) handGroup.style.display = 'none';
+        if (jumpGroup) jumpGroup.style.display = 'none';
+        if (bluffsBtn) bluffsBtn.style.display = 'none';
+        if (emblemBtn) emblemBtn.style.display = 'none';
+        if (globalGroup) globalGroup.style.display = 'flex';
+
+        if (btnMacro) btnMacro.classList.remove('active');
+        if (btnMicro) btnMicro.classList.remove('active');
+        if (btnGlobal) btnGlobal.classList.add('active');
+
+        const profSelect = document.getElementById('xaiGlobalProfileSelect');
+        const profile = profSelect ? profSelect.value : 'ALL';
+        const seedSelect = document.getElementById('xaiSeedSelect');
+        const seed = seedSelect ? seedSelect.value : '';
+        loadGlobalGraph(profile, seed);
+      }
+    }
+
+    async function loadGlobalGraph(profile = 'ALL', seed = null) {
+      xaiCurrentView = 'global';
+      xaiCurrentGlobalProfile = profile;
+
+      const seedSelect = document.getElementById('xaiSeedSelect');
+      const selectedSeed = seed !== null ? seed : (seedSelect ? seedSelect.value : '');
+
+      const breadcrumb = document.getElementById('xaiBreadcrumb');
+      const hintText = document.getElementById('xaiHintText');
+      const inspectorFooter = document.getElementById('inspectorFooter');
+
+      if (inspectorFooter) inspectorFooter.style.display = 'none';
+
+      let seedLabel = '';
+      if (selectedSeed) {
+        if (selectedSeed.includes('seed101')) seedLabel = ' · Seed 101';
+        else if (selectedSeed.includes('seed144')) seedLabel = ' · Seed 144';
+        else if (selectedSeed.includes('seed99')) seedLabel = ' · Seed 99';
+        else seedLabel = ` · ${selectedSeed}`;
+      }
+
+      const profLabel = profile === 'ALL' ? 'Todos os Agentes' : profile;
+      if (breadcrumb) {
+        breadcrumb.innerHTML = `🌐 Visão GLOBAL (Process Mining) · Fluxo Consolidado (${profLabel}${seedLabel})`;
+      }
+      if (hintText) {
+        hintText.innerHTML = `🌐 <strong>Process Mining Consolidado:</strong> Mineração empírica de decisões de IA. A espessura das arestas representa a probabilidade empírica de transição. <strong>Clique em qualquer nó</strong> para ver taxas de vitória, volume e casos emblemáticos!`;
+      }
+
+      updateXaiLegend('global');
+      resetInspectorState();
+
+      try {
+        const seedParam = selectedSeed ? `&seed=${encodeURIComponent(selectedSeed)}` : '';
+        const url = `/api/xai/global_graph?profile=${encodeURIComponent(profile)}${seedParam}`;
+        const resp = await safeFetchJson(url);
+        if (!resp || !resp.success) {
+          console.error('Falha ao carregar Grafo Global:', resp);
+          return;
+        }
+
+        xaiGlobalNodesMap = {};
+        (resp.nodes || []).forEach(n => {
+          xaiGlobalNodesMap[n.id] = n;
+        });
+
+        renderVisNetwork(resp.nodes, resp.edges, 'global');
+        inspectGlobalSummary(resp);
+
+      } catch (err) {
+        console.error('Erro ao buscar Grafo Global:', err);
       }
     }
 
@@ -4632,6 +4809,37 @@
             hierarchicalRepulsion: {
               centralGravity: 0.0,
               springLength: 130,
+              springConstant: 0.03,
+              nodeDistance: 160
+            }
+          },
+          interaction: {
+            hover: true,
+            tooltipDelay: 80,
+            zoomView: true,
+            dragView: true,
+            selectConnectedEdges: true
+          }
+        };
+      } else if (mode === 'global') {
+        options = {
+          layout: {
+            hierarchical: {
+              enabled: true,
+              direction: 'LR',
+              sortMethod: 'directed',
+              levelSeparation: 260,
+              nodeSpacing: 110,
+              treeSpacing: 150,
+              blockShifting: true,
+              edgeMinimization: true
+            }
+          },
+          physics: {
+            enabled: xaiPhysicsEnabled,
+            hierarchicalRepulsion: {
+              centralGravity: 0.0,
+              springLength: 140,
               springConstant: 0.03,
               nodeDistance: 160
             }
@@ -4701,12 +4909,116 @@
         if (node) {
           inspectMacroNode(node);
         }
-      } else {
+      } else if (xaiCurrentView === 'micro') {
         const node = xaiMicroNodesMap[nodeId];
         if (node) {
           inspectMicroNode(node);
         }
+      } else if (xaiCurrentView === 'global') {
+        const node = xaiGlobalNodesMap[nodeId];
+        if (node) {
+          inspectGlobalNode(node);
+        }
       }
+    }
+
+    function inspectGlobalSummary(resp) {
+      const titleEl = document.getElementById('inspectorTitle');
+      const badgeEl = document.getElementById('inspectorBadge');
+      const contentEl = document.getElementById('inspectorContent');
+      const footerEl = document.getElementById('inspectorFooter');
+
+      if (footerEl) footerEl.style.display = 'none';
+
+      const sum = resp.summary || {};
+      const tot = sum.total_decisions || 1;
+      if (titleEl) titleEl.innerText = `🌐 Process Mining Global`;
+      if (badgeEl) {
+        badgeEl.innerText = resp.profile === 'ALL' ? 'Todos os Agentes' : resp.profile;
+        badgeEl.style.background = '#0369a1';
+        badgeEl.style.color = '#e0f2fe';
+        badgeEl.style.borderColor = '#38bdf8';
+      }
+
+      if (contentEl) {
+        contentEl.innerHTML = `
+          <div class="inspect-card">
+            <div class="inspect-card-title">📊 Universo Amostral Minerado</div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Total de Decisões:</span><span class="inspect-field-value" style="color:#38bdf8; font-weight:700;">${(sum.total_decisions || 0).toLocaleString()}</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Apostas de Valor:</span><span class="inspect-field-value" style="color:#34d399;">${(sum.value_bets || 0).toLocaleString()} (${((sum.value_bets/tot)*100).toFixed(1)}%)</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Semi-Blefes:</span><span class="inspect-field-value" style="color:#fb923c;">${(sum.semi_bluffs || 0).toLocaleString()} (${((sum.semi_bluffs/tot)*100).toFixed(1)}%)</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Blefes Puros:</span><span class="inspect-field-value" style="color:#f87171;">${(sum.pure_bluffs || 0).toLocaleString()} (${((sum.pure_bluffs/tot)*100).toFixed(1)}%)</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Folds Disciplinados:</span><span class="inspect-field-value" style="color:#94a3b8;">${(sum.folds || 0).toLocaleString()} (${((sum.folds/tot)*100).toFixed(1)}%)</span></div>
+            <div class="inspect-field-row"><span class="inspect-field-label">Checks & Calls:</span><span class="inspect-field-value" style="color:#cbd5e1;">${(sum.checks_calls || 0).toLocaleString()} (${((sum.checks_calls/tot)*100).toFixed(1)}%)</span></div>
+          </div>
+          <div class="inspect-card">
+            <div class="inspect-card-title">💡 Como Funciona este Grafo</div>
+            <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.4;">
+              Este grafo condensa todas as <strong>181.083 decisões</strong> executadas ao longo dos 3 seeds do benchmark em clusters conceituais. Cada nó representa um estado comportamental e cada aresta representa a probabilidade empírica de transição.
+            </div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:8px;">
+              👉 <em>Clique em qualquer cluster no grafo para inspecionar métricas detalhadas e abrir mãos emblemáticas!</em>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function inspectGlobalNode(node) {
+      const titleEl = document.getElementById('inspectorTitle');
+      const badgeEl = document.getElementById('inspectorBadge');
+      const contentEl = document.getElementById('inspectorContent');
+      const footerEl = document.getElementById('inspectorFooter');
+
+      if (footerEl) footerEl.style.display = 'none';
+
+      const meta = node.meta || {};
+      if (titleEl) titleEl.innerText = meta.title || node.label.split('\n')[0];
+      if (badgeEl) {
+        badgeEl.innerText = meta.badge || 'Cluster Global';
+        badgeEl.style.background = '#1e293b';
+        badgeEl.style.color = '#38bdf8';
+        badgeEl.style.borderColor = '#38bdf8';
+      }
+
+      let html = `
+        <div class="inspect-card">
+          <div class="inspect-card-title">📈 Métricas Empíricas do Cluster</div>
+          <div class="inspect-field-row"><span class="inspect-field-label">Volume de Decisões:</span><span class="inspect-field-value" style="color:#38bdf8; font-weight:700;">${meta.volume || 'N/A'}</span></div>
+          ${meta.avg_equity ? `<div class="inspect-field-row"><span class="inspect-field-label">Equidade Média:</span><span class="inspect-field-value" style="color:#a78bfa;">${meta.avg_equity}</span></div>` : ''}
+          ${meta.win_rate ? `<div class="inspect-field-row"><span class="inspect-field-label">Taxa de Vitória:</span><span class="inspect-field-value" style="color:#34d399; font-weight:700;">${meta.win_rate}</span></div>` : ''}
+          ${meta.avg_pot ? `<div class="inspect-field-row"><span class="inspect-field-label">Pote Médio:</span><span class="inspect-field-value" style="color:#fbbf24;">${meta.avg_pot} fichas</span></div>` : ''}
+        </div>
+        <div class="inspect-card">
+          <div class="inspect-card-title">📝 Significado Estratégico</div>
+          <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
+            ${meta.description || 'Estado comportamental agregado de Process Mining.'}
+          </div>
+        </div>
+      `;
+
+      if (meta.emblematic_hands && meta.emblematic_hands.length > 0) {
+        let handsHtml = '';
+        meta.emblematic_hands.forEach(h => {
+          handsHtml += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:6px 8px; border-radius:6px; margin-bottom:6px; border:1px solid #334155;">
+              <span style="font-size:0.78rem; color:#e2e8f0; font-weight:600;">${h.label}</span>
+              <button style="background:#2563eb; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:0.72rem; cursor:pointer; font-weight:600;" onclick="switchXaiView('macro'); loadMacroGraph(${h.hand_id}, '${h.test_id}')">
+                Abrir Mão 🔍
+              </button>
+            </div>
+          `;
+        });
+
+        html += `
+          <div class="inspect-card">
+            <div class="inspect-card-title">⭐ Casos Emblemáticos Relacionados</div>
+            <div>${handsHtml}</div>
+          </div>
+        `;
+      }
+
+      if (contentEl) contentEl.innerHTML = html;
     }
 
     function inspectMacroNode(node) {

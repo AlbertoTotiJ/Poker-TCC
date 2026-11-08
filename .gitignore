@@ -56,5 +56,9 @@ logs/
 # Obsidian Vault local
 Poker-TCC/
 
+# Office / PowerPoint lock files
+~$*
+data/*.png
+
 # Scratch temporario
 scratch/
