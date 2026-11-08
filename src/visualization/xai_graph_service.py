@@ -318,6 +318,7 @@ def _serialize_val(val: Any) -> Any:
 def get_available_hands_for_xai(
     only_bluffs: bool = False,
     limit: int = 50,
+    test_id: Optional[str] = None,
     custom_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Retorna a lista de mãos disponíveis com resumos executivos para seleção no frontend."""
@@ -328,11 +329,18 @@ def get_available_hands_for_xai(
 
     cur = conn.cursor()
     try:
-        # Query agregada sobre game_actions e decision_telemetry_and_bluffs
+        where_clauses = []
+        params: List[Any] = []
+        if test_id:
+            where_clauses.append("a.test_id = %s")
+            params.append(test_id)
+
+        where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
         bluff_filter = "HAVING bool_or(t.is_bluff = TRUE)" if only_bluffs else ""
         query = f"""
         SELECT 
             a.hand_id,
+            a.test_id,
             MAX(a.pot_after) as total_pot,
             COUNT(a.action_id) as total_actions,
             COALESCE(bool_or(t.is_bluff = TRUE), FALSE) as has_bluff,
@@ -342,23 +350,25 @@ def get_available_hands_for_xai(
             (
                 SELECT t_sub.player_name 
                 FROM decision_telemetry_and_bluffs t_sub 
-                WHERE t_sub.hand_id = a.hand_id AND t_sub.hand_result IN ('WON_HAND', 'SPLIT_POT') 
+                WHERE t_sub.hand_id = a.hand_id AND t_sub.test_id = a.test_id AND t_sub.hand_result IN ('WON_HAND', 'SPLIT_POT') 
                 LIMIT 1
             ) as winner_name,
             (
                 SELECT t_sub.profile 
                 FROM decision_telemetry_and_bluffs t_sub 
-                WHERE t_sub.hand_id = a.hand_id AND t_sub.hand_result IN ('WON_HAND', 'SPLIT_POT') 
+                WHERE t_sub.hand_id = a.hand_id AND t_sub.test_id = a.test_id AND t_sub.hand_result IN ('WON_HAND', 'SPLIT_POT') 
                 LIMIT 1
             ) as winner_profile
         FROM game_actions a
         LEFT JOIN decision_telemetry_and_bluffs t ON a.action_id = t.action_id
-        GROUP BY a.hand_id
+        {where_sql}
+        GROUP BY a.hand_id, a.test_id
         {bluff_filter}
-        ORDER BY a.hand_id DESC
+        ORDER BY a.hand_id DESC, total_pot DESC
         LIMIT %s;
         """
-        cur.execute(query, (limit,))
+        params.append(limit)
+        cur.execute(query, tuple(params))
         cols = [desc[0] for desc in cur.description]
         hands_list = []
         for row in cur.fetchall():
@@ -382,7 +392,102 @@ def get_available_hands_for_xai(
             pass
 
 
-def build_macro_graph(hand_id: int, custom_url: Optional[str] = None) -> Dict[str, Any]:
+def get_curated_emblematic_hands() -> List[Dict[str, Any]]:
+    """Retorna a coleção oficial de 5 Casos de Estudo emblemáticos para apresentações e defesas."""
+    return [
+        {
+            "category": "EXTRAÇÃO MÁXIMA (+EV / POTE MONSTRO)",
+            "title": "Armadilha com Sequência Nuts e Aposta Máxima no River",
+            "hand_id": 491,
+            "test_id": "9max_full_ring_1000m_seed99",
+            "hero_name": "Matemático 1",
+            "hero_profile": "Matemático (Tier S)",
+            "hole_cards": "A♣ T♠",
+            "community_cards": "Q♠ J♣ 4♦ K♠ 8♣",
+            "final_pot": 9000,
+            "key_action": "RAISE de 4.483 fichas no River",
+            "raw_equity": 0.995,
+            "pot_odds": 0.2192,
+            "expected_value": 5440.19,
+            "insight": "Broadway nuts completa no turn/river; o bot induziu raises sucessivos do Matemático 7 e executou raise por valor absoluto, capturando 9.000 fichas.",
+            "badge": "💰 Pote Monstro (9.000)",
+        },
+        {
+            "category": "BLEFE PURO DESMASCARADO (DISPARIDADE COGNITIVA)",
+            "title": "Blefe Oportunista do Híbrido Pego por Mão Legítima",
+            "hand_id": 72,
+            "test_id": "05_bluffer_vs_5_hybrids_seed99",
+            "hero_name": "Híbrido 3",
+            "hero_profile": "Híbrido",
+            "hole_cards": "3♠ J♦",
+            "community_cards": "5♥ 4♦ 8♠ Q♦",
+            "final_pot": 2184,
+            "key_action": "BET de 324 fichas no Turn com 1.0% de equidade",
+            "raw_equity": 0.010,
+            "pot_odds": 0.0,
+            "expected_value": 0.0,
+            "insight": "Tentativa de blefe puro em mesa passiva sem outs ou blockers; o adversário pagou no showdown e desmascarou o blefe (Disparidade Cognitiva).",
+            "badge": "🔥 Blefe Desmascarado",
+        },
+        {
+            "category": "SEMI-BLEFE ESTRATÉGICO COM FOLD EQUITY",
+            "title": "Raise no Turn com 8 Outs e Concretização no River",
+            "hand_id": 472,
+            "test_id": "6max_heterogeneo_1000m_seed101",
+            "hero_name": "Matemático 2",
+            "hero_profile": "Matemático",
+            "hole_cards": "7♦ 6♣",
+            "community_cards": "9♠ 8♠ 8♣ 8♦ T♦",
+            "final_pot": 2000,
+            "key_action": "RAISE de 533 fichas no Turn com 8 outs de ponta aberta",
+            "raw_equity": 0.285,
+            "pot_odds": 0.2179,
+            "expected_value": -173.71,
+            "insight": "Semi-blefe clássico: aposta agressiva baseada na Fold Equity + 8 outs de sequência. O 10 de ouros no River completou a sequência para a vitória.",
+            "badge": "🎯 Semi-Blefe (8 Outs)",
+        },
+        {
+            "category": "FOLD DISCIPLINADO PREVENTIVO (-EV DEFENSE)",
+            "title": "Desistência Cirúrgica contra Pot Odds Desfavoráveis",
+            "hand_id": 277,
+            "test_id": "6max_heterogeneo_1000m_seed101",
+            "hero_name": "Matemático 1",
+            "hero_profile": "Matemático",
+            "hole_cards": "A♣ 8♣",
+            "community_cards": "K♠ Q♦ 7♥ 3♣ 9♠",
+            "final_pot": 2298,
+            "key_action": "FOLD no River com 8.5% de equidade",
+            "raw_equity": 0.085,
+            "pot_odds": 0.3786,
+            "expected_value": 0.0,
+            "insight": "Proteção de capital pura: a equidade (8.5%) era inferior às pot odds (37.9%). A IA descartou a mão evitando perder mais de 800 fichas adicionais.",
+            "badge": "🛡️ Fold Disciplinado",
+        },
+        {
+            "category": "FULL HOUSE MONSTRO & SLOW PLAY",
+            "title": "Armadilha de Trinca/Full House em Bordo Dobrado",
+            "hand_id": 385,
+            "test_id": "6max_heterogeneo_1000m_seed101",
+            "hero_name": "Matemático 4",
+            "hero_profile": "Matemático",
+            "hole_cards": "2♥ 2♦",
+            "community_cards": "2♠ 3♥ Q♥ 3♠ 8♥",
+            "final_pot": 7455,
+            "key_action": "RAISE de 3.341 fichas no River com Full House (2-2-2-3-3)",
+            "raw_equity": 0.950,
+            "pot_odds": 0.2291,
+            "expected_value": 5082.75,
+            "insight": "Full house floppado/turnado; o bot fez slow-play até o River para permitir que o oponente blefasse, antes de cravar um raise de 3.341 fichas.",
+            "badge": "👑 Full House (7.455)",
+        },
+    ]
+
+
+def build_macro_graph(
+    hand_id: int, 
+    test_id: Optional[str] = None, 
+    custom_url: Optional[str] = None
+) -> Dict[str, Any]:
     """Constrói os nós e arestas para a Visão MACRO (Trilha da Vitória) da mão especificada."""
     conn = get_neon_connection(custom_url=custom_url)
     actions: List[Dict[str, Any]] = []
@@ -390,29 +495,57 @@ def build_macro_graph(hand_id: int, custom_url: Optional[str] = None) -> Dict[st
     if conn is not None:
         cur = conn.cursor()
         try:
-            query = """
-            SELECT 
-                a.action_id, a.hand_id, a.step_order, a.street, a.player_id, a.player_name,
-                a.profile, a.hole_cards, a.community_cards, a.action_type, a.amount,
-                a.pot_before, a.pot_after, a.player_stack_before, a.player_stack_after,
-                COALESCE(t.decision_mode, 'STANDARD') as decision_mode,
-                COALESCE(t.raw_equity, 0.0) as raw_equity,
-                COALESCE(t.pot_odds, 0.0) as pot_odds,
-                COALESCE(t.expected_value, 0.0) as expected_value,
-                COALESCE(t.outs_count, 0) as outs_count,
-                COALESCE(t.tactical_reason, '') as tactical_reason,
-                COALESCE(t.is_bluff, FALSE) as is_bluff,
-                COALESCE(t.bluff_type, 'NONE') as bluff_type,
-                COALESCE(t.opponent_response, 'NOT_APPLICABLE') as opponent_response,
-                COALESCE(t.bluff_outcome, 'NOT_APPLICABLE') as bluff_outcome,
-                COALESCE(t.net_bluff_chips, 0) as net_bluff_chips,
-                COALESCE(t.hand_result, 'UNKNOWN') as hand_result
-            FROM game_actions a
-            LEFT JOIN decision_telemetry_and_bluffs t ON a.action_id = t.action_id
-            WHERE a.hand_id = %s
-            ORDER BY a.step_order ASC;
-            """
-            cur.execute(query, (hand_id,))
+            if test_id:
+                query = """
+                SELECT 
+                    a.action_id, a.hand_id, a.step_order, a.street, a.player_id, a.player_name,
+                    a.profile, a.hole_cards, a.community_cards, a.action_type, a.amount,
+                    a.pot_before, a.pot_after, a.player_stack_before, a.player_stack_after,
+                    COALESCE(t.decision_mode, 'STANDARD') as decision_mode,
+                    COALESCE(t.raw_equity, 0.0) as raw_equity,
+                    COALESCE(t.pot_odds, 0.0) as pot_odds,
+                    COALESCE(t.expected_value, 0.0) as expected_value,
+                    COALESCE(t.outs_count, 0) as outs_count,
+                    COALESCE(t.tactical_reason, '') as tactical_reason,
+                    COALESCE(t.is_bluff, FALSE) as is_bluff,
+                    COALESCE(t.bluff_type, 'NONE') as bluff_type,
+                    COALESCE(t.opponent_response, 'NOT_APPLICABLE') as opponent_response,
+                    COALESCE(t.bluff_outcome, 'NOT_APPLICABLE') as bluff_outcome,
+                    COALESCE(t.net_bluff_chips, 0) as net_bluff_chips,
+                    COALESCE(t.hand_result, 'UNKNOWN') as hand_result
+                FROM game_actions a
+                LEFT JOIN decision_telemetry_and_bluffs t ON a.action_id = t.action_id
+                WHERE a.hand_id = %s AND a.test_id = %s
+                ORDER BY a.step_order ASC;
+                """
+                cur.execute(query, (hand_id, test_id))
+            else:
+                query = """
+                SELECT 
+                    a.action_id, a.hand_id, a.step_order, a.street, a.player_id, a.player_name,
+                    a.profile, a.hole_cards, a.community_cards, a.action_type, a.amount,
+                    a.pot_before, a.pot_after, a.player_stack_before, a.player_stack_after,
+                    COALESCE(t.decision_mode, 'STANDARD') as decision_mode,
+                    COALESCE(t.raw_equity, 0.0) as raw_equity,
+                    COALESCE(t.pot_odds, 0.0) as pot_odds,
+                    COALESCE(t.expected_value, 0.0) as expected_value,
+                    COALESCE(t.outs_count, 0) as outs_count,
+                    COALESCE(t.tactical_reason, '') as tactical_reason,
+                    COALESCE(t.is_bluff, FALSE) as is_bluff,
+                    COALESCE(t.bluff_type, 'NONE') as bluff_type,
+                    COALESCE(t.opponent_response, 'NOT_APPLICABLE') as opponent_response,
+                    COALESCE(t.bluff_outcome, 'NOT_APPLICABLE') as bluff_outcome,
+                    COALESCE(t.net_bluff_chips, 0) as net_bluff_chips,
+                    COALESCE(t.hand_result, 'UNKNOWN') as hand_result
+                FROM game_actions a
+                LEFT JOIN decision_telemetry_and_bluffs t ON a.action_id = t.action_id
+                WHERE a.hand_id = %s AND a.test_id = (
+                    SELECT a2.test_id FROM game_actions a2 WHERE a2.hand_id = %s LIMIT 1
+                )
+                ORDER BY a.step_order ASC;
+                """
+                cur.execute(query, (hand_id, hand_id))
+
             cols = [desc[0] for desc in cur.description]
             for row in cur.fetchall():
                 act = dict(zip(cols, row))

@@ -1028,6 +1028,15 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 return
 
             if (
+                clean_path.endswith("/xai/emblematic_hands")
+                or clean_path == "/xai/emblematic_hands"
+                or clean_path.endswith("xai%2Femblematic_hands")
+            ):
+                from src.visualization.xai_graph_service import get_curated_emblematic_hands
+                self._send_json({"success": True, "cases": get_curated_emblematic_hands()})
+                return
+
+            if (
                 clean_path.endswith("/xai/hands")
                 or clean_path == "/xai/hands"
                 or clean_path.endswith("xai%2Fhands")
@@ -1037,7 +1046,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 params = parse_qs(parsed.query) if parsed.query else {}
                 only_bluffs = params.get("only_bluffs", ["false"])[0].lower() in ("true", "1")
                 limit = int(params.get("limit", [50])[0])
-                res = get_available_hands_for_xai(only_bluffs=only_bluffs, limit=limit)
+                test_id = params.get("test_id", [None])[0]
+                res = get_available_hands_for_xai(only_bluffs=only_bluffs, limit=limit, test_id=test_id)
                 self._send_json(res)
                 return
 
@@ -1050,7 +1060,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 from src.visualization.xai_graph_service import build_macro_graph
                 params = parse_qs(parsed.query) if parsed.query else {}
                 hand_id = int(params.get("hand_id", [1])[0])
-                res = build_macro_graph(hand_id=hand_id)
+                test_id = params.get("test_id", [None])[0]
+                res = build_macro_graph(hand_id=hand_id, test_id=test_id)
                 self._send_json(res)
                 return
 
@@ -1274,6 +1285,15 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 return
 
             if (
+                clean_path.endswith("/xai/emblematic_hands")
+                or clean_path == "/xai/emblematic_hands"
+                or clean_path.endswith("xai%2Femblematic_hands")
+            ):
+                from src.visualization.xai_graph_service import get_curated_emblematic_hands
+                self._send_json({"success": True, "cases": get_curated_emblematic_hands()})
+                return
+
+            if (
                 clean_path.endswith("/xai/hands")
                 or clean_path == "/xai/hands"
                 or clean_path.endswith("xai%2Fhands")
@@ -1281,7 +1301,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
                 from src.visualization.xai_graph_service import get_available_hands_for_xai
                 only_bluffs = bool(data.get("only_bluffs", False)) if data else False
                 limit = int(data.get("limit", 50)) if data else 50
-                res = get_available_hands_for_xai(only_bluffs=only_bluffs, limit=limit)
+                test_id = data.get("test_id") if data else None
+                res = get_available_hands_for_xai(only_bluffs=only_bluffs, limit=limit, test_id=test_id)
                 self._send_json(res)
                 return
 
@@ -1292,7 +1313,8 @@ class PokerApiHandler(BaseHTTPRequestHandler):
             ):
                 from src.visualization.xai_graph_service import build_macro_graph
                 hand_id = int(data.get("hand_id", 1)) if data else 1
-                res = build_macro_graph(hand_id=hand_id)
+                test_id = data.get("test_id") if data else None
+                res = build_macro_graph(hand_id=hand_id, test_id=test_id)
                 self._send_json(res)
                 return
 

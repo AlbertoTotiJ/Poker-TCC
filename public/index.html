@@ -1531,6 +1531,181 @@
       white-space: nowrap;
     }
 
+    .btn-xai-nav {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      padding: 4px 7px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-xai-nav:hover {
+      background: #334155;
+      color: #fff;
+      border-color: #94a3b8;
+    }
+    .btn-xai-emblematic {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(135deg, #78350f, #b45309);
+      border: 1px solid #f59e0b;
+      color: #fef3c7;
+      padding: 6px 11px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-xai-emblematic:hover {
+      background: linear-gradient(135deg, #92400e, #d97706);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Modal de Casos Emblemáticos */
+    .emblematic-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 10005;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .emblematic-modal-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 860px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+    }
+    .emblematic-modal-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .emblematic-modal-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .emblematic-modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .emblematic-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .emblematic-card:hover {
+      border-color: #64748b;
+      background: #243248;
+    }
+    .emblematic-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .emblematic-badge {
+      font-size: 0.76rem;
+      font-weight: 800;
+      background: #3b82f6;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.3px;
+    }
+    .emblematic-meta {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .emblematic-title {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .emblematic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      font-size: 0.8rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 8px 10px;
+      border-radius: 6px;
+    }
+    .card-pill {
+      font-family: monospace;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+    .emblematic-stats {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .emblematic-stats strong {
+      color: #f8fafc;
+    }
+    .emblematic-insight {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+      background: rgba(30, 41, 59, 0.5);
+      border-left: 3px solid #3b82f6;
+      padding: 6px 10px;
+      border-radius: 0 4px 4px 0;
+    }
+    .btn-emblematic-load {
+      align-self: flex-start;
+      margin-top: 4px;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      border: 1px solid #60a5fa;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-emblematic-load:hover {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      transform: translateY(-1px);
+    }
+
     .btn-xai-filter {
       display: inline-flex;
       align-items: center;
@@ -2433,11 +2608,23 @@
 
       <!-- Controls & Hand Selector -->
       <div class="xai-toolbar">
+        <button class="btn-xai-emblematic" onclick="openEmblematicCasesModal()" title="Explorar 5 Casos Emblemáticos Selecionados para Apresentação e Defesa">
+          ⭐ Casos de Estudo
+        </button>
+
         <div class="xai-control-group">
           <label for="xaiHandSelect">Mão:</label>
+          <button class="btn-xai-nav" onclick="navXaiHand(-1)" title="Mão Anterior">◀</button>
           <select id="xaiHandSelect" onchange="onXaiHandChange(this.value)">
             <option value="">Carregando mãos do banco Neon...</option>
           </select>
+          <button class="btn-xai-nav" onclick="navXaiHand(1)" title="Próxima Mão">▶</button>
+        </div>
+
+        <div class="xai-control-group" title="Pular diretamente para o número da rodada (mão)">
+          <label for="xaiQuickHandInput">Ir p/:</label>
+          <input type="number" id="xaiQuickHandInput" min="1" max="1000" placeholder="ex: 491" style="width: 48px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 2px 4px; font-size: 0.78rem;" onkeydown="if(event.key==='Enter') jumpToQuickHand()">
+          <button class="btn-xai-nav" onclick="jumpToQuickHand()" title="Abrir Mão">🔍</button>
         </div>
 
         <button class="btn-xai-filter" id="btnXaiOnlyBluffs" onclick="toggleXaiBluffFilter()">
@@ -2460,6 +2647,19 @@
         <button class="btn-xai-close" onclick="closeXaiWorkspace()" title="Fechar Grafo e Voltar para a Mesa">
           ✖ Voltar à Mesa
         </button>
+      </div>
+    </div>
+
+    <!-- Modal de Casos Emblemáticos / Apresentação -->
+    <div id="emblematicCasesModal" class="emblematic-modal-overlay" onclick="if(event.target===this) closeEmblematicCasesModal()">
+      <div class="emblematic-modal-card">
+        <div class="emblematic-modal-header">
+          <h3>⭐ Casos de Estudo Emblemáticos (Apresentação & Defesa)</h3>
+          <button class="btn-xai-close" style="padding: 4px 8px; font-size: 0.8rem;" onclick="closeEmblematicCasesModal()">✖ Fechar</button>
+        </div>
+        <div class="emblematic-modal-body" id="emblematicCasesList">
+          <!-- Preenchido dinamicamente via JS -->
+        </div>
       </div>
     </div>
 
@@ -4049,6 +4249,7 @@
     /* ===================================================================== */
     let xaiNetwork = null;
     let xaiCurrentHandId = null;
+    let xaiCurrentTestId = null;
     let xaiCurrentActionId = null;
     let xaiCurrentView = 'macro';
     let xaiOnlyBluffs = false;
@@ -4056,6 +4257,7 @@
     let xaiSelectedNodeData = null;
     let xaiMacroNodesMap = {};
     let xaiMicroNodesMap = {};
+    let emblematicCasesCache = null;
 
     function openXaiWorkspace() {
       const overlay = document.getElementById('xaiWorkspaceOverlay');
@@ -4107,8 +4309,9 @@
           const bluffIcon = h.has_bluff ? `🔥 (${h.bluff_count} blefe${h.bluff_count > 1 ? 's' : ''})` : '';
           const winnerTxt = h.winner_name ? `🏆 ${h.winner_name}` : 'Mão em Aberto';
           const label = `Mão #${h.hand_id} • ${winnerTxt} (+${h.total_pot} fichas) ${bluffIcon}`;
+          const val = `${h.hand_id}|${h.test_id || ''}`;
           const isSelected = xaiCurrentHandId && parseInt(xaiCurrentHandId) === h.hand_id;
-          html += `<option value="${h.hand_id}" ${isSelected ? 'selected' : ''}>${label}</option>`;
+          html += `<option value="${val}" ${isSelected ? 'selected' : ''}>${label}</option>`;
         });
 
         if (select) {
@@ -4116,13 +4319,14 @@
         }
 
         // Se não tiver selecionado ainda, seleciona a primeira
-        const chosenHandId = (xaiCurrentHandId && resp.hands.some(h => h.hand_id === xaiCurrentHandId)) 
-          ? xaiCurrentHandId 
-          : resp.hands[0].hand_id;
+        const chosenItem = (xaiCurrentHandId && resp.hands.find(h => h.hand_id === xaiCurrentHandId)) 
+          ? resp.hands.find(h => h.hand_id === xaiCurrentHandId)
+          : resp.hands[0];
 
-        xaiCurrentHandId = chosenHandId;
-        if (select) select.value = chosenHandId;
-        loadMacroGraph(chosenHandId);
+        xaiCurrentHandId = chosenItem.hand_id;
+        xaiCurrentTestId = chosenItem.test_id || null;
+        if (select) select.value = `${chosenItem.hand_id}|${chosenItem.test_id || ''}`;
+        loadMacroGraph(xaiCurrentHandId, xaiCurrentTestId);
 
       } catch (err) {
         console.error('Erro ao buscar mãos para XAI:', err);
@@ -4132,16 +4336,113 @@
       }
     }
 
-    function onXaiHandChange(handId) {
-      if (!handId) return;
-      xaiCurrentHandId = parseInt(handId);
+    function onXaiHandChange(val) {
+      if (!val) return;
+      const parts = String(val).split('|');
+      xaiCurrentHandId = parseInt(parts[0]);
+      xaiCurrentTestId = parts[1] || null;
       xaiCurrentActionId = null;
-      loadMacroGraph(xaiCurrentHandId);
+      loadMacroGraph(xaiCurrentHandId, xaiCurrentTestId);
     }
 
-    async function loadMacroGraph(handId) {
+    function navXaiHand(delta) {
+      const select = document.getElementById('xaiHandSelect');
+      if (!select || select.options.length <= 1) return;
+      let newIdx = select.selectedIndex + delta;
+      if (newIdx < 0) newIdx = 0;
+      if (newIdx >= select.options.length) newIdx = select.options.length - 1;
+      if (newIdx !== select.selectedIndex) {
+        select.selectedIndex = newIdx;
+        onXaiHandChange(select.value);
+      }
+    }
+
+    function jumpToQuickHand() {
+      const input = document.getElementById('xaiQuickHandInput');
+      if (!input || !input.value) return;
+      const hid = parseInt(input.value);
+      if (isNaN(hid) || hid < 1) {
+        alert('Por favor digite um número de rodada válido (ex: 491).');
+        return;
+      }
+      xaiCurrentHandId = hid;
+      xaiCurrentTestId = null;
+      loadMacroGraph(hid, null);
+    }
+
+    async function openEmblematicCasesModal() {
+      const modal = document.getElementById('emblematicCasesModal');
+      const body = document.getElementById('emblematicCasesList');
+      if (!modal || !body) return;
+      modal.style.display = 'flex';
+
+      if (!emblematicCasesCache) {
+        body.innerHTML = '<div style="color: #cbd5e1; padding: 25px; text-align: center;">⏳ Carregando 5 Casos de Estudo do Banco Neon...</div>';
+        try {
+          const resp = await safeFetchJson('/api/xai/emblematic_hands');
+          if (resp && resp.success && resp.cases) {
+            emblematicCasesCache = resp.cases;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      if (!emblematicCasesCache || emblematicCasesCache.length === 0) {
+        body.innerHTML = '<div style="color: #ef4444; padding: 20px;">Não foi possível carregar os casos de estudo.</div>';
+        return;
+      }
+
+      let html = '';
+      emblematicCasesCache.forEach(c => {
+        html += `
+          <div class="emblematic-card">
+            <div class="emblematic-header">
+              <span class="emblematic-badge">${c.badge}</span>
+              <span class="emblematic-meta">Mão #${c.hand_id} · ${c.hero_name} (${c.hero_profile})</span>
+            </div>
+            <div class="emblematic-title">${c.title}</div>
+            <div class="emblematic-grid">
+              <div><strong>Cartas Privadas:</strong> <span class="card-pill">${c.hole_cards}</span></div>
+              <div><strong>Bordo:</strong> <span class="card-pill">${c.community_cards}</span></div>
+              <div><strong>Ação:</strong> <span style="color:#fbbf24; font-weight:700;">${c.key_action}</span></div>
+              <div><strong>Pote Final:</strong> <span style="color:#4ade80; font-weight:700;">+${c.final_pot} fichas</span></div>
+            </div>
+            <div class="emblematic-stats">
+              <span>Equidade: <strong>${(c.raw_equity * 100).toFixed(1)}%</strong></span> · 
+              <span>Pot Odds: <strong>${(c.pot_odds * 100).toFixed(1)}%</strong></span> · 
+              <span>EV: <strong>${c.expected_value >= 0 ? '+' : ''}${c.expected_value.toFixed(1)}</strong></span>
+            </div>
+            <div class="emblematic-insight">💡 <strong>Insight Didático:</strong> ${c.insight}</div>
+            <button class="btn-emblematic-load" onclick="selectEmblematicCase(${c.hand_id}, '${c.test_id}')">
+              🔬 Visualizar este Caso no Grafo Cognitivo
+            </button>
+          </div>
+        `;
+      });
+      body.innerHTML = html;
+    }
+
+    function closeEmblematicCasesModal() {
+      const modal = document.getElementById('emblematicCasesModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function selectEmblematicCase(handId, testId) {
+      closeEmblematicCasesModal();
+      xaiCurrentHandId = handId;
+      xaiCurrentTestId = testId;
+      const select = document.getElementById('xaiHandSelect');
+      if (select) {
+        select.value = `${handId}|${testId}`;
+      }
+      loadMacroGraph(handId, testId);
+    }
+
+    async function loadMacroGraph(handId, testId = null) {
       xaiCurrentView = 'macro';
       xaiCurrentHandId = handId;
+      if (testId) xaiCurrentTestId = testId;
 
       const btnMacro = document.getElementById('btnModeMacro');
       const btnMicro = document.getElementById('btnModeMicro');
@@ -4164,7 +4465,10 @@
       resetInspectorState();
 
       try {
-        const resp = await safeFetchJson(`/api/xai/macro_graph?hand_id=${handId}`);
+        const queryParam = xaiCurrentTestId 
+          ? `hand_id=${handId}&test_id=${encodeURIComponent(xaiCurrentTestId)}` 
+          : `hand_id=${handId}`;
+        const resp = await safeFetchJson(`/api/xai/macro_graph?${queryParam}`);
         if (!resp || !resp.success) {
           console.error('Falha ao carregar Grafo Macro:', resp);
           return;
