@@ -110,7 +110,7 @@ def test_web_poker_session_agent_modes() -> None:
     ]
     for b in bots_gh_bluffer:
         assert b["agent_type"] == "gh_bluffer"
-        assert "GhBluffer" in b["agent_label"]
+        assert "Blefador" in b["agent_label"]
 
 
 def test_find_free_port_and_start_server() -> None:

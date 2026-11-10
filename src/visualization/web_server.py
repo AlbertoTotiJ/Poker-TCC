@@ -29,13 +29,13 @@ _WEB_DIR = Path(__file__).resolve().parent / "web"
 
 _BOT_PRESETS: List[Tuple[str, AgentProfile]] = [
     ("Matemático 1", AgentProfile.BALANCED),
-    ("Agressivo 1", AgentProfile.AGGRESSIVE),
-    ("Conservador 1", AgentProfile.CONSERVATIVE),
+    ("Blefador 1", AgentProfile.AGGRESSIVE),
+    ("Híbrido 1", AgentProfile.BALANCED),
     ("Matemático 2", AgentProfile.BALANCED),
-    ("Agressivo 2", AgentProfile.AGGRESSIVE),
-    ("Conservador 2", AgentProfile.CONSERVATIVE),
+    ("Blefador 2", AgentProfile.AGGRESSIVE),
+    ("Híbrido 2", AgentProfile.BALANCED),
     ("Matemático 3", AgentProfile.BALANCED),
-    ("Agressivo 3", AgentProfile.AGGRESSIVE),
+    ("Blefador 3", AgentProfile.AGGRESSIVE),
 ]
 
 
@@ -127,7 +127,7 @@ class WebPokerSession:
                 bot = global_registry.instantiate_agent_by_id(
                     agent_id="trained_bluffer",
                     player_id=bot_id,
-                    name=f"Blefador Tier S {i + 1}",
+                    name=f"Blefador {i + 1}",
                     rng=random.Random(self.rng.randint(1, 1000000)),
                 )
                 bot_name = bot.name
@@ -135,12 +135,12 @@ class WebPokerSession:
                 bot = global_registry.instantiate_agent_by_id(
                     agent_id="trained_math",
                     player_id=bot_id,
-                    name=f"Matemático Tier S {i + 1}",
+                    name=f"Matemático {i + 1}",
                     rng=random.Random(self.rng.randint(1, 1000000)),
                 )
                 bot_name = bot.name
             elif agent_type == "gh_bluffer":
-                bot_name = f"GhBluffer {i + 1} (GH)"
+                bot_name = f"Blefador {i + 1}"
                 bot = GhBlufferAgent(
                     player_id=bot_id,
                     name=bot_name,
@@ -158,7 +158,7 @@ class WebPokerSession:
                 )
                 bot_name = f"{bot.name} {i + 1}"
             elif agent_type == "gh_math":
-                bot_name = f"GhMath {i + 1} (GH)"
+                bot_name = f"Matemático {i + 1}"
                 bot = GhMathAgent(
                     player_id=bot_id,
                     name=bot_name,
@@ -168,7 +168,7 @@ class WebPokerSession:
                     rng=random.Random(self.rng.randint(1, 1000000)),
                 )
             elif agent_type == "math":
-                bot_name = f"Agente Matemático {i + 1}"
+                bot_name = f"Matemático {i + 1}"
                 bot: BaseAgent = MathematicalAgent(
                     player_id=bot_id,
                     name=bot_name,
@@ -177,7 +177,7 @@ class WebPokerSession:
                     rng=random.Random(self.rng.randint(1, 1000000)),
                 )
             elif agent_type == "bluffer":
-                bot_name = f"Agente Blefador {i + 1}"
+                bot_name = f"Blefador {i + 1}"
                 bot = BlufferAgent(
                     player_id=bot_id,
                     name=bot_name,
@@ -187,7 +187,7 @@ class WebPokerSession:
                     rng=random.Random(self.rng.randint(1, 1000000)),
                 )
             elif agent_type == "hybrid":
-                bot_name = f"Agente Híbrido {i + 1}"
+                bot_name = f"Híbrido {i + 1}"
                 bot = HybridAgent(
                     player_id=bot_id,
                     name=bot_name,
@@ -522,16 +522,12 @@ class WebPokerSession:
             )
             if is_human:
                 agent_label = "Você (Humano)"
-            elif agent_type == "gh_bluffer":
-                agent_label = "🎭 GhBluffer (GTO Blockers)"
-            elif agent_type == "gh_math":
-                agent_label = "🧠 GhMath (Kelly & XAI)"
-            elif agent_type == "math":
-                agent_label = "📐 Matemático Definitivo"
-            elif agent_type == "bluffer":
-                agent_label = "🃏 Blefador Definitivo"
+            elif agent_type in ("gh_bluffer", "bluffer", "trained_bluffer", "blef"):
+                agent_label = "🎭 Blefador"
+            elif agent_type in ("gh_math", "math", "trained_math", "math_s"):
+                agent_label = "📐 Matemático"
             elif agent_type == "hybrid":
-                agent_label = "⚡ Híbrido Definitivo"
+                agent_label = "🧬 Híbrido"
             elif agent_type == "aggressive":
                 agent_label = "⚔️ Agressivo"
             elif agent_type == "conservative":

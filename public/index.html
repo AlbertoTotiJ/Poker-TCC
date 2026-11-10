@@ -2282,18 +2282,18 @@
           <button type="button" onclick="openAgentsModal()" style="background:transparent; border:none; color:#64b5f6; cursor:pointer; font-size:0.75rem; text-decoration:underline;">Ver Painel Detalhado ↗</button>
         </div>
         <select id="configAgentModeSelect" onchange="selectAgentMode(this.value)">
-          <option value="tripartite" selected>🌟 Mesa Tripartite Definitiva (3x3x3 / 2x2x2)</option>
-          <option value="math">📐 Agente Matemático Definitivo (Kelly / Monte Carlo / Chen)</option>
-          <option value="bluffer">🃏 Agente Blefador Definitivo (Nash GTO / Blockers)</option>
-          <option value="hybrid">⚡ Agente Híbrido Definitivo (Matemático + Blefador)</option>
-          <option value="custom">⚙️ Personalizado por Cadeira (3 Agentes Definitivos)</option>
+          <option value="tripartite" selected>🌟 Mesa Tripartite (Matemático, Blefador, Híbrido)</option>
+          <option value="math">📐 Matemático</option>
+          <option value="bluffer">🎭 Blefador</option>
+          <option value="hybrid">🧬 Híbrido</option>
+          <option value="custom">⚙️ Personalizado por Cadeira</option>
         </select>
       </div>
 
-      <!-- Botão Selecionar Agentes Definitivos TCC -->
+      <!-- Botão Selecionar Agentes TCC -->
       <div style="margin-bottom: 14px;">
         <button type="button" class="btn-header" onclick="openAgentsModal()" style="width:100%; background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(21, 101, 192, 0.25)); border: 1px solid #42a5f5; color: #90caf9; padding: 10px 14px; font-weight: 700; font-size: 0.85rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          🤖 Selecionar Agentes (Painel dos 3 Definitivos TCC)
+          🤖 Selecionar Agentes (Matemático, Blefador, Híbrido)
         </button>
       </div>
 
@@ -2320,48 +2320,48 @@
     </div>
   </div>
 
-  <!-- Modal Selecionar Agentes (Versão Definitiva TCC) -->
+  <!-- Modal Selecionar Agentes (Matemático, Blefador, Híbrido) -->
   <div class="modal-overlay" id="agentsModal">
     <div class="modal-card agents-modal-card">
       <button class="modal-close-btn" onclick="closeAgentsModal()">×</button>
-      <div class="modal-header">🤖 Selecionar Agentes da Mesa (Definitivos TCC)</div>
+      <div class="modal-header">🤖 Selecionar Agentes da Mesa (Matemático, Blefador, Híbrido)</div>
 
-      <!-- Banner de Consolidação Definitiva dos 3 Agentes -->
+      <!-- Banner dos 3 Agentes de IA -->
       <div style="background: linear-gradient(135deg, rgba(21, 101, 192, 0.22), rgba(13, 71, 161, 0.42)); border: 1px solid #42a5f5; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
         <div style="display:flex; align-items:center; gap:10px;">
           <span style="font-size: 1.8rem;">🌟</span>
           <div>
-            <div style="font-weight: 700; color: #90caf9; font-size: 0.9rem;">Versão Definitiva dos 3 Agentes de IA</div>
+            <div style="font-weight: 700; color: #90caf9; font-size: 0.9rem;">Os 3 Arquétipos de Agentes de IA</div>
             <div style="font-size: 0.76rem; color: #b0bec5; margin-top: 2px;">O ecossistema oficial conta exclusivamente com os 3 arquétipos consolidados: <strong>Matemático</strong> (Chen + Kelly + EV Monte Carlo), <strong>Blefador</strong> (Nash GTO + Nut Blockers) e <strong>Híbrido</strong> (Fusão adaptativa).</div>
           </div>
         </div>
       </div>
 
       <div style="font-size:0.85rem; color:#bbb; line-height:1.4;">
-        Escolha o modo de jogo ou selecione o oponente definitivo para enfrentar. Por padrão, a mesa opera no modo tripartite equilibrado (3 de cada em mesas de 9 jogadores; 2 de cada em 6-Max):
+        Escolha o modo de jogo ou selecione o oponente para enfrentar. Por padrão, a mesa opera no modo tripartite equilibrado (3 de cada em mesas de 9 jogadores; 2 de cada em 6-Max):
       </div>
 
       <div class="agents-options-list">
-        <!-- Opção 1: Mesa Tripartite Definitiva (Oficial TCC) -->
+        <!-- Opção 1: Mesa Tripartite (Oficial TCC) -->
         <div class="agent-option-card selected" id="cardModeTripartite" onclick="selectAgentMode('tripartite')">
           <div class="agent-option-top">
-            <span class="agent-option-title">🌟 Mesa Tripartite Definitiva (Padrão Oficial TCC)</span>
+            <span class="agent-option-title">🌟 Mesa Tripartite (Matemático, Blefador, Híbrido)</span>
             <span class="agent-badge-tag badge-ready" style="background: rgba(255, 215, 0, 0.25); color: #ffd54f; border: 1px solid #ffd54f;">Padrão Oficial • 3x3x3 ou 2x2x2</span>
           </div>
           <div class="agent-option-desc">
-            Distribui os assentos da mesa equitativamente entre os 3 Agentes Definitivos (3 Matemáticos, 3 Blefadores e 3 Híbridos em 9-Max; 2 de cada em 6-Max). Permite testar o equilíbrio e a dinâmica competitiva de alto nível entre todos os estilos.
+            Distribui os assentos da mesa equitativamente entre os 3 agentes (3 Matemáticos, 3 Blefadores e 3 Híbridos em 9-Max; 2 de cada em 6-Max). Permite testar o equilíbrio e a dinâmica competitiva de alto nível entre todos os estilos.
           </div>
           <div style="margin-top:10px;">
             <button class="btn-submit" onclick="selectAndApplyAgentMode('tripartite', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #f57f17, #fbc02d); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar Mesa Tripartite Definitiva Agora
+              ▶️ Jogar Mesa Tripartite Agora
             </button>
           </div>
         </div>
 
-        <!-- Opção 2: Agente Matemático Definitivo -->
+        <!-- Opção 2: Agente Matemático -->
         <div class="agent-option-card" id="cardModeMath" onclick="selectAgentMode('math')">
           <div class="agent-option-top">
-            <span class="agent-option-title">📐 Agente Matemático Definitivo</span>
+            <span class="agent-option-title">📐 Matemático</span>
             <span class="agent-badge-tag badge-ready" style="background: rgba(0, 230, 118, 0.25); color: #00e676; border: 1px solid #00e676;">Kelly Fracionário • Chen Formula • EV Monte Carlo</span>
           </div>
           <div class="agent-option-desc">
@@ -2369,15 +2369,15 @@
           </div>
           <div style="margin-top:10px;">
             <button class="btn-submit" onclick="selectAndApplyAgentMode('math', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #00c853, #69f0ae); border:none; color:#000; font-weight:800; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra Matemáticos Definitivos
+              ▶️ Jogar contra Matemáticos
             </button>
           </div>
         </div>
 
-        <!-- Opção 3: Agente Blefador Definitivo -->
+        <!-- Opção 3: Agente Blefador -->
         <div class="agent-option-card" id="cardModeBluffer" onclick="selectAgentMode('bluffer')">
           <div class="agent-option-top">
-            <span class="agent-option-title">🃏 Agente Blefador Definitivo</span>
+            <span class="agent-option-title">🎭 Blefador</span>
             <span class="agent-badge-tag badge-ready" style="background: rgba(186, 104, 200, 0.25); color: #ba68c8; border: 1px solid #ba68c8;">Nash GTO Indifference • Nut Blockers • Fold Equity</span>
           </div>
           <div class="agent-option-desc">
@@ -2385,15 +2385,15 @@
           </div>
           <div style="margin-top:10px;">
             <button class="btn-submit" onclick="selectAndApplyAgentMode('bluffer', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #ab47bc, #7b1fa2); border:none; color:#fff; font-weight:700; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra Blefadores Definitivos
+              ▶️ Jogar contra Blefadores
             </button>
           </div>
         </div>
 
-        <!-- Opção 4: Agente Híbrido Definitivo -->
+        <!-- Opção 4: Agente Híbrido -->
         <div class="agent-option-card" id="cardModeHybrid" onclick="selectAgentMode('hybrid')">
           <div class="agent-option-top">
-            <span class="agent-option-title">⚡ Agente Híbrido Definitivo</span>
+            <span class="agent-option-title">🧬 Híbrido</span>
             <span class="agent-badge-tag badge-ready" style="background: rgba(33, 150, 243, 0.25); color: #64b5f6; border: 1px solid #64b5f6;">Fusão Sinérgica • Slow-play Traps • Adaptativo</span>
           </div>
           <div class="agent-option-desc">
@@ -2401,7 +2401,7 @@
           </div>
           <div style="margin-top:10px;">
             <button class="btn-submit" onclick="selectAndApplyAgentMode('hybrid', event)" style="padding:7px 14px; font-size:0.82rem; width:auto; background: linear-gradient(135deg, #1976d2, #42a5f5); border:none; color:#fff; font-weight:700; cursor:pointer; border-radius:6px;">
-              ▶️ Jogar contra Híbridos Definitivos
+              ▶️ Jogar contra Híbridos
             </button>
           </div>
         </div>
@@ -2413,7 +2413,7 @@
             <span class="agent-badge-tag badge-bot">Cadeira por Cadeira</span>
           </div>
           <div class="agent-option-desc">
-            Escolha manualmente qual dos 3 Agentes Definitivos (Matemático, Blefador ou Híbrido) ocupará cada assento da mesa.
+            Escolha manualmente qual dos 3 agentes (Matemático, Blefador ou Híbrido) ocupará cada assento da mesa.
           </div>
           <div id="customSeatsArea" class="custom-seats-container" style="display: none;" onclick="event.stopPropagation()">
             <!-- Populado via JS baseado no número de jogadores -->
@@ -2428,145 +2428,6 @@
         <button class="btn-header" onclick="closeAgentsModal()" style="padding:12px 18px;">
           Cancelar
         </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Agentes Treinados (Pasta models/) -->
-  <div class="modal-overlay" id="trainingModal">
-    <div class="modal-card record-card" style="max-width: 680px;">
-      <button class="modal-close-btn" onclick="closeTrainingModal()">×</button>
-      <div class="modal-header">⭐ Agentes Treinados & Pasta Local <code>models/</code></div>
-
-      <!-- Card Informativo de Onde Colocar os Arquivos -->
-      <div class="coach-card">
-        <div class="coach-avatar">📁</div>
-        <div style="flex:1;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#64b5f6; font-size:0.95rem;">Onde Colocar seu Agente Treinado</strong>
-            <span style="font-size:0.7rem; background:#2e7d32; color:#fff; padding:2px 8px; border-radius:12px; font-weight:700;">Pasta models/</span>
-          </div>
-          <div style="font-size:0.78rem; color:#bbb; margin-top:3px; line-height:1.4;">
-            Basta colocar o arquivo <code>.json</code> exportado pelo Google Colab diretamente dentro da pasta:
-            <br><code style="color:#ffd54f; font-weight:700; font-size:0.85rem;">Poker-TCC/models/seu_agente.json</code>
-          </div>
-        </div>
-      </div>
-
-      <!-- Guia de Preservação e Segurança dos Agentes -->
-      <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #81c784; padding: 10px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.78rem; color: #eceff1; line-height: 1.5;">
-        <div style="font-weight: 700; color: #a5d6a7; margin-bottom: 4px; display:flex; align-items:center; gap:6px;">
-          <span>🛡️</span> <strong>Preservação Garantida dos Agentes:</strong>
-        </div>
-        • <strong>Os originais nunca são modificados:</strong> Os agentes padrão (Matemático, Blefador, Híbrido, GhMath) estão fixados no código-fonte e continuam 100% disponíveis.<br>
-        • <strong>Isolamento Total:</strong> Cada modelo treinado possui seu próprio arquivo <code>.json</code> com hiperparâmetros próprios.<br>
-        • <strong>Sem Conflitos:</strong> Você pode ter quantas versões quiser (ex: <code>bluffer_v1.json</code>, <code>bluffer_v2.json</code>, <code>hybrid_v1.json</code>) coexistindo na mesa.
-      </div>
-
-      <!-- Zona de Carregamento Automático / Importação Rápida Opcional -->
-      <input type="file" id="importAgentFileInput" accept=".json" style="display:none;" onchange="handleAgentFileImport(event)">
-      <div class="import-dropzone" onclick="document.getElementById('importAgentFileInput').click()" title="Clique para selecionar arquivo .json baixado do Colab">
-        <div style="font-size: 1.8rem; margin-bottom: 4px;">📥</div>
-        <div style="font-weight: 700; color: #90caf9; font-size: 0.92rem;">Importar arquivo .json agora (ou copie para a pasta models/)</div>
-        <div style="font-size: 0.74rem; color: #aaa; margin-top: 4px;">Arquivos colocados em <code>models/</code> são reconhecidos automaticamente</div>
-      </div>
-
-      <!-- Feedback de Importação -->
-      <div id="importStatusArea" style="display:none; margin-bottom:14px;"></div>
-
-      <!-- Catálogo de Agentes Já Treinados -->
-      <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
-        <div class="preview-section-title" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>⭐ Agentes Carregados da Pasta models/</span>
-          <span id="savedAgentsCountBadge" style="font-size:0.7rem; color:#aaa; font-weight:normal;">0 agentes</span>
-        </div>
-        <div id="savedAgentsContainer" style="max-height:220px; overflow-y:auto; padding-right:4px;">
-          <div style="font-size:0.78rem; color:#777; text-align:center; padding:14px;">Nenhum agente treinado encontrado. Coloque um arquivo .json na pasta models/!</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-    <!-- Modal de Gravação de Partidas com Autenticação -->
-  <div class="modal-overlay" id="recordModal">
-    <div class="modal-card record-card">
-      <button class="modal-close-btn" onclick="closeRecordModal()">×</button>
-      <div class="modal-header">🔴 Gravação de Rodadas de Pesquisa</div>
-
-      <div style="font-size:0.85rem; color:#bbb; margin-bottom:10px; line-height:1.4;">
-        Área restrita da equipe de pesquisa. Insira o código de autenticação para simular as rodadas e inspecionar todos os dados antes de salvar.
-      </div>
-
-      <div id="recordConnStatus" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:8px 12px; border-radius:6px; font-size:0.78rem; margin-bottom:14px;">
-        <span id="neonStatusBadge" style="cursor:help;">🐘 Neon: <strong style="color:#aaa;">Verificando...</strong></span>
-        <span id="githubStatusBadge" style="cursor:help;">🐙 GitHub: <strong style="color:#aaa;">Verificando...</strong></span>
-      </div>
-      <div id="connDetailNotice" style="display:none; font-size:0.73rem; color:#ddd; background:rgba(0,0,0,0.35); border-left:3px solid #ffb74d; padding:6px 10px; border-radius:4px; margin-top:-8px; margin-bottom:14px; line-height:1.35;"></div>
-
-      <div class="form-group">
-        <label for="recordAuthCode">Código de Autenticação da Equipe:</label>
-        <input type="password" id="recordAuthCode" value="TCC2026" placeholder="TCC2026" autocomplete="off">
-      </div>
-
-      <div class="form-group">
-        <label for="recordNumHands">Quantidade de Rodadas:</label>
-        <input type="number" id="recordNumHands" value="10" min="1" max="100">
-        <small style="color:#888;">Recomendado na Vercel: lotes de 5 a 25 partidas por requisição.</small>
-      </div>
-
-      <div class="form-group">
-        <label for="recordTableFormat">Composição e Configuração da Mesa:</label>
-        <select id="recordTableFormat" onchange="handleRecordTableFormatChange()">
-          <optgroup label="🌟 Mesas Definitivas Oficiais (TCC)">
-            <option value="definitive_9max" data-players="9" selected>🌟 Mesa 9-Max Definitiva: 3 Matemáticos + 3 Blefadores + 3 Híbridos (9 Jogadores)</option>
-            <option value="tripartite_6max" data-players="6">🏆 Mesa 6-Max Tripartite: 2 Matemáticos + 2 Blefadores + 2 Híbridos (6 Jogadores)</option>
-          </optgroup>
-          <optgroup label="⚙️ Configuração Personalizada">
-            <option value="custom" data-players="9">⚙️ Personalizar Assentos da Mesa (2 a 9 Agentes Definitivos)</option>
-          </optgroup>
-        </select>
-        <div id="rosterDescriptionNotice" style="font-size:0.74rem; color:#bbb; margin-top:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-left:3px solid var(--gold-light); padding:6px 10px; border-radius:4px; line-height:1.35;">
-          🌟 <strong>Mesa 9-Max Definitiva:</strong> Padrão oficial do TCC com exatamente 3 Agentes Matemáticos Definitivos, 3 Agentes Blefadores Definitivos e 3 Agentes Híbridos Definitivos.
-        </div>
-      </div>
-
-      <!-- Seção de Personalização dos Assentos da Mesa de Gravação -->
-      <div id="recordCustomSeatsSection" style="display: none; margin-top: -6px; margin-bottom: 14px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 8px; padding: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="font-weight: 700; color: var(--gold-light); font-size: 0.85rem;">⚙️ Configuração dos Assentos da Mesa</span>
-          <span style="font-size: 0.72rem; color: #81c784; background: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 4px; padding: 2px 6px;">100% IA Autônoma</span>
-        </div>
-        <div class="form-group" style="margin-bottom: 10px;">
-          <label for="recordNumPlayersSelect" style="font-size: 0.76rem; color: #ddd;">Quantidade de Jogadores na Mesa (2 a 9):</label>
-          <select id="recordNumPlayersSelect" onchange="renderRecordCustomSeatsInputs()" style="width: 100%; background: #0a0e14; border: 1px solid #444; color: #fff; padding: 6px 8px; border-radius: 4px; font-size: 0.82rem;">
-            <option value="2">2 Jogadores (Heads-up 1v1)</option>
-            <option value="3">3 Jogadores</option>
-            <option value="4">4 Jogadores</option>
-            <option value="5">5 Jogadores</option>
-            <option value="6">6 Jogadores (6-Max)</option>
-            <option value="7">7 Jogadores</option>
-            <option value="8">8 Jogadores</option>
-            <option value="9" selected>9 Jogadores (Mesa Cheia / 9-Max)</option>
-          </select>
-        </div>
-        <div id="recordCustomSeatsNotice" style="font-size: 0.73rem; color: #b3e5fc; background: rgba(3, 169, 244, 0.12); border-left: 3px solid #03a9f4; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; line-height: 1.35;">
-          💡 <strong>Nota da Pesquisa:</strong> Na gravação de partidas, todos os assentos são controlados por Agentes de IA. Ao selecionar <strong>9 Jogadores</strong>, a <strong>Cadeira 9</strong> é configurada como outro agente de IA no lugar do jogador humano.
-        </div>
-        <div id="recordCustomSeatsList" class="custom-seats-container" style="max-height: 240px; overflow-y: auto; padding-right: 4px;">
-          <!-- Preenchido via renderRecordCustomSeatsInputs() -->
-        </div>
-      </div>
-
-      <button class="btn-submit" id="btnStartRecord" onclick="submitRecordBatch()" style="width:100%;">
-        ▶ Simular e Visualizar Rodadas
-      </button>
-
-      <!-- Área de Progresso e Resultados -->
-      <div id="recordStatusArea" style="display: none; margin-top: 14px;">
-        <div id="recordSpinner" style="text-align: center; padding: 12px; color: var(--gold-light); font-weight: 700;">
-          ⏳ Simulando partidas e calculando métricas de blefe... Aguarde!
-        </div>
-        <div id="recordResultBox" style="display: none;" class="record-result-box"></div>
       </div>
     </div>
   </div>
@@ -2623,9 +2484,9 @@
           <label for="xaiGlobalProfileSelect">Agente:</label>
           <select id="xaiGlobalProfileSelect" onchange="loadGlobalGraph(this.value)">
             <option value="ALL">🌟 Todos os Agentes (181.083 Decisões)</option>
-            <option value="Matemático">📐 Apenas Matemáticos (Tier S)</option>
-            <option value="Blefador">🎭 Apenas Blefadores (GTO)</option>
-            <option value="Híbrido">🧬 Apenas Híbridos (Adaptativos)</option>
+            <option value="Matemático">📐 Matemático</option>
+            <option value="Blefador">🎭 Blefador</option>
+            <option value="Híbrido">🧬 Híbrido</option>
           </select>
         </div>
 
@@ -2737,7 +2598,6 @@
     let botSpeed = 700; // ms
     let selectedAgentMode = 'tripartite';
     let customAgentsConfig = [];
-    let recordCustomAgentsConfig = [];
     const speedModes = [
       { label: "Normal (700ms)", delay: 700 },
       { label: "Rápido (250ms)", delay: 250 },
@@ -2751,7 +2611,6 @@
       sessionId = 'sess_' + Math.random().toString(36).substring(2, 11);
       localStorage.setItem('poker_session_id', sessionId);
     }
-    let lastSimulatedFullRecords = [];
 
     // Official Poker Chip Denominations
     const CHIP_DENOMINATIONS = [
@@ -2969,9 +2828,9 @@
           <div class="custom-seat-row">
             <label for="customSeatSelect_${i}">Cadeira ${i + 1} (Agente IA):</label>
             <select id="customSeatSelect_${i}" onchange="customAgentsConfig[${i}] = this.value">
-              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático Definitivo</option>
-              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador Definitivo</option>
-              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>⚡ Agente Híbrido Definitivo</option>
+              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Matemático</option>
+              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🎭 Blefador</option>
+              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>🧬 Híbrido</option>
             </select>
           </div>
         `;
@@ -3428,532 +3287,6 @@
       }
     }
 
-    async function updateRecordConnectionsStatus() {
-      const neonBadge = document.getElementById('neonStatusBadge');
-      const githubBadge = document.getElementById('githubStatusBadge');
-      const noticeBox = document.getElementById('connDetailNotice');
-      if (!neonBadge || !githubBadge) return;
-      try {
-        const res = await safeFetchJson('/api/check_db');
-        if (res && res.success) {
-          const notices = [];
-
-          if (res.neon_connected) {
-            let detailParts = [];
-            if (res.neon_telemetry_count) {
-              detailParts.push(`${res.neon_telemetry_count} telemetrias`);
-            }
-            if (res.neon_hands_count) {
-              detailParts.push(`${res.neon_hands_count} mãos`);
-            }
-            const countStr = detailParts.length > 0 ? ` (${detailParts.join(' | ')})` : '';
-            neonBadge.innerHTML = `🐘 Neon: <strong style="color:#69f0ae;">🟢 Conectado${countStr}</strong>`;
-            let tooltip = `Banco Neon PostgreSQL conectado!\n• Tabelas: ${(res.neon_tables || []).join(', ')}`;
-            if (res.neon_telemetry_count) tooltip += `\n• Registros de Telemetria/Blefe: ${res.neon_telemetry_count}`;
-            if (res.neon_actions_count) tooltip += `\n• Ações Físicas: ${res.neon_actions_count}`;
-            if (res.neon_hands_count) tooltip += `\n• Partidas (Hands): ${res.neon_hands_count}`;
-            if (res.neon_bluffs_count) tooltip += `\n• Blefes catalogados: ${res.neon_bluffs_count}`;
-            neonBadge.title = tooltip;
-            neonBadge.onclick = () => alert(tooltip);
-          } else if (res.database_url_configured) {
-            const diag = (res.neon_diag || 'Erro na conexão').replace(/"/g, '&quot;');
-            neonBadge.innerHTML = `<span title="${diag}">🐘 Neon: <strong style="color:#ef5350;">🔴 Erro Conexão</strong></span>`;
-            neonBadge.onclick = () => alert('Diagnóstico Neon:\n' + (res.neon_diag || 'Verifique as credenciais da DATABASE_URL no Neon.'));
-            notices.push('⚠️ <strong>Neon:</strong> Falha ao autenticar no banco com DATABASE_URL. Clique no status para ver o diagnóstico.');
-          } else {
-            neonBadge.innerHTML = '🐘 Neon: <strong style="color:#ffb74d;">⚪ DATABASE_URL ausente</strong>';
-            neonBadge.title = 'DATABASE_URL não configurada no ambiente da Vercel. Você pode informar a URL do Neon manualmente abaixo.';
-          }
-
-          if (res.github_token_configured) {
-            githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#69f0ae;">🟢 API Ativa</strong>';
-            githubBadge.title = 'Token de acesso do GitHub configurado para salvar via API.';
-          } else if (res.git_cli_available) {
-            githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#64b5f6;">🟢 Git Local</strong>';
-            githubBadge.title = 'Comandos Git locais disponíveis no computador do desenvolvedor.';
-          } else {
-            githubBadge.innerHTML = '🐙 GitHub: <strong style="color:#ffb74d;">⚪ Sem Token</strong>';
-            githubBadge.title = 'Na nuvem (Vercel), salve via token no formulário abaixo ou use o botão Baixar Arquivo.';
-            notices.push('ℹ️ <strong>GitHub na Nuvem:</strong> Para sincronizar direto pela Vercel, informe seu Token abaixo ou utilize <em>Baixar Arquivo</em> (.jsonl).');
-          }
-
-          if (noticeBox) {
-            if (notices.length > 0) {
-              noticeBox.style.display = 'block';
-              noticeBox.innerHTML = notices.join('<br>');
-            } else {
-              noticeBox.style.display = 'none';
-            }
-          }
-        }
-      } catch (e) {
-        // Silencioso se der erro de rede inicial
-      }
-    }
-
-    function updateRosterDescriptionNotice() {
-      const select = document.getElementById('recordTableFormat');
-      if (!select) return;
-      const val = select.value;
-      const notice = document.getElementById('rosterDescriptionNotice');
-      if (!notice) return;
-
-      const descMap = {
-        'definitive_9max': '🌟 <strong>Mesa 9-Max Definitiva (3x3x3):</strong> O novo padrão oficial do TCC com 3 Matemáticos Definitivos, 3 Blefadores Definitivos e 3 Híbridos Definitivos em confronto Full Ring.',
-        'tripartite_6max': '🏆 <strong>Mesa 6-Max Tripartite (2x2x2):</strong> 2 Matemáticos Definitivos, 2 Blefadores Definitivos e 2 Híbridos Definitivos em mesa curta de alta dinâmica.',
-        'custom': '⚙️ <strong>Mesa Personalizada:</strong> Configuração individual cadeira por cadeira (2 a 9 jogadores). Na mesa cheia (9 jogadores), o 9º assento é preenchido pelo agente selecionado no lugar do jogador humano.',
-        'tier_s_duelo': '⭐ <strong>Duelo dos Campeões Tier S:</strong> Confronto direto entre 3 Agentes Blefadores Treinados (Tier S - 94% win rate) vs 3 Agentes Matemáticos Treinados (Tier S - +14.5k fichas). Ideal para benchmarking de elite.',
-        'hybrid_vs_champions': '⚡ <strong>Torneio Híbrido vs Campeões Tier S:</strong> 2 Agentes Híbridos (adaptativos) enfrentam 2 Blefadores Tier S e 2 Matemáticos Tier S para testar a flexibilidade estratégica contra especialistas.',
-        'tcc_champions_9': '🌟 <strong>Grande Torneio TCC 9-Max:</strong> Mesa cheia de alta voltagem com 3 Matemáticos Tier S, 3 Blefadores Tier S e 3 Agentes Híbridos.',
-        'tcc_experiment_9': '🎓 <strong>Experimento TCC 9-Max:</strong> 4 Agentes Matemáticos Reais (Alberto) vs 5 Agentes Blefadores (9 Jogadores autônomos, com o 9º agente ocupando a 9ª cadeira no lugar do jogador humano).',
-        'gh_bluffer_showdown': '🎭 <strong>Duelo de Blefes (GH vs Alberto):</strong> 2 GhBlufferAgent (Gustavo - Razão de Nash e Nut Blockers) vs 2 Agentes Blefadores (Alberto) e 2 Bots Heurísticos.',
-        'gh_math_showdown': '🧠 <strong>Duelo GH vs Alberto (XAI Quartz):</strong> 2 GhMathAgent (Gustavo com telemetria cognitiva para Rede Neural) vs 2 Agentes Matemáticos (Alberto) e 2 Bots Heurísticos.',
-        'math_vs_bots': '📐 <strong>Duelo Científico:</strong> 3 Agentes Matemáticos Reais (Monte Carlo + Pot Odds + EV) vs 3 Bots Heurísticos Clássicos (1 Agressivo, 1 Conservador, 1 Equilibrado).',
-        'full_ai_tournament': '🏆 <strong>Torneio Completo de IAs:</strong> Batalha multimodelo entre os 3 agentes do projeto: 2 Matemáticos (probabilísticos), 2 Blefadores (fold equity) e 2 Híbridos (estratégia integrada).',
-        'bluff_challenge': '🃏 <strong>Desafio de Blefe:</strong> Avalia como os Agentes Blefadores exploram oponentes conservadores e se conseguem dobrar o cálculo frio dos Agentes Matemáticos.',
-        'hybrid_lab': '🧠 <strong>Laboratório Híbrido:</strong> 3 Agentes Híbridos (combinam EV matemático e semi-blefes/armadilhas) contra 3 Agentes Matemáticos estritos.',
-        'math_tournament': '🔬 <strong>Torneio Puro Matemático:</strong> 6 Agentes Matemáticos Reais com calibrações de limiar de equidade variando de 58% a 73% para análise de sensibilidade paramétrica.',
-        'all_models_9': '🌟 <strong>Grande Torneio 9-Max:</strong> Mesa cheia integrando todos os agentes: 3 Matemáticos, 2 Blefadores, 2 Híbridos, 1 Agressivo e 1 Conservador.',
-        'classic_6': '⚖️ <strong>Clássica 6-Max:</strong> 2 Agentes Matemáticos Reais, 2 Agressivos e 2 Conservadores.',
-        'classic_9': '🏟️ <strong>Clássica 9-Max:</strong> 3 Agentes Matemáticos Reais, 3 Agressivos e 3 Conservadores.'
-      };
-
-      notice.innerHTML = descMap[val] || 'Composição personalizada selecionada.';
-    }
-
-    function handleRecordTableFormatChange() {
-      const select = document.getElementById('recordTableFormat');
-      const section = document.getElementById('recordCustomSeatsSection');
-      if (select && section) {
-        if (select.value === 'custom') {
-          section.style.display = 'block';
-          renderRecordCustomSeatsInputs();
-        } else {
-          section.style.display = 'none';
-        }
-      }
-      updateRosterDescriptionNotice();
-    }
-
-    function renderRecordCustomSeatsInputs() {
-      const container = document.getElementById('recordCustomSeatsList');
-      if (!container) return;
-      const numPlayersSelect = document.getElementById('recordNumPlayersSelect');
-      const numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || 9;
-      const trio = ['math', 'bluffer', 'hybrid'];
-
-      let html = '';
-      for (let i = 0; i < numPlayers; i++) {
-        const seatNum = i + 1;
-        const isSeat9 = (seatNum === 9);
-        const defaultVal = recordCustomAgentsConfig[i] || trio[i % trio.length];
-
-        const highlightStyle = isSeat9
-          ? 'style="border: 1px solid rgba(255, 213, 79, 0.45); background: rgba(255, 213, 79, 0.08); padding: 8px; border-radius: 6px;"'
-          : '';
-
-        const labelText = isSeat9
-          ? '🌟 <strong style="color: #ffd54f;">Cadeira 9 (9º Agente - No lugar do Jogador Humano):</strong>'
-          : `Cadeira ${seatNum} (Agente Definitivo):`;
-
-        html += `
-          <div class="custom-seat-row" ${highlightStyle}>
-            <label for="recCustomSeatSelect_${i}">${labelText}</label>
-            <select id="recCustomSeatSelect_${i}" onchange="recordCustomAgentsConfig[${i}] = this.value">
-              <option value="math" ${defaultVal === 'math' ? 'selected' : ''}>📐 Agente Matemático Definitivo (Kelly/Chen)</option>
-              <option value="bluffer" ${defaultVal === 'bluffer' ? 'selected' : ''}>🃏 Agente Blefador Definitivo (Nash GTO/Blockers)</option>
-              <option value="hybrid" ${defaultVal === 'hybrid' ? 'selected' : ''}>⚡ Agente Híbrido Definitivo (Fusão S-Tier)</option>
-            </select>
-          </div>
-        `;
-      }
-      container.innerHTML = html;
-    }
-
-    function openRecordModal() {
-      document.getElementById('recordModal').classList.add('active');
-      document.getElementById('recordStatusArea').style.display = 'none';
-      document.getElementById('recordResultBox').style.display = 'none';
-      document.getElementById('btnStartRecord').disabled = false;
-      updateRecordConnectionsStatus();
-      handleRecordTableFormatChange();
-    }
-
-    function closeRecordModal() {
-      document.getElementById('recordModal').classList.remove('active');
-    }
-
-    async function submitRecordBatch() {
-      const code = document.getElementById('recordAuthCode').value.trim();
-      const numHands = parseInt(document.getElementById('recordNumHands').value) || 10;
-      const rosterSelect = document.getElementById('recordTableFormat');
-      const rosterMode = rosterSelect ? rosterSelect.value : 'definitive_9max';
-      let numPlayers = 6;
-      let customSeatsPayload = undefined;
-
-      if (rosterMode === 'custom') {
-        const numPlayersSelect = document.getElementById('recordNumPlayersSelect');
-        numPlayers = (numPlayersSelect && parseInt(numPlayersSelect.value)) || 9;
-        customSeatsPayload = [];
-        for (let i = 0; i < numPlayers; i++) {
-          const el = document.getElementById(`recCustomSeatSelect_${i}`);
-          customSeatsPayload.push(el ? el.value : (recordCustomAgentsConfig[i] || 'math'));
-        }
-      } else {
-        const selectedOpt = rosterSelect ? rosterSelect.options[rosterSelect.selectedIndex] : null;
-        numPlayers = selectedOpt ? (parseInt(selectedOpt.getAttribute('data-players')) || 6) : 6;
-      }
-
-      if (!code) {
-        alert("Por favor, digite o código de autenticação da equipe.");
-        return;
-      }
-
-      const btnStart = document.getElementById('btnStartRecord');
-      const statusArea = document.getElementById('recordStatusArea');
-      const spinner = document.getElementById('recordSpinner');
-      const resultBox = document.getElementById('recordResultBox');
-
-      btnStart.disabled = true;
-      statusArea.style.display = 'block';
-      spinner.style.display = 'block';
-      resultBox.style.display = 'none';
-
-      try {
-        const data = await safeFetchJson('/api/record_batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: 'record_batch',
-            auth_code: code,
-            num_hands: numHands,
-            num_players: numPlayers,
-            roster_mode: rosterMode,
-            custom_seats: customSeatsPayload
-          })
-        });
-
-        spinner.style.display = 'none';
-        resultBox.style.display = 'block';
-
-        if (!data.success) {
-          resultBox.innerHTML = `
-            <div style="color: #ff5252; font-weight: bold; margin-bottom: 8px;">
-              ❌ Erro: ${data.error || 'Falha na autenticação ou gravação.'}
-            </div>
-          `;
-          btnStart.disabled = false;
-          return;
-        }
-
-        lastSimulatedFullRecords = data.full_records || [];
-        updateRecordConnectionsStatus();
-
-        const wins = data.wins_by_profile || {};
-        const champ = data.champion || {};
-        const bestComb = data.best_combination || {};
-        const hands = data.hands_summary || [];
-        const leaderboard = data.leaderboard || [];
-
-        let winBadgesHTML = '';
-        for (const [prof, count] of Object.entries(wins)) {
-          let icon = '🤖';
-          if (prof.includes('Matemático')) icon = '📐';
-          else if (prof.includes('Blefador')) icon = '🃏';
-          else if (prof.includes('Híbrido')) icon = '🧠';
-          else if (prof.includes('Agressivo')) icon = '⚔️';
-          else if (prof.includes('Conservador')) icon = '🛡️';
-          else if (prof.includes('Equilibrado')) icon = '⚖️';
-
-          winBadgesHTML += `
-            <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:6px 10px; display:inline-flex; align-items:center; gap:6px; font-size:0.8rem;">
-              <span>${icon} <strong>${prof}</strong>:</span>
-              <span style="color:var(--gold-light); font-weight:800;">${count} vitórias</span>
-            </div>
-          `;
-        }
-
-        let leaderboardHTML = `
-          <table class="record-preview-table">
-            <thead>
-              <tr>
-                <th>Jogador</th>
-                <th>Perfil de IA</th>
-                <th>Stack Final</th>
-                <th>Saldo</th>
-                <th>Vitórias</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-        leaderboard.forEach(p => {
-          const profitClass = p.net_profit >= 0 ? 'color: #69f0ae;' : 'color: #ff5252;';
-          const profitStr = (p.net_profit >= 0 ? '+' : '') + p.net_profit;
-          let profIcon = '🤖';
-          if (p.profile.includes('Matemático')) profIcon = '📐';
-          else if (p.profile.includes('Blefador')) profIcon = '🃏';
-          else if (p.profile.includes('Híbrido')) profIcon = '🧠';
-          else if (p.profile.includes('Agressivo')) profIcon = '⚔️';
-          else if (p.profile.includes('Conservador')) profIcon = '🛡️';
-          else if (p.profile.includes('Equilibrado')) profIcon = '⚖️';
-
-          leaderboardHTML += `
-            <tr>
-              <td><strong>${p.name}</strong></td>
-              <td>${profIcon} ${p.profile}</td>
-              <td>${p.final_stack}</td>
-              <td style="${profitClass}"><strong>${profitStr}</strong></td>
-              <td>${p.wins}</td>
-            </tr>
-          `;
-        });
-        leaderboardHTML += `</tbody></table>`;
-
-        let handsHTML = `
-          <table class="record-preview-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Bordo (Mesa)</th>
-                <th>Pote</th>
-                <th>Vencedor(a)</th>
-                <th>Combinação</th>
-                <th>Blefe?</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-        hands.forEach(h => {
-          const bluffTag = h.bluffs > 0 
-            ? `<span style="background: rgba(229,57,53,0.3); color:#ff8a80; padding:2px 6px; border-radius:4px; font-weight:700;">🔥 ${h.bluffs}</span>` 
-            : `<span style="color:#666;">-</span>`;
-          handsHTML += `
-            <tr>
-              <td><strong>${h.hand_index}</strong></td>
-              <td style="font-family: monospace; letter-spacing: 1px;">${h.board || 'Pré-flop'}</td>
-              <td>$${h.pot}</td>
-              <td><strong>${h.winners}</strong></td>
-              <td>${h.combination}</td>
-              <td>${bluffTag}</td>
-            </tr>
-          `;
-        });
-        handsHTML += `</tbody></table>`;
-
-        resultBox.innerHTML = `
-          <div style="color: #69f0ae; font-weight: 800; font-size: 1.05rem; margin-bottom: 4px;">
-            ✅ Simulação Concluída (${data.hands_completed} Rodadas - ${data.roster_name || 'Lineup de Pesquisa'})
-          </div>
-          <div style="font-size: 0.8rem; color: #bbb; margin-bottom: 12px;">
-            Lineup ativo: <strong>${data.roster_name || rosterMode}</strong>. Confira as métricas e o resultado das mãos antes de sincronizar:
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <div style="font-size: 0.72rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-              🏆 Vitórias por Modelo / Perfil de IA:
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              ${winBadgesHTML || '<span style="color:#888;">Sem vitórias registradas</span>'}
-            </div>
-          </div>
-
-          <div class="record-stat-grid">
-            <div class="stat-badge">
-              <span>🏆 Campeão da Mesa:</span>
-              <strong>${champ.name || 'N/A'} (${champ.profile || ''})</strong>
-              <small style="color: #69f0ae;">Lucro: ${champ.net_profit >= 0 ? '+' : ''}${champ.net_profit || 0} fichas</small>
-            </div>
-            <div class="stat-badge">
-              <span>🃏 Maior Combinação:</span>
-              <strong style="font-size: 0.95rem;">${bestComb.combination || 'N/A'}</strong>
-              <small style="color: #bbb;">Feita por: ${bestComb.player || '-'}</small>
-            </div>
-            <div class="stat-badge">
-              <span>💰 Maior Pote da Sessão:</span>
-              <strong>$${data.highest_pot} fichas</strong>
-            </div>
-            <div class="stat-badge">
-              <span>🕵️ Total de Blefes:</span>
-              <strong style="color: #ff8a80;">${data.total_bluffs_detected} detectados</strong>
-            </div>
-          </div>
-
-          <div class="preview-section-title">📊 Classificação Final dos Jogadores:</div>
-          ${leaderboardHTML}
-
-          <div class="preview-section-title">🃏 Detalhe Mão a Mão (${hands.length} Rodadas):</div>
-          <div style="max-height: 180px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
-            ${handsHTML}
-          </div>
-
-          <div class="preview-section-title" style="margin-top: 14px;">💾 Escolha onde deseja salvar esses dados:</div>
-          <div class="sync-actions-row">
-            <button class="btn-sync-action btn-sync-github" onclick="syncToGitHub()">
-              <span>🐙 Salvar no GitHub</span>
-              <small style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">Commit & Push / API</small>
-            </button>
-            <button class="btn-sync-action btn-sync-neon" onclick="syncToNeon()">
-              <span>🐘 Salvar no Neon</span>
-              <small style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">PostgreSQL Cloud</small>
-            </button>
-            <button class="btn-sync-action btn-sync-download" onclick="downloadRecordedDataset()">
-              <span>📥 Baixar Arquivo</span>
-              <small style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">Formato .jsonl</small>
-            </button>
-          </div>
-
-          <details style="margin-top: 10px; font-size: 0.78rem; color: #aaa; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px;">
-            <summary style="cursor: pointer; color: var(--gold-light); font-weight: 600;">
-              ⚙️ Conexão Manual Opcional (se não configurada na Vercel)
-            </summary>
-            <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
-              <div>
-                <label style="display:block; font-size:0.72rem; color:#bbb; margin-bottom:2px;">URL do Neon (postgresql://...):</label>
-                <input type="password" id="customNeonUrl" placeholder="postgresql://user:pass@ep-xyz.neon.tech/neondb?sslmode=require" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 8px; border-radius:4px; font-size:0.75rem;">
-              </div>
-              <div>
-                <label style="display:block; font-size:0.72rem; color:#bbb; margin-bottom:2px;">GitHub Personal Access Token (para push via API na nuvem):</label>
-                <input type="password" id="customGithubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 8px; border-radius:4px; font-size:0.75rem;">
-              </div>
-            </div>
-          </details>
-
-          <div id="syncFeedback" class="sync-status-msg"></div>
-        `;
-        btnStart.disabled = false;
-      } catch (err) {
-        spinner.style.display = 'none';
-        resultBox.style.display = 'block';
-        const isTimeout = err.message && (
-          err.message.includes('FUNCTION_INVOCATION_TIMEOUT') ||
-          err.message.includes('504') ||
-          err.message.toLowerCase().includes('timeout')
-        );
-        if (isTimeout) {
-          resultBox.innerHTML = `
-            <div style="color: #ff5252; font-weight: bold; margin-bottom: 6px;">
-              ⏱️ Tempo Limite da Função Serverless Excedido (Timeout na Vercel)
-            </div>
-            <div style="font-size: 0.8rem; color: #ddd; line-height: 1.4;">
-              A simulação de muitas rodadas em mesa cheia atingiu o tempo limite da Vercel.<br>
-              <strong>Solução:</strong> Rode em lotes de <strong>5 a 10 partidas</strong> por vez para resposta instantânea.
-            </div>
-          `;
-        } else {
-          resultBox.innerHTML = `
-            <div style="color: #ff5252; font-weight: bold;">
-              ❌ Erro de comunicação com o servidor: ${err.message}
-            </div>
-          `;
-        }
-        btnStart.disabled = false;
-      }
-    }
-
-    async function syncToGitHub() {
-      const code = document.getElementById('recordAuthCode').value.trim();
-      const tokenEl = document.getElementById('customGithubToken');
-      const customToken = tokenEl ? tokenEl.value.trim() : '';
-      const feedback = document.getElementById('syncFeedback');
-      feedback.style.display = 'block';
-      feedback.style.background = 'rgba(255,255,255,0.08)';
-      feedback.style.border = '1px solid rgba(255,255,255,0.2)';
-      feedback.style.color = '#fff';
-      feedback.innerText = '🐙 Enviando dataset para o GitHub... Aguarde!';
-
-      try {
-        const data = await safeFetchJson('/api/save_to_github', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: 'save_to_github',
-            auth_code: code,
-            github_token: customToken || undefined
-          })
-        });
-        if (data.success) {
-          feedback.style.background = 'rgba(76, 175, 80, 0.2)';
-          feedback.style.border = '1px solid #4caf50';
-          feedback.style.color = '#a5d6a7';
-          feedback.innerHTML = `✅ ${data.message} (${data.details || 'main atualizada'})`;
-          updateRecordConnectionsStatus();
-        } else {
-          feedback.style.background = 'rgba(244, 67, 54, 0.2)';
-          feedback.style.border = '1px solid #f44336';
-          feedback.style.color = '#ef9a9a';
-          feedback.innerText = `❌ ${data.error || 'Falha ao salvar no GitHub.'}`;
-        }
-      } catch (e) {
-        feedback.style.background = 'rgba(244, 67, 54, 0.2)';
-        feedback.style.border = '1px solid #f44336';
-        feedback.style.color = '#ef9a9a';
-        feedback.innerText = `❌ Erro de conexão: ${e.message}`;
-      }
-    }
-
-    async function syncToNeon() {
-      const code = document.getElementById('recordAuthCode').value.trim();
-      const neonEl = document.getElementById('customNeonUrl');
-      const customNeon = neonEl ? neonEl.value.trim() : '';
-      const feedback = document.getElementById('syncFeedback');
-      feedback.style.display = 'block';
-      feedback.style.background = 'rgba(255,255,255,0.08)';
-      feedback.style.border = '1px solid rgba(255,255,255,0.2)';
-      feedback.style.color = '#fff';
-      feedback.innerText = '🐘 Gravando partidas no banco de dados Neon PostgreSQL... Aguarde!';
-
-      try {
-        const payload = {
-          endpoint: 'save_to_neon',
-          auth_code: code,
-          database_url: customNeon || undefined
-        };
-        if (lastSimulatedFullRecords && lastSimulatedFullRecords.length > 0) {
-          payload.hands = lastSimulatedFullRecords;
-        }
-
-        const data = await safeFetchJson('/api/save_to_neon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (data.success) {
-          feedback.style.background = 'rgba(0, 230, 153, 0.2)';
-          feedback.style.border = '1px solid #00e699';
-          feedback.style.color = '#69f0ae';
-          feedback.innerHTML = `✅ ${data.message}`;
-          updateRecordConnectionsStatus();
-        } else {
-          feedback.style.background = 'rgba(244, 67, 54, 0.2)';
-          feedback.style.border = '1px solid #f44336';
-          feedback.style.color = '#ef9a9a';
-          feedback.innerText = `❌ ${data.error || 'Falha ao gravar no Neon.'}`;
-        }
-      } catch (e) {
-        feedback.style.background = 'rgba(244, 67, 54, 0.2)';
-        feedback.style.border = '1px solid #f44336';
-        feedback.style.color = '#ef9a9a';
-        feedback.innerText = `❌ Erro de conexão: ${e.message}`;
-      }
-    }
-
-    function downloadRecordedDataset() {
-      if (lastSimulatedFullRecords && lastSimulatedFullRecords.length > 0) {
-        const lines = lastSimulatedFullRecords.map(r => JSON.stringify(r)).join('\n') + '\n';
-        const blob = new Blob([lines], { type: 'application/x-jsonlines;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'partidas_gravadas.jsonl';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else {
-        window.location.href = '/api/download_dataset';
-      }
-    }
-
     /* Ajuste dinâmico e auto-scale da mesa para qualquer tamanho de tela (mobile, tablet, desktop) */
     function autoScaleTable() {
       const main = document.querySelector('main');
@@ -3972,273 +3305,11 @@
 
     // Initial fetch e auto-scale responsivo
     
-    /* ==========================================================================
-       GESTÃO VISUAL DO AGENTE TREINADOR & LABORATÓRIO DE IA
-       ========================================================================== */
-    let availableTrainedAgents = [];
 
-    function openTrainingModal() {
-      const modal = document.getElementById('trainingModal');
-      if (modal) modal.classList.add('active');
-      const statusArea = document.getElementById('importStatusArea');
-      if (statusArea) statusArea.style.display = 'none';
-      loadAvailableCustomAgents();
-    }
-    const openAgentsManagerModal = openTrainingModal;
 
-    function closeTrainingModal() {
-      const modal = document.getElementById('trainingModal');
-      if (modal) modal.classList.remove('active');
-    }
 
-    async function handleAgentFileImport(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
 
-      const statusArea = document.getElementById('importStatusArea');
-      if (statusArea) {
-        statusArea.style.display = 'block';
-        statusArea.innerHTML = `<div style="text-align:center; padding:10px; color:#64b5f6; font-weight:600;">⏳ Importando e registrando agente...</div>`;
-      }
 
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          let jsonContent;
-          try {
-            jsonContent = JSON.parse(e.target.result);
-          } catch (parseErr) {
-            throw new Error('O arquivo selecionado não é um formato JSON válido.');
-          }
-
-          const res = await fetch('/api/training/import_agent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              endpoint: 'training/import_agent',
-              agent_data: jsonContent
-            })
-          });
-          const data = await res.json();
-          if (data.success && data.agent) {
-            renderImportSuccess(data.agent, jsonContent);
-            await loadAvailableCustomAgents();
-          } else {
-            if (statusArea) {
-              statusArea.innerHTML = `
-                <div style="color: #ff5252; padding: 10px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px; font-size: 0.8rem;">
-                  ❌ <strong>Falha na Importação:</strong> ${data.error || 'Não foi possível registrar o agente.'}
-                </div>
-              `;
-            }
-          }
-        } catch (err) {
-          if (statusArea) {
-            statusArea.innerHTML = `
-              <div style="color: #ff5252; padding: 10px; background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; border-radius: 6px; font-size: 0.8rem;">
-                ❌ <strong>Erro:</strong> ${err.message}
-              </div>
-            `;
-          }
-        } finally {
-          event.target.value = '';
-        }
-      };
-      reader.readAsText(file);
-    }
-
-        function renderImportSuccess(agent, rawData) {
-      const statusArea = document.getElementById('importStatusArea');
-      if (!statusArea) return;
-
-      const qual = agent.qualification || (rawData && rawData.qualification) || {};
-      const tier = qual.overall_tier || 'Treinado';
-      const fitness = (qual.overall_fitness !== undefined && qual.overall_fitness !== null)
-        ? Number(qual.overall_fitness).toFixed(1)
-        : ((rawData && rawData.metrics && rawData.metrics.bb_per_100) ? '82.5' : '--');
-
-      const tierClass = {
-        'S (Elite)': 'tier-badge-s',
-        'A (Mestre)': 'tier-badge-a',
-        'B (Competitivo)': 'tier-badge-b',
-        'C (Intermediário)': 'tier-badge-c',
-        'D (Iniciante)': 'tier-badge-d'
-      }[tier] || 'tier-badge-b';
-
-      statusArea.style.display = 'block';
-      statusArea.innerHTML = `
-        <div style="background: rgba(76, 175, 80, 0.15); border: 1px solid #4caf50; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#81c784; font-size:0.98rem;">🎉 Agente Importado com Sucesso!</strong>
-            <span class="${tierClass}">${tier}</span>
-          </div>
-          <div style="margin-top:6px; font-size:0.85rem; color:#fff;">
-            <strong>Nome:</strong> <span style="color:var(--gold-light); font-weight:800;">${agent.name}</span>
-            <span style="color:#aaa; font-size:0.75rem; margin-left:8px;">(Base: ${agent.base_type || 'IA'})</span>
-          </div>
-          <div style="margin-top:4px; font-size:0.75rem; color:#c8e6c9;">
-            Fitness Avaliado: <strong>${fitness} pts</strong> • Já adicionado ao catálogo da mesa!
-          </div>
-          <div style="margin-top:10px; display:flex; gap:8px;">
-            <button class="btn-submit" onclick="selectTrainedAgentForGame('${agent.agent_id}')" style="flex:1; padding:8px 12px; font-size:0.82rem; background: linear-gradient(135deg, #2e7d32, #1b5e20); border:none; cursor:pointer; color:#fff; border-radius:6px; font-weight:700;">
-              🎮 Jogar com Este Agente Agora
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    async function loadAvailableCustomAgents() {
-      try {
-        const res = await fetch('/api/training/agents');
-        const data = await res.json();
-        if (data.success && data.agents) {
-          availableTrainedAgents = data.agents;
-          renderSavedAgentsList();
-          updateSeatDropdownsWithTrainedAgents();
-          updateBaseAgentSelectWithCustomAgents();
-        }
-      } catch (e) {
-        // Fallback silencioso
-      }
-    }
-
-        function updateBaseAgentSelectWithCustomAgents() {
-      const sel = document.getElementById('trainBaseAgentSelect');
-      if (!sel) return;
-      const customList = (availableTrainedAgents || []).filter(a => a.is_custom);
-
-      let grp = sel.querySelector('optgroup[data-retrain="true"]');
-      if (customList.length === 0) {
-        if (grp) grp.remove();
-        return;
-      }
-      if (!grp) {
-        grp = document.createElement('optgroup');
-        grp.label = '⭐ Re-treinar Agente Salvo (Ajuste Fino)';
-        grp.setAttribute('data-retrain', 'true');
-        sel.appendChild(grp);
-      }
-      grp.innerHTML = customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name} (Evoluir Parâmetros)</option>`).join('');
-    }
-
-    function renderSavedAgentsList() {
-      const container = document.getElementById('savedAgentsContainer');
-      const badge = document.getElementById('savedAgentsCountBadge');
-      if (!container) return;
-
-      const customList = availableTrainedAgents.filter(a => a.is_custom);
-      if (badge) badge.innerText = `${customList.length} agente(s)`;
-
-      if (customList.length === 0) {
-        container.innerHTML = `<div style="font-size:0.78rem; color:#777; text-align:center; padding:10px;">Nenhum agente treinado importado ainda. Execute o treino no Google Colab e importe o arquivo .json acima!</div>`;
-        return;
-      }
-
-      let html = '';
-      for (const a of customList) {
-        const tier = (a.qualification && a.qualification.overall_tier) || 'Treinado';
-        const fit = (a.qualification && a.qualification.overall_fitness) ? a.qualification.overall_fitness.toFixed(1) : '--';
-        html += `
-          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:6px 10px; border-radius:6px; margin-bottom:6px;">
-            <div>
-              <div style="font-size:0.82rem; font-weight:700; color:var(--gold-light);">${a.name}</div>
-              <div style="font-size:0.7rem; color:#888;">Base: ${a.base_type} | Fitness: ${fit} pts</div>
-            </div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn-header" onclick="selectTrainedAgentForGame('${a.agent_id}')" style="font-size:0.72rem; padding:3px 8px; background:rgba(76,175,80,0.2); border-color:#4caf50;">Jogar</button>
-              <button class="btn-header" onclick="deleteTrainedAgent('${a.agent_id}')" style="font-size:0.72rem; padding:3px 8px; color:#ff7043; border-color:#e64a19;" title="Excluir este agente customizado">🗑️</button>
-            </div>
-          </div>
-        `;
-      }
-      container.innerHTML = html;
-    }
-
-    async function deleteTrainedAgent(agentId) {
-      if (!confirm('Deseja realmente excluir este agente customizado?')) return;
-      try {
-        const res = await fetch('/api/training/delete_agent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: 'training/delete_agent',
-            agent_id: agentId
-          })
-        });
-        const data = await res.json();
-        if (data.success) {
-          loadAvailableCustomAgents();
-        } else {
-          alert('Erro ao excluir: ' + (data.error || 'Erro inesperado.'));
-        }
-      } catch (e) {
-        alert('Erro ao excluir: ' + e.message);
-      }
-    }
-
-    function selectTrainedAgentForGame(agentId) {
-      closeTrainingModal();
-      // Configura a mesa com o agente customizado
-      startGameWithCustomAgent(agentId);
-    }
-
-    async function startGameWithCustomAgent(agentId) {
-      try {
-        const payload = {
-          num_players: 4,
-          starting_stack: 1000,
-          agent_mode: 'custom',
-          custom_agents: [agentId, 'math', 'aggressive']
-        };
-        const res = await fetch('/api/start_game', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.session_id) {
-          sessionId = data.session_id;
-          localStorage.setItem('poker_session_id', sessionId);
-          fetchState();
-        }
-      } catch (e) {
-        console.error('Erro ao iniciar jogo com agente customizado:', e);
-      }
-    }
-
-    function updateSeatDropdownsWithTrainedAgents() {
-      const customList = (availableTrainedAgents || []).filter(a => a.is_custom);
-      if (customList.length === 0) return;
-
-      const optsHtml = customList.map(a => `<option value="${a.agent_id}">⭐ ${a.name}</option>`).join('');
-
-      for (let i = 0; i < 9; i++) {
-        const recSel = document.getElementById(`recCustomSeatSelect_${i}`);
-        if (recSel) {
-          let grp = recSel.querySelector('optgroup[data-trained="true"]');
-          if (!grp) {
-            grp = document.createElement('optgroup');
-            grp.label = '⭐ Novos Agentes Treinados';
-            grp.setAttribute('data-trained', 'true');
-            recSel.insertBefore(grp, recSel.firstChild);
-          }
-          grp.innerHTML = optsHtml;
-        }
-
-        const seatSel = document.getElementById(`customSeatSelect_${i}`);
-        if (seatSel) {
-          let grp = seatSel.querySelector('optgroup[data-trained="true"]');
-          if (!grp) {
-            grp = document.createElement('optgroup');
-            grp.label = '⭐ Novos Agentes Treinados';
-            grp.setAttribute('data-trained', 'true');
-            seatSel.insertBefore(grp, seatSel.firstChild);
-          }
-          grp.innerHTML = optsHtml;
-        }
-      }
-    }
 
     /* ===================================================================== */
     /* XAI COGNITIVE GRAPH WORKSPACE LOGIC (VISÃO MACRO E MICRO)             */
@@ -5417,7 +4488,6 @@
     }
 
     window.addEventListener('load', () => {
-      loadAvailableCustomAgents();
       autoScaleTable();
       fetchState();
     });
