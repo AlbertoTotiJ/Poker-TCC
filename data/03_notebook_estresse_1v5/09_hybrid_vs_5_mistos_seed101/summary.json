@@ -1,0 +1,19 @@
+{
+  "test_id": "09_hybrid_vs_5_mistos_seed101",
+  "created_at": "2026-11-07T01:47:00.859850+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 101,
+  "total_bluffs": 486,
+  "pure_bluffs": 86,
+  "semi_bluffs": 207,
+  "cbet_bluffs": 150,
+  "steal_bluffs": 43,
+  "blocker_bluffs": 0,
+  "accepted_folds": 90,
+  "refused_calls": 198,
+  "refused_raises": 198,
+  "successful_outcomes": 267,
+  "failed_outcomes": 219,
+  "test_dir": "data\\03_notebook_estresse_1v5\\09_hybrid_vs_5_mistos_seed101"
+}

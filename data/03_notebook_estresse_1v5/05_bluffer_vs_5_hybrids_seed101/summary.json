@@ -1,0 +1,19 @@
+{
+  "test_id": "05_bluffer_vs_5_hybrids_seed101",
+  "created_at": "2026-11-07T01:34:53.658003+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 101,
+  "total_bluffs": 814,
+  "pure_bluffs": 261,
+  "semi_bluffs": 227,
+  "cbet_bluffs": 187,
+  "steal_bluffs": 139,
+  "blocker_bluffs": 0,
+  "accepted_folds": 177,
+  "refused_calls": 288,
+  "refused_raises": 349,
+  "successful_outcomes": 440,
+  "failed_outcomes": 374,
+  "test_dir": "data\\03_notebook_estresse_1v5\\05_bluffer_vs_5_hybrids_seed101"
+}

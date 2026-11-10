@@ -1,0 +1,19 @@
+{
+  "test_id": "03_math_vs_5_mistos_seed99",
+  "created_at": "2026-11-07T16:04:11.427068+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 99,
+  "total_bluffs": 554,
+  "pure_bluffs": 114,
+  "semi_bluffs": 191,
+  "cbet_bluffs": 195,
+  "steal_bluffs": 54,
+  "blocker_bluffs": 0,
+  "accepted_folds": 214,
+  "refused_calls": 145,
+  "refused_raises": 195,
+  "successful_outcomes": 343,
+  "failed_outcomes": 211,
+  "test_dir": "data\\03_notebook_estresse_1v5\\03_math_vs_5_mistos_seed99"
+}

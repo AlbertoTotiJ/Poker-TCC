@@ -1,0 +1,19 @@
+{
+  "test_id": "9max_full_ring_1000m_seed101",
+  "created_at": "2026-11-07T01:11:00.938847+00:00",
+  "num_hands": 1000,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 101,
+  "total_bluffs": 927,
+  "pure_bluffs": 227,
+  "semi_bluffs": 346,
+  "cbet_bluffs": 260,
+  "steal_bluffs": 94,
+  "blocker_bluffs": 0,
+  "accepted_folds": 224,
+  "refused_calls": 298,
+  "refused_raises": 405,
+  "successful_outcomes": 506,
+  "failed_outcomes": 421,
+  "test_dir": "data\\01_desktop_mesas\\9max_full_ring_1000m_seed101"
+}

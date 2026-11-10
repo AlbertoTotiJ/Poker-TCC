@@ -1,0 +1,19 @@
+{
+  "test_id": "02_math_vs_5_hybrids_seed144",
+  "created_at": "2026-11-07T14:00:25.423875+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 144,
+  "total_bluffs": 572,
+  "pure_bluffs": 232,
+  "semi_bluffs": 124,
+  "cbet_bluffs": 86,
+  "steal_bluffs": 130,
+  "blocker_bluffs": 0,
+  "accepted_folds": 75,
+  "refused_calls": 236,
+  "refused_raises": 261,
+  "successful_outcomes": 268,
+  "failed_outcomes": 304,
+  "test_dir": "data\\03_notebook_estresse_1v5\\02_math_vs_5_hybrids_seed144"
+}

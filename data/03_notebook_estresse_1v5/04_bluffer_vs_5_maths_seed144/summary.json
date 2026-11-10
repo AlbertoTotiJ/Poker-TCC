@@ -1,0 +1,19 @@
+{
+  "test_id": "04_bluffer_vs_5_maths_seed144",
+  "created_at": "2026-11-07T14:08:18.054136+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 144,
+  "total_bluffs": 178,
+  "pure_bluffs": 31,
+  "semi_bluffs": 84,
+  "cbet_bluffs": 50,
+  "steal_bluffs": 13,
+  "blocker_bluffs": 0,
+  "accepted_folds": 9,
+  "refused_calls": 95,
+  "refused_raises": 74,
+  "successful_outcomes": 84,
+  "failed_outcomes": 94,
+  "test_dir": "data\\03_notebook_estresse_1v5\\04_bluffer_vs_5_maths_seed144"
+}

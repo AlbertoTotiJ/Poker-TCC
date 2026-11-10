@@ -1,0 +1,19 @@
+{
+  "test_id": "06_bluffer_vs_5_mistos_seed101",
+  "created_at": "2026-11-07T01:38:47.962697+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 101,
+  "total_bluffs": 413,
+  "pure_bluffs": 88,
+  "semi_bluffs": 167,
+  "cbet_bluffs": 110,
+  "steal_bluffs": 48,
+  "blocker_bluffs": 0,
+  "accepted_folds": 65,
+  "refused_calls": 194,
+  "refused_raises": 154,
+  "successful_outcomes": 219,
+  "failed_outcomes": 194,
+  "test_dir": "data\\03_notebook_estresse_1v5\\06_bluffer_vs_5_mistos_seed101"
+}

@@ -1,0 +1,19 @@
+{
+  "test_id": "6max_heterogeneo_1000m_seed99",
+  "created_at": "2026-11-07T15:38:34.102624+00:00",
+  "num_hands": 1000,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 99,
+  "total_bluffs": 959,
+  "pure_bluffs": 232,
+  "semi_bluffs": 323,
+  "cbet_bluffs": 294,
+  "steal_bluffs": 110,
+  "blocker_bluffs": 0,
+  "accepted_folds": 226,
+  "refused_calls": 370,
+  "refused_raises": 363,
+  "successful_outcomes": 530,
+  "failed_outcomes": 429,
+  "test_dir": "data\\01_desktop_mesas\\6max_heterogeneo_1000m_seed99"
+}

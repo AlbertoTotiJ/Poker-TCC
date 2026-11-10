@@ -1,0 +1,19 @@
+{
+  "test_id": "duel_hibrido_vs_matematico_seed99",
+  "created_at": "2026-11-07T15:55:48.736421+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 99,
+  "total_bluffs": 231,
+  "pure_bluffs": 64,
+  "semi_bluffs": 75,
+  "cbet_bluffs": 42,
+  "steal_bluffs": 50,
+  "blocker_bluffs": 0,
+  "accepted_folds": 61,
+  "refused_calls": 97,
+  "refused_raises": 73,
+  "successful_outcomes": 126,
+  "failed_outcomes": 105,
+  "test_dir": "data\\02_notebook_headsup\\duel_hibrido_vs_matematico_seed99"
+}

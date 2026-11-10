@@ -1,0 +1,19 @@
+{
+  "test_id": "duel_hibrido_vs_bluffer_seed99",
+  "created_at": "2026-11-07T15:57:40.917410+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 99,
+  "total_bluffs": 679,
+  "pure_bluffs": 120,
+  "semi_bluffs": 183,
+  "cbet_bluffs": 259,
+  "steal_bluffs": 117,
+  "blocker_bluffs": 0,
+  "accepted_folds": 231,
+  "refused_calls": 209,
+  "refused_raises": 239,
+  "successful_outcomes": 430,
+  "failed_outcomes": 249,
+  "test_dir": "data\\02_notebook_headsup\\duel_hibrido_vs_bluffer_seed99"
+}

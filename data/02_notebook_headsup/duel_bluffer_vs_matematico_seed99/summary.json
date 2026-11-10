@@ -1,0 +1,19 @@
+{
+  "test_id": "duel_bluffer_vs_matematico_seed99",
+  "created_at": "2026-11-07T15:54:33.926460+00:00",
+  "num_hands": 500,
+  "roster_mode": "tier_s_duelo",
+  "rng_seed": 99,
+  "total_bluffs": 330,
+  "pure_bluffs": 52,
+  "semi_bluffs": 150,
+  "cbet_bluffs": 110,
+  "steal_bluffs": 18,
+  "blocker_bluffs": 0,
+  "accepted_folds": 34,
+  "refused_calls": 210,
+  "refused_raises": 86,
+  "successful_outcomes": 195,
+  "failed_outcomes": 135,
+  "test_dir": "data\\02_notebook_headsup\\duel_bluffer_vs_matematico_seed99"
+}
