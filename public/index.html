@@ -1542,6 +1542,210 @@
       color: #fff;
       border-color: #94a3b8;
     }
+
+    /* Menu Unificado de Abertura XAI */
+    .xai-open-menu-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(30, 41, 59, 0.85);
+      padding: 3px 5px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      flex-shrink: 0;
+    }
+    .btn-xai-open-menu {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid #475569;
+      color: #f8fafc;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .btn-xai-open-menu:hover, .btn-xai-open-menu.open {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    }
+    .xai-open-badge {
+      background: rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      border: 1px solid rgba(147, 197, 253, 0.35);
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+    .btn-xai-open-menu:hover .xai-open-badge, .btn-xai-open-menu.open .xai-open-badge {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .xai-caret {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      transition: transform 0.2s ease;
+    }
+    .btn-xai-open-menu.open .xai-caret {
+      transform: rotate(180deg);
+      color: #fff;
+    }
+
+    /* Dropdown Popover Panel */
+    .xai-open-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 7px);
+      left: 0;
+      width: 390px;
+      background: rgba(15, 23, 42, 0.98);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 10px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      z-index: 10020;
+      overflow: hidden;
+      animation: xaiFadeInDown 0.16s ease-out;
+    }
+    @keyframes xaiFadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .xai-open-dropdown-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 13px;
+      background: rgba(30, 41, 59, 0.85);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .xai-dropdown-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-xai-dropdown-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.95rem;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1;
+      transition: all 0.2s;
+    }
+    .btn-xai-dropdown-close:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+    .xai-dropdown-content {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .xai-dropdown-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .xai-dropdown-label {
+      font-size: 0.73rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .xai-dropdown-select {
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 7px 9px;
+      font-size: 0.79rem;
+      font-weight: 600;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .xai-dropdown-select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    .xai-dropdown-input-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .xai-dropdown-input-row .xai-dropdown-select {
+      flex: 1;
+      min-width: 0;
+    }
+    .xai-dropdown-jump-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .xai-dropdown-input {
+      flex: 1;
+      background: #0f172a;
+      color: #fff;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .xai-dropdown-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    .btn-xai-jump-submit {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border: 1px solid #3b82f6;
+      border-radius: 6px;
+      padding: 6px 13px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-xai-jump-submit:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
     .btn-xai-emblematic {
       display: inline-flex;
       align-items: center;
@@ -2452,32 +2656,72 @@
           ⭐ Casos de Estudo
         </button>
 
-        <div class="xai-control-group" id="xaiSeedSelectGroup" title="Filtrar por Seed / Torneio do Benchmark">
-          <label for="xaiSeedSelect">Seed:</label>
-          <select id="xaiSeedSelect" onchange="onXaiSeedChange(this.value)">
-            <option value="6max_heterogeneo_1000m_seed101">🌱 Seed 101 (6-Max Principal)</option>
-            <option value="6max_heterogeneo_1000m_seed144">🌱 Seed 144 (6-Max Agressivo)</option>
-            <option value="6max_heterogeneo_1000m_seed99">🌱 Seed 99 (6-Max Variância)</option>
-            <option value="9max_full_ring_1000m_seed101">🏛️ Seed 101 (9-Max Full Ring)</option>
-            <option value="9max_full_ring_1000m_seed144">🏛️ Seed 144 (9-Max Full Ring)</option>
-            <option value="9max_full_ring_1000m_seed99">🏛️ Seed 99 (9-Max Full Ring)</option>
-            <option value="">🌟 Todos os Torneios</option>
-          </select>
-        </div>
+        <!-- Menu Unificado de Abertura e Navegação de Rodadas -->
+        <div class="xai-open-menu-wrapper" id="xaiOpenMenuWrapper">
+          <button type="button" class="btn-xai-nav" onclick="navXaiHand(-1)" title="Mão Anterior">◀</button>
+          <button type="button" class="btn-xai-open-menu" id="btnXaiOpenMenu" onclick="toggleXaiOpenMenu(event)" title="Abrir menu de seleção de Torneio, Mão e Pulo Rápido">
+            <span>📂</span>
+            <span class="xai-open-label">Abrir Rodada</span>
+            <span class="xai-open-badge" id="xaiOpenBadge">Mão #1000</span>
+            <span class="xai-caret" id="xaiOpenCaret">▾</span>
+          </button>
+          <button type="button" class="btn-xai-nav" onclick="navXaiHand(1)" title="Próxima Mão">▶</button>
 
-        <div class="xai-control-group" id="xaiHandSelectGroup">
-          <label for="xaiHandSelect">Mão:</label>
-          <button class="btn-xai-nav" onclick="navXaiHand(-1)" title="Mão Anterior">◀</button>
-          <select id="xaiHandSelect" onchange="onXaiHandChange(this.value)">
-            <option value="">Carregando mãos do banco Neon...</option>
-          </select>
-          <button class="btn-xai-nav" onclick="navXaiHand(1)" title="Próxima Mão">▶</button>
-        </div>
+          <!-- Dropdown Popover -->
+          <div class="xai-open-dropdown-menu" id="xaiOpenDropdownMenu" style="display: none;">
+            <div class="xai-open-dropdown-header">
+              <div class="xai-dropdown-title">
+                <span>📂</span>
+                <span>Abrir Rodada & Experimento</span>
+              </div>
+              <button type="button" class="btn-xai-dropdown-close" onclick="closeXaiOpenMenu()" title="Fechar Menu">✕</button>
+            </div>
 
-        <div class="xai-control-group" id="xaiQuickJumpGroup" title="Pular diretamente para o número da rodada (mão)">
-          <label for="xaiQuickHandInput">Ir p/:</label>
-          <input type="number" id="xaiQuickHandInput" min="1" max="1000" placeholder="ex: 491" style="width: 48px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 2px 4px; font-size: 0.78rem;" onkeydown="if(event.key==='Enter') jumpToQuickHand()">
-          <button class="btn-xai-nav" onclick="jumpToQuickHand()" title="Abrir Mão">🔍</button>
+            <div class="xai-dropdown-content">
+              <!-- 1. Torneio / Seed -->
+              <div class="xai-dropdown-field" id="xaiSeedSelectGroup">
+                <label for="xaiSeedSelect" class="xai-dropdown-label">
+                  <span>🌱 Torneio / Seed de Benchmark:</span>
+                </label>
+                <select id="xaiSeedSelect" class="xai-dropdown-select" onchange="onXaiSeedChange(this.value)">
+                  <option value="6max_heterogeneo_1000m_seed101">🌱 Seed 101 (6-Max Principal)</option>
+                  <option value="6max_heterogeneo_1000m_seed144">🌱 Seed 144 (6-Max Agressivo)</option>
+                  <option value="6max_heterogeneo_1000m_seed99">🌱 Seed 99 (6-Max Variância)</option>
+                  <option value="9max_full_ring_1000m_seed101">🏛️ Seed 101 (9-Max Full Ring)</option>
+                  <option value="9max_full_ring_1000m_seed144">🏛️ Seed 144 (9-Max Full Ring)</option>
+                  <option value="9max_full_ring_1000m_seed99">🏛️ Seed 99 (9-Max Full Ring)</option>
+                  <option value="">🌟 Todos os Torneios</option>
+                </select>
+              </div>
+
+              <!-- 2. Seleção de Mão -->
+              <div class="xai-dropdown-field" id="xaiHandSelectGroup">
+                <label for="xaiHandSelect" class="xai-dropdown-label">
+                  <span>🃏 Mão / Rodada Registrada:</span>
+                </label>
+                <div class="xai-dropdown-input-row">
+                  <button type="button" class="btn-xai-nav" onclick="navXaiHand(-1)" title="Mão Anterior">◀</button>
+                  <select id="xaiHandSelect" class="xai-dropdown-select" onchange="onXaiHandChange(this.value); closeXaiOpenMenu();">
+                    <option value="">Carregando mãos do banco Neon...</option>
+                  </select>
+                  <button type="button" class="btn-xai-nav" onclick="navXaiHand(1)" title="Próxima Mão">▶</button>
+                </div>
+              </div>
+
+              <!-- 3. Pulo Rápido (Ir p/) -->
+              <div class="xai-dropdown-field" id="xaiQuickJumpGroup">
+                <label for="xaiQuickHandInput" class="xai-dropdown-label">
+                  <span>🎯 Pular Direto para Mão nº:</span>
+                </label>
+                <div class="xai-dropdown-jump-row">
+                  <input type="number" id="xaiQuickHandInput" min="1" max="1000" placeholder="ex: 491" class="xai-dropdown-input" onkeydown="if(event.key==='Enter') { jumpToQuickHand(); closeXaiOpenMenu(); }">
+                  <button type="button" class="btn-xai-jump-submit" onclick="jumpToQuickHand(); closeXaiOpenMenu();" title="Abrir Mão">
+                    🔍 Abrir
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="xai-control-group" id="xaiGlobalProfileGroup" style="display: none;" title="Filtrar Grafo Global de Process Mining por Perfil de Agente">
@@ -3331,12 +3575,14 @@
     function openXaiWorkspace() {
       const overlay = document.getElementById('xaiWorkspaceOverlay');
       if (overlay) overlay.style.display = 'flex';
+      closeXaiOpenMenu();
       reloadXaiHands();
     }
 
     function closeXaiWorkspace() {
       const overlay = document.getElementById('xaiWorkspaceOverlay');
       if (overlay) overlay.style.display = 'none';
+      closeXaiOpenMenu();
       if (xaiNetwork) {
         try { xaiNetwork.destroy(); } catch (e) {}
         xaiNetwork = null;
@@ -3358,11 +3604,68 @@
       reloadXaiHands();
     }
 
+    function updateXaiOpenBadge(handId, testId) {
+      const badge = document.getElementById('xaiOpenBadge');
+      if (!badge) return;
+      if (xaiCurrentView === 'global') {
+        const seedSelect = document.getElementById('xaiSeedSelect');
+        const seed = seedSelect ? seedSelect.value : '';
+        badge.textContent = seed ? 'Torneio Filtrado' : 'Todos os Torneios';
+        return;
+      }
+      if (!handId) {
+        badge.textContent = 'Mão --';
+        return;
+      }
+      badge.textContent = `Mão #${handId}`;
+    }
+
+    function toggleXaiOpenMenu(event) {
+      if (event) {
+        if (event.stopPropagation) event.stopPropagation();
+        if (event.preventDefault) event.preventDefault();
+      }
+      const menu = document.getElementById('xaiOpenDropdownMenu');
+      const btn = document.getElementById('btnXaiOpenMenu');
+      if (!menu) return;
+      const isClosed = menu.style.display === 'none' || !menu.style.display;
+      if (isClosed) {
+        menu.style.display = 'block';
+        if (btn) btn.classList.add('open');
+      } else {
+        menu.style.display = 'none';
+        if (btn) btn.classList.remove('open');
+      }
+    }
+
+    function closeXaiOpenMenu() {
+      const menu = document.getElementById('xaiOpenDropdownMenu');
+      const btn = document.getElementById('btnXaiOpenMenu');
+      if (menu) menu.style.display = 'none';
+      if (btn) btn.classList.remove('open');
+    }
+
+    // Fechar menu de abrir ao clicar fora
+    document.addEventListener('click', function(e) {
+      const wrapper = document.getElementById('xaiOpenMenuWrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        closeXaiOpenMenu();
+      }
+    });
+
+    // Fechar menu de abrir com Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeXaiOpenMenu();
+      }
+    });
+
     function onXaiSeedChange(seedVal) {
       xaiCurrentTestId = seedVal || null;
       if (xaiCurrentView === 'global') {
         const profSelect = document.getElementById('xaiGlobalProfileSelect');
         const profile = profSelect ? profSelect.value : 'ALL';
+        updateXaiOpenBadge(null, seedVal);
         loadGlobalGraph(profile, seedVal);
       } else {
         xaiCurrentHandId = null;
@@ -3414,6 +3717,7 @@
         xaiCurrentHandId = chosenItem.hand_id;
         xaiCurrentTestId = chosenItem.test_id || null;
         if (select) select.value = `${chosenItem.hand_id}|${chosenItem.test_id || ''}`;
+        updateXaiOpenBadge(chosenItem.hand_id, chosenItem.test_id);
         loadMacroGraph(xaiCurrentHandId, xaiCurrentTestId);
 
       } catch (err) {
@@ -3430,6 +3734,7 @@
       xaiCurrentHandId = parseInt(parts[0]);
       xaiCurrentTestId = parts[1] || null;
       xaiCurrentActionId = null;
+      updateXaiOpenBadge(xaiCurrentHandId, xaiCurrentTestId);
       loadMacroGraph(xaiCurrentHandId, xaiCurrentTestId);
     }
 
@@ -3457,6 +3762,8 @@
       const selectedSeed = seedSelect ? seedSelect.value : xaiCurrentTestId;
       xaiCurrentHandId = hid;
       xaiCurrentTestId = selectedSeed || null;
+      updateXaiOpenBadge(hid, xaiCurrentTestId);
+      closeXaiOpenMenu();
       loadMacroGraph(hid, xaiCurrentTestId);
     }
 
@@ -3533,6 +3840,7 @@
       xaiCurrentView = 'macro';
       xaiCurrentHandId = handId;
       if (testId) xaiCurrentTestId = testId;
+      updateXaiOpenBadge(handId, testId || xaiCurrentTestId);
 
       const btnMacro = document.getElementById('btnModeMacro');
       const btnMicro = document.getElementById('btnModeMicro');
@@ -3726,6 +4034,7 @@
       const bluffsBtn = document.getElementById('btnXaiOnlyBluffs');
       const emblemBtn = document.getElementById('btnXaiEmblematic');
       const globalGroup = document.getElementById('xaiGlobalProfileGroup');
+      const openBadge = document.getElementById('xaiOpenBadge');
 
       const btnMacro = document.getElementById('btnModeMacro');
       const btnMicro = document.getElementById('btnModeMicro');
@@ -3737,6 +4046,7 @@
         if (bluffsBtn) bluffsBtn.style.display = 'inline-block';
         if (emblemBtn) emblemBtn.style.display = 'inline-block';
         if (globalGroup) globalGroup.style.display = 'none';
+        if (openBadge && xaiCurrentHandId) openBadge.textContent = `Mão #${xaiCurrentHandId}`;
 
         if (btnMacro) btnMacro.classList.add('active');
         if (btnMicro) btnMicro.classList.remove('active');
@@ -3754,6 +4064,7 @@
           if (bluffsBtn) bluffsBtn.style.display = 'none';
           if (emblemBtn) emblemBtn.style.display = 'none';
           if (globalGroup) globalGroup.style.display = 'none';
+          if (openBadge && xaiCurrentHandId) openBadge.textContent = `Mão #${xaiCurrentHandId}`;
 
           if (btnMacro) btnMacro.classList.remove('active');
           if (btnMicro) btnMicro.classList.add('active');
@@ -3778,6 +4089,9 @@
         const profile = profSelect ? profSelect.value : 'ALL';
         const seedSelect = document.getElementById('xaiSeedSelect');
         const seed = seedSelect ? seedSelect.value : '';
+        if (openBadge) {
+          openBadge.textContent = seed ? 'Torneio Filtrado' : 'Todos os Torneios';
+        }
         loadGlobalGraph(profile, seed);
       }
     }
