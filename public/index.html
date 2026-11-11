@@ -1450,9 +1450,9 @@
       backdrop-filter: blur(12px);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
       flex-shrink: 0;
-      overflow: hidden;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      overflow: visible !important;
+      position: relative;
+      z-index: 1000;
     }
     .xai-topbar::-webkit-scrollbar {
       display: none !important;
@@ -1495,6 +1495,9 @@
       gap: 6px;
       flex-wrap: nowrap;
       flex-shrink: 0;
+      position: relative;
+      overflow: visible !important;
+      z-index: 1005;
     }
 
     .xai-control-group {
@@ -1607,15 +1610,14 @@
     /* Dropdown Popover Panel */
     .xai-open-dropdown-menu {
       position: absolute;
-      top: calc(100% + 7px);
+      top: calc(100% + 8px);
       left: 0;
-      width: 390px;
-      background: rgba(15, 23, 42, 0.98);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      width: 410px;
+      max-width: 92vw;
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.4);
       border-radius: 10px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
       z-index: 10020;
       overflow: hidden;
       animation: xaiFadeInDown 0.16s ease-out;
@@ -2743,10 +2745,10 @@
             🔭 Visão MACRO
           </button>
           <button class="btn-xai-mode" id="btnModeMicro" onclick="switchXaiView('micro')" title="Clique em uma ação no grafo Macro para abrir a visão Micro">
-            🔬 Visão MICRO (Rede Neural)
+            🔬 Visão MICRO
           </button>
-          <button class="btn-xai-mode" id="btnModeGlobal" onclick="switchXaiView('global')" title="Visão GLOBAL: Grafo de Transição de Estados (Process Mining sobre 181.083 Decisões)">
-            🌐 Visão GLOBAL (Process Mining)
+          <button class="btn-xai-mode" id="btnModeGlobal" onclick="switchXaiView('global')" title="Visão GLOBAL: Grafo de Transição de Estados (181.083 Decisões)">
+            🌐 Visão GLOBAL
           </button>
         </div>
 
@@ -2780,7 +2782,7 @@
         <!-- Floating Status / Instruction Banner -->
         <div class="xai-hint-banner" id="xaiHintBanner">
           <span style="font-size: 1.2rem;">💡</span>
-          <span id="xaiHintText">Visão MACRO ativa. A <strong>Trilha da Vitória</strong> está destacada em dourado. <strong>Dê um clique</strong> em qualquer nó de ação para inspecionar, ou <strong>clique duplo</strong> para abrir a <strong>Visão MICRO (Rede Neural)</strong>!</span>
+          <span id="xaiHintText">Visão MACRO ativa. A <strong>Trilha da Vitória</strong> está destacada em dourado. <strong>Dê um clique</strong> em qualquer nó de ação para inspecionar, ou <strong>clique duplo</strong> para abrir a <strong>Visão MICRO</strong>!</span>
         </div>
 
         <!-- Vis.js Canvas Element -->
@@ -3864,7 +3866,7 @@
         breadcrumb.innerHTML = `🔭 Visão MACRO · Trilha da Vitória (Mão #${handId}${seedLabel})`;
       }
       if (hintText) {
-        hintText.innerHTML = `Visão MACRO ativa. A <strong>Trilha da Vitória</strong> está destacada em dourado. <strong>Dê um clique</strong> em qualquer nó de ação para inspecionar, ou <strong>clique duplo</strong> para abrir a <strong>Visão MICRO (Rede Neural)</strong>!`;
+        hintText.innerHTML = `Visão MACRO ativa. A <strong>Trilha da Vitória</strong> está destacada em dourado. <strong>Dê um clique</strong> em qualquer nó de ação para inspecionar, ou <strong>clique duplo</strong> para abrir a <strong>Visão MICRO</strong>!`;
       }
 
       updateXaiLegend('macro');
@@ -3920,7 +3922,7 @@
           breadcrumb.innerHTML = `
             <span style="cursor:pointer; text-decoration:underline; color:#93c5fd;" onclick="loadMacroGraph(${resp.hand_id})">🔭 Mão #${resp.hand_id}</span>
             <span style="margin: 0 4px; color:#64748b;">➔</span>
-            <span>🔬 Visão MICRO · Rede Neural (${resp.player_name}: ${resp.action_type} ${resp.amount > 0 ? resp.amount : ''})</span>
+            <span>🔬 Visão MICRO (${resp.player_name}: ${resp.action_type} ${resp.amount > 0 ? resp.amount : ''})</span>
           `;
         }
 
@@ -3974,7 +3976,7 @@
       const toggleTitle = isCollapsed ? 'Expandir Legenda' : 'Minimizar Legenda (Evitar atrapalhar visualização)';
 
       if (viewMode === 'micro') {
-        const titleText = isCollapsed ? '🔬 Legenda (MICRO)' : '🔬 LEGENDA · REDE NEURAL DE DECISÃO (MICRO)';
+        const titleText = isCollapsed ? '🔬 Legenda (MICRO)' : '🔬 LEGENDA · DECISÃO COGNITIVA (MICRO)';
         box.innerHTML = `
           <div class="legend-title" style="color: #c084fc;" onclick="if(xaiLegendCollapsed) toggleXaiLegendCollapse(event)">
             <span>${titleText}</span>
@@ -3992,7 +3994,7 @@
           </div>
         `;
       } else if (viewMode === 'global') {
-        const titleText = isCollapsed ? '🌐 Legenda (GLOBAL)' : '🌐 LEGENDA · PROCESS MINING GLOBAL (181.083 DECISÕES)';
+        const titleText = isCollapsed ? '🌐 Legenda (GLOBAL)' : '🌐 LEGENDA · FLUXO GLOBAL (181.083 DECISÕES)';
         box.innerHTML = `
           <div class="legend-title" style="color: #38bdf8;" onclick="if(xaiLegendCollapsed) toggleXaiLegendCollapse(event)">
             <span>${titleText}</span>
@@ -4119,7 +4121,7 @@
 
       const profLabel = profile === 'ALL' ? 'Todos os Agentes' : profile;
       if (breadcrumb) {
-        breadcrumb.innerHTML = `🌐 Visão GLOBAL (Process Mining) · Fluxo Consolidado (${profLabel}${seedLabel})`;
+        breadcrumb.innerHTML = `🌐 Visão GLOBAL · Fluxo Consolidado (${profLabel}${seedLabel})`;
       }
       if (hintText) {
         hintText.innerHTML = `🌐 <strong>Process Mining Consolidado:</strong> Mineração empírica de decisões de IA. A espessura das arestas representa a probabilidade empírica de transição. <strong>Clique em qualquer nó</strong> para ver taxas de vitória, volume e casos emblemáticos!`;
